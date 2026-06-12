@@ -365,14 +365,13 @@ body{position:fixed;inset:0}
 .cockpitScreen .ckFrame{position:absolute;left:50%;bottom:0;transform:translateX(-50%);height:100%;width:auto;aspect-ratio:540/1127;z-index:1}
 @supports not (aspect-ratio:1){.cockpitScreen .ckFrame{height:100%;width:100%;left:0;transform:none}}
 .cockpitScreen .ckBG{position:absolute;inset:0;width:100%;height:100%;background-size:100% 100%;background-repeat:no-repeat;background-position:center;pointer-events:none;z-index:2}
-/* Sky composite scaled DOWN (was cover) so the baked-in monster fits inside the
-   window frame; the image still covers the whole transparent window hole. */
-.cockpitScreen .ckSky{position:absolute;inset:0;width:100%;height:100%;background-size:auto 74%;background-repeat:no-repeat;background-position:center top;background-color:#000;pointer-events:none;z-index:1}
+/* Per-constellation full-window background (starfield + asterism art). */
+.cockpitScreen .ckSky{position:absolute;inset:0;width:100%;height:100%;background-size:cover;background-repeat:no-repeat;background-position:center top;background-color:#000;pointer-events:none;z-index:1}
 /* Monster layer: behind the frame (.ckBG z-index:2) so it shows through the
    transparent window panes. Cockpit frame > monster > planet. */
 .cockpitScreen .ckMonster{position:absolute;left:var(--mx,50%);top:var(--my,22%);
   width:var(--mw,46%);transform:translate(-50%,-50%);z-index:1;pointer-events:none;
-  filter:drop-shadow(0 0 14px rgba(150,255,170,.5))}
+  filter:drop-shadow(0 0 12px rgba(150,200,255,.45))}
 /* inner wrapper carries per-frame anim transform (offsets in % of monster box) */
 .cockpitScreen .ckMonInner{position:relative;width:100%;
   transform:translate(var(--ax,0),var(--ay,0)) scale(var(--asc,1)) rotate(var(--arot,0deg)) scaleX(var(--aflip,1));
@@ -6202,7 +6201,7 @@ const NACL_MON_IMG='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAbgAAAE3CAMAAA
 
 // Standard monster placement (agreed baseline). Future monsters reuse these
 // values; per-monster overrides can adjust if needed.
-const MON_BASE={mx:50, my:15, mw:82};   // monster sits high, near the window top
+const MON_BASE={mx:50, my:20, mw:42};   // cut-out sprite layer, ~50% smaller, high in the window
 // Map a planet to its monster image (null if none). Add entries here per compound.
 function cockpitMonsterImg(p){
   // Prefer the external constellation monster art (PYRION zodiac). The loader
@@ -6346,10 +6345,7 @@ function cockpitSetMonImgPose(pose,n){
     const im=el.querySelector('img'); if(im&&im.src!==img.src)im.src=img.src;
     const tint=el.querySelector('.ckMonTint'); if(tint)tint.style.setProperty('--amask',`url('${img.src}')`);
   }
-  // Full-window SKY route (e.g. Pisces composites): swap the .ckSky background.
-  const sky=document.querySelector('#cockpitScreen .ckSky');
-  if(sky){ sky.style.backgroundImage=`url('${img.src}')`; }
-  return !!(el||sky);
+  return !!el;
 }
 // Pose-aware monster image: while a reaction pose is active, renders use it.
 function cockpitMonsterImgActive(p){
@@ -6617,15 +6613,19 @@ function monAssetStd(p){ return monAssetImg(p,'std',1); }
 // load it directly via CSS background-image (it displays when the download
 // finishes — no dependence on a JS re-render). We still register the cache entry
 // so the DEV diagnostic can report load state.
+// Per-constellation full-window BACKGROUND (starfield + asterism art), named
+// "<Const>_bg" (e.g. Pisces_bg). Returns the resolved URL once loaded, else null.
+function cockpitBgImg(p){
+  const cn=planetConstName(p);               // PYRION zodiac only
+  if(!cn)return null;
+  const base=MON_ASSET.base+MON_ASSET.dir+cn+'_bg';
+  const e=monAssetLoad(base);
+  return (e&&e.state==='ok')?e.url:null;
+}
 function cockpitSkyImg(p){
   const cn=planetConstName(p);               // PYRION zodiac only
   if(!cn)return null;
   const boss=(typeof planetIsBoss==='function')&&planetIsBoss(p);
-  // While a reaction pose is active (hit/att/hurt), re-renders keep showing it.
-  if(typeof _monPose!=='undefined' && _monPose && Date.now()<_monPose.until){
-    const pe=monAssetLoad(monAssetBase(cn, boss, _monPose.pose, _monPose.n));
-    if(pe&&pe.state==='ok')return pe.url;
-  }
   const normalBase=monAssetBase(cn, false, 'std', 1);
   if(!boss){ return monAssetResolvedUrl(normalBase); }
   // BOSS: prefer the boss image, but only once it is CONFIRMED loaded. Until then
@@ -6742,8 +6742,8 @@ function cockpitEnemyFX(){
   const dpr=Math.min(2,window.devicePixelRatio||1);
   cv.width=W*dpr; cv.height=H*dpr;
   const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
-  // hands ≈ either side of the monster sprite (sky composite scaled to 74%)
-  const hands=[[W*0.40,H*0.28],[W*0.60,H*0.28]];
+  // hands ≈ either side of the monster sprite (sprite layer at my 20%)
+  const hands=[[W*0.42,H*0.22],[W*0.58,H*0.22]];
   const orbs=[];
   for(let i=0;i<8;i++){const hpt=hands[i%2];
     orbs.push({sx:hpt[0],sy:hpt[1],ex:W*(0.35+Math.random()*0.30),ey:H*0.78,
@@ -6893,12 +6893,22 @@ function cockpitRender(){
     // ROUTE A: if a composite (starfield+monster) image exists for this planet,
     // render it as a FULL-WINDOW background (replacing the planet body shown
     // through the window) instead of the cut-out monster layer.
-    const skyImg=cockpitSkyImg(p);
-    if(skyImg){
-      h+=`<div class="ckSky" style="background-image:url('${skyImg}')"></div>`;
-    } else {
+    // Preferred model: dedicated <Const>_bg full-window background + a SEPARATE
+    // cut-out monster sprite layered on top (50% size). Falls back to the legacy
+    // routes if no _bg art exists for this constellation yet.
+    const bgImg=cockpitBgImg(p);
+    if(bgImg){
+      h+=`<div class="ckSky" style="background-image:url('${bgImg}')"></div>`;
       const monImg=cockpitMonsterImgActive(p);
       if(monImg){ h+=cockpitMonsterLayer(monImg); _hasMonsterLayer=true; }
+    } else {
+      const skyImg=cockpitSkyImg(p);
+      if(skyImg){
+        h+=`<div class="ckSky" style="background-image:url('${skyImg}')"></div>`;
+      } else {
+        const monImg=cockpitMonsterImgActive(p);
+        if(monImg){ h+=cockpitMonsterLayer(monImg); _hasMonsterLayer=true; }
+      }
     }
   }catch(err){
     // Never let monster/sky logic crash the cockpit.
@@ -7310,7 +7320,7 @@ function cockpitProjectileFX(code, color){
   const dpr=Math.min(2,window.devicePixelRatio||1);
   cv.width=W*dpr; cv.height=H*dpr;
   const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
-  const tx=W*0.5, ty=H*0.26;                 // monster center (sky composite scaled to 74%)
+  const tx=W*0.5, ty=H*0.20;                 // monster center (sprite layer at my 20%)
   // Launch points: from OUTSIDE the window's two sides, converging on the monster.
   const lx=-W*0.04, rx=W*1.04, sy=H*0.42;
   const DUR=3000, t0=performance.now();
