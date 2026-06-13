@@ -247,28 +247,34 @@ body{position:fixed;inset:0}
 /* CODEX ELEMENT/FORMULA tabs */
 /* file-folder style tabs: tabs sit on a shared baseline; the active one rises and
    merges into the content below it */
-.cxtabs{display:flex;justify-content:center;gap:4px;margin:0 auto 0;width:100%;
-  border-bottom:2px solid rgba(70,224,255,.4)}
-.cxtab{flex:0 0 auto;min-width:120px;padding:10px 0;border-radius:10px 10px 0 0;cursor:pointer;
-  border:2px solid rgba(70,224,255,.28);border-bottom:none;background:rgba(10,20,34,.55);
-  color:rgba(180,200,230,.55);font-family:'Rajdhani';font-weight:700;font-size:14px;letter-spacing:2px;
-  margin-bottom:-2px;position:relative}
-.cxtab.on{background:rgba(70,224,255,.16);color:#cfeeff;border-color:rgba(70,224,255,.6);
-  border-bottom:2px solid rgba(70,224,255,.16);box-shadow:0 -3px 10px rgba(70,224,255,.25)}
+/* two tabs filling the full width, slanted (parallelogram) edges, muted text */
+.cxtabs{display:flex;justify-content:stretch;gap:6px;margin:0 auto 0;width:100%;
+  border-bottom:2px solid rgba(70,224,255,.3)}
+.cxtab{flex:1;padding:11px 0;cursor:pointer;border:none;
+  clip-path:polygon(11% 0%,100% 0%,89% 100%,0% 100%);
+  background:rgba(22,34,54,.5);color:rgba(150,175,205,.42);
+  font-family:'Rajdhani';font-weight:700;font-size:13px;letter-spacing:2px}
+.cxtab.on{background:rgba(70,224,255,.16);color:rgba(190,220,250,.72)}
 /* FORMULA codex grid: scrolls vertically, compounds as pill cells */
-.fxscroll{overflow-y:auto;overflow-x:hidden;max-height:52cqh;width:100%;margin-top:0}
-.fxgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;width:100%;padding:2px 2px 8px}
-.fxcell{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  min-height:46px;border-radius:8px;border:1.5px solid rgba(120,160,200,.25);background:rgba(10,16,30,.5);
-  cursor:pointer;padding:4px 2px;opacity:.5;transition:opacity .15s,box-shadow .15s}
-.fxcell .fxname{font-family:'Rajdhani';font-weight:800;font-size:14px;color:#cfe3ff;letter-spacing:.3px}
+/* FORMULA catalog scrolls HORIZONTALLY (3 rows, drag left/right), no vertical clip */
+.fxscroll{overflow-x:auto;overflow-y:hidden;width:100%;margin-top:0;cursor:grab;-webkit-overflow-scrolling:touch}
+.fxscroll:active{cursor:grabbing}
+.fxgrid{display:grid;grid-template-rows:repeat(3,1fr);grid-auto-flow:column;gap:7px;padding:2px 2px 6px;height:max-content}
+.fxcell{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  width:24cqw;min-width:96px;height:18cqh;min-height:118px;border-radius:8px;
+  border:1.5px solid rgba(120,160,200,.25);background:rgba(10,16,30,.5);
+  cursor:pointer;padding:14px 4px 4px;opacity:.5;transition:opacity .15s,box-shadow .15s}
+.fxcell .fxnum{position:absolute;top:3px;left:6px;font-family:'Rajdhani';font-weight:700;font-size:9px;letter-spacing:.5px;color:rgba(150,180,215,.6)}
+.fxcell .fxmol{width:100%;height:50px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.fxcell .fxmol svg{max-width:100%;max-height:100%}
+.fxcell .fxname{font-family:'Rajdhani';font-weight:800;font-size:14px;color:#cfe3ff;letter-spacing:.3px;margin-top:2px}
 .fxcell .fxcnt{font-family:'Rajdhani';font-weight:700;font-size:11px;color:#46ffb0;margin-top:1px}
 .fxcell .fxmk{font-family:'Rajdhani';font-weight:700;font-size:9px;letter-spacing:1px;color:#ffd36e;margin-top:1px}
-.fxcell.have{opacity:1;border-color:#46ffb0;background:rgba(70,255,176,.12);box-shadow:0 0 10px rgba(70,255,176,.3)}
+.fxcell.have{opacity:1;border-color:#46ffb0;background:rgba(70,255,176,.1);box-shadow:0 0 10px rgba(70,255,176,.25)}
 .fxcell.have .fxname{color:#dffff0;text-shadow:0 0 8px rgba(70,255,176,.6)}
 .fxcell.makeable{opacity:.85;border-color:rgba(255,211,110,.5);background:rgba(255,211,110,.07)}
 .fxcell:active{transform:scale(.96)}
-.cxseg{position:relative;display:flex;align-items:stretch;margin:0 auto 8px;width:min(255px,80cqw);height:44px;
+.cxseg{position:relative;display:flex;align-items:stretch;margin:16px auto 8px;width:min(255px,80cqw);height:44px;
   border:1px solid rgba(70,224,255,.28);background:rgba(70,224,255,.08);border-radius:999px;overflow:hidden;
   box-shadow:0 0 10px rgba(70,224,255,.35),inset 0 0 6px rgba(70,224,255,.12)}
 .cxseg-fill{position:absolute;top:2px;bottom:2px;left:2px;width:62%;border-radius:999px;
@@ -393,7 +399,7 @@ body{position:fixed;inset:0}
 /* monster + starfield composite sized to sit fully INSIDE the window frame
    (no overflow past the hexagonal opening); centred in the window's upper area */
 /* starfield bg (Pisces_bg etc.) fills the window; the cut-out monster layers on top */
-.cockpitScreen .ckSky{position:absolute;inset:0;width:100%;height:100%;background-size:cover;background-repeat:no-repeat;background-position:center top;background-color:#000;pointer-events:none;z-index:1}
+.cockpitScreen .ckSky{position:absolute;inset:0;width:100%;height:100%;background-size:cover;background-repeat:no-repeat;background-position:center top;background-color:#000;pointer-events:none;z-index:1;opacity:.5}
 /* Monster layer: behind the frame (.ckBG z-index:2) so it shows through the
    transparent window panes. Cockpit frame > monster > planet. */
 /* Monster sprite is a BLACK-background cut-out; screen blend drops the black into
@@ -2195,7 +2201,7 @@ var _arcImgUrl='https://raw.githubusercontent.com/skactaeon/astreon-assets/main/
 var _planetImgBase='https://raw.githubusercontent.com/skactaeon/astreon-assets/main/planets/Planet_';
 var _planetImgExts=['.webp','.jpg','.png'];
 var _planetImgGeom={r:3757, cx:434, cy:4277};
-var _PLANET_IMG_SCALE=1.25;   // enlarge per-planet surface so its limb hugs the rim arc
+var _PLANET_IMG_SCALE=1.5;   // enlarge per-planet surface so its limb hugs the rim arc
 // Per-image REAL visible-horizon y (at the canonical 868x1812 size), auto-detected
 // by detect_horizon.py. Each planet aligns ITS OWN horizon to the rim arc, since the
 // AI photos place the horizon at different heights. Missing codes fall back to 628.
@@ -5522,19 +5528,34 @@ let codexMode='EXTRACT';
 let codexTab='ELEMENT';   // ELEMENT (periodic table) | FORMULA (compound codex)
 function codexSetTab(t){ if(t===codexTab)return; codexTab=t; renderCodex(); setTimeout(attachCodexClose,10); }
 // FORMULA codex: every compound in the game, owned ones lit + count, tap to synthesize.
+var _formulaNum=null;
+function formulaCatalogNum(){
+  if(_formulaNum)return _formulaNum;
+  // #001.. sorted by atom-count ascending, ties broken by proton-sum ascending
+  const order=COMPOUNDS.map((c,i)=>({i,
+    ac:c.atoms.reduce((s,a)=>s+a.n,0),
+    ps:c.atoms.reduce((s,a)=>s+a.z*a.n,0)}));
+  order.sort((a,b)=>a.ac-b.ac||a.ps-b.ps);
+  _formulaNum={}; order.forEach((o,k)=>{_formulaNum[o.i]=k+1;});
+  return _formulaNum;
+}
 function formulaTabHTML(){
   G.formulas=G.formulas||{};
-  let owned=0; for(let i=0;i<COMPOUNDS.length;i++){ if((G.formulas[COMPOUNDS[i].text]||0)>0)owned++; }
-  let h=`<p class="cxhint" style="color:var(--glow);margin:0 0 4px">Compounds collected ${owned} / ${COMPOUNDS.length} · tap to synthesize from held atoms</p>`;
-  h+=`<p class="cxhint" id="cxRedeemMsg" style="color:#ffd36e;min-height:15px;margin:-2px 0 4px;font-weight:400;opacity:0;transition:opacity .3s"></p>`;
+  const num=formulaCatalogNum();
+  // (no instruction text) — just a redeem-message line that fades in on synth
+  let h=`<p class="cxhint" id="cxRedeemMsg" style="color:#ffd36e;min-height:15px;margin:0 0 6px;font-weight:400;opacity:0;transition:opacity .3s"></p>`;
+  // horizontal-scrolling catalog (like the periodic table); cells carry a spinning
+  // 3D-style structure thumbnail + #number + name + owned count / SYNTH hint.
   h+=`<div class="ptscroll fxscroll" id="cxScroll"><div class="fxgrid">`;
   for(let i=0;i<COMPOUNDS.length;i++){
     const f=COMPOUNDS[i].text; const cnt=G.formulas[f]||0; const has=cnt>0;
-    // can we synthesize it right now (enough held atoms)?
     let canMake=true; const atoms=COMPOUNDS[i].atoms;
     for(const a of atoms){ if(get(a.z)<a.n){ canMake=false; break; } }
     const cls=has?'have':(canMake?'makeable':'');
+    const svg=(has && typeof compoundSVG==='function')?compoundSVG(i,66,48):'';
     h+=`<div class="fxcell ${cls}" data-cid="${i}" onclick="formulaCellTap(${i})">`+
+       `<span class="fxnum">#${String(num[i]).padStart(3,'0')}</span>`+
+       `<div class="fxmol">${svg}</div>`+
        `<span class="fxname">${f}</span>`+
        (has?`<span class="fxcnt">×${cnt}</span>`:(canMake?`<span class="fxmk">SYNTH</span>`:''))+
        `</div>`;
@@ -5614,7 +5635,7 @@ function renderCodex(){
     <button class="cxtab ${codexTab==='FORMULA'?'on':''}" onclick="codexSetTab('FORMULA')">FORMULA</button></div>`;
   if(codexTab==='FORMULA'){
     h+=formulaTabHTML();
-    h+=`<button class="closebtn" style="margin-top:14px;margin-bottom:8px" onclick="closeCodex()">${T('back')}</button>`;
+    h+=`<button class="closebtn" style="margin-top:7px;margin-bottom:6px" onclick="closeCodex()">${T('back')}</button>`;
     document.getElementById('codexInner').innerHTML=h;
     setTimeout(attachCodexClose,10);
     return;
@@ -5664,11 +5685,11 @@ function _codexAvailH(){
   const app=document.querySelector('.app');
   return (app&&app.clientHeight)||window.innerHeight||780;}
 function presetCodexCell(){
-  // -330 reserves room for the title, folder tabs, mode pill and hint lines so the
-  // 10-row table fits without vertical clipping.
-  const avail=Math.max(150, Math.round(_codexAvailH() - 330));
+  // Larger table: smaller reserved margin lets the 10 rows grow, kept just clear of
+  // the hint line above and the BACK button below.
+  const avail=Math.max(150, Math.round(_codexAvailH() - 268));
   let cell=Math.floor((avail-9*4-16)/10);
-  cell=Math.max(18,Math.min(cell,70));
+  cell=Math.max(18,Math.min(cell,80));
   document.body.style.setProperty('--pcell',cell+'px');}
 function fitCodexTable(){
   const scroll=document.getElementById('cxScroll');if(!scroll)return;
@@ -7372,13 +7393,8 @@ function cockpitZone4HTML(){
 }
 var _ckMolCanvas=null, _ckMolCompId=null;
 function cockpitStartCenterMol(p){
-  // Phase-2 SOLVED: tear the model down for the gold exit.
-  if(_combat && _combat.phase===2 && _combat.drag && _combat.drag.done){
-    if(typeof mol3dStop==='function')mol3dStop();
-    _ckMolCompId=null;
-    if(_ckMolCanvas&&_ckMolCanvas.parentNode)_ckMolCanvas.parentNode.removeChild(_ckMolCanvas);
-    return;
-  }
+  // Phase-2 SOLVED keeps showing the FILLED molecule (it glows gold and slides down
+  // via .puzzleDone CSS); it is torn down later when the cockpit closes.
   if(p.compId==null || typeof mol3dStart!=='function')return;
   const win=document.getElementById('ckMolWin'); if(!win)return;
   if(!_ckMolCanvas){
