@@ -46,7 +46,7 @@ body{position:fixed;inset:0}
 .stat .v{font-family:'Rajdhani';font-weight:700;font-size:13px;line-height:1}
 .prog .v{color:var(--ok)}
 .mapbtn{background:rgba(70,224,255,.08);
-  border:1px solid rgba(70,224,255,.28);border-radius:999px;color:var(--glow);font-family:'Rajdhani';
+  border:1px solid rgba(70,224,255,.5);border-radius:999px;color:var(--glow);font-family:'Rajdhani';
   font-weight:700;font-size:10px;letter-spacing:1px;padding:8px 9px;cursor:pointer;flex:none;white-space:nowrap}
 .mapbtn:active{transform:scale(.96)}
 .mapbtn.storebtn{border-color:#ffd36e;color:#ffe6a8;
@@ -96,7 +96,7 @@ body{position:fixed;inset:0}
 .row{display:flex;gap:8px;align-items:center}
 .holds{display:flex;flex-wrap:wrap;gap:5px 5px;max-width:340px;margin:0 auto;flex:0 0 auto;max-height:none;overflow-y:auto;overflow-x:hidden;padding:3px 4px 4px;scrollbar-width:none;justify-content:center;align-items:flex-end;align-content:flex-end}
 .holds::-webkit-scrollbar{display:none}
-.chip{flex:none;width:48px;height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid rgba(70,224,255,.28);border-radius:50%;background:rgba(255,255,255,.02)}
+.chip{flex:none;width:48px;height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid rgba(70,224,255,.5);border-radius:50%;background:rgba(255,255,255,.02)}
 .chip.big{width:48px;height:48px;gap:0}
 .chip .e{font-family:'Rajdhani';font-weight:700;font-size:16px;line-height:1}
 .chip.big .e{font-size:14px;line-height:1.02}
@@ -126,7 +126,7 @@ body{position:fixed;inset:0}
   color:#fff;text-shadow:0 0 4px #000,0 0 4px #000,0 1px 2px #000}
 .dchip.placeholder{border:none;box-shadow:none;background:transparent!important}
 .btn{flex:1;background:rgba(70,224,255,.08);
-  border:1px solid rgba(70,224,255,.28);border-radius:999px;color:var(--glow);font-family:'Rajdhani';font-weight:700;
+  border:1px solid rgba(70,224,255,.5);border-radius:999px;color:var(--glow);font-family:'Rajdhani';font-weight:700;
   font-size:12px;padding:11px 14px;letter-spacing:1px;cursor:pointer;transition:.15s;white-space:nowrap}
 .btn:active{transform:scale(.97)}
 .btn[disabled]{opacity:.32;cursor:not-allowed}
@@ -250,33 +250,73 @@ body{position:fixed;inset:0}
 /* two tabs filling the full width, slanted (parallelogram) edges, muted text */
 .cxtabs{display:flex;justify-content:stretch;gap:6px;margin:0 auto 0;width:100%;
   border-bottom:2px solid rgba(70,224,255,.3)}
-.cxtab{flex:1;padding:11px 0;cursor:pointer;border:none;
-  background:rgba(22,34,54,.5);color:rgba(150,175,205,.42);
+/* item 4: tabs in the system colour (#46e0ff). The inactive tab sits RECESSED
+   (pushed back + inner shadow); the active tab rises FORWARD (system glow). */
+.cxtab{flex:1;padding:11px 0;cursor:pointer;border:none;position:relative;
+  background:rgba(70,224,255,.08);color:rgba(120,200,235,.5);transform:translateY(2px);
+  box-shadow:inset 0 -3px 9px rgba(0,8,16,.45),inset 0 1px 0 rgba(70,224,255,.12);
+  transition:background .2s,color .2s,transform .2s,box-shadow .2s;
   font-family:'Rajdhani';font-weight:700;font-size:13px;letter-spacing:2px}
 /* the SEAM between the two tabs is the diagonal: left tab's right edge slants, the
    right tab's left edge slants to match */
 .cxtab:first-child{clip-path:polygon(0 0,100% 0,92% 100%,0 100%)}
 .cxtab:last-child{clip-path:polygon(8% 0,100% 0,100% 100%,0 100%)}
-.cxtab.on{background:rgba(70,224,255,.16);color:rgba(190,220,250,.72)}
+.cxtab.on{background:rgba(70,224,255,.5) !important;color:#eaf6ff !important;transform:translateY(0) !important;z-index:2;
+  box-shadow:0 -3px 14px rgba(70,224,255,.6),inset 0 2px 0 rgba(255,255,255,.28),inset 0 0 0 1px rgba(120,230,255,.6) !important}
 /* FORMULA catalog: vertical scroll (no horizontal drag), 3 columns */
-.fxscroll{overflow-y:auto;overflow-x:hidden;max-height:50cqh;width:100%;margin-top:0;-webkit-overflow-scrolling:touch}
+/* FORMULA catalog: horizontally FIXED, vertical scroll (wheel + drag), 3 cells/row.
+   Fills the available column height and scrolls all entries (flex:1 + min-height:0). */
+.fxscroll{overflow-y:auto;overflow-x:hidden;flex:1 1 auto;min-height:0;width:100%;margin-top:0;cursor:grab;-webkit-overflow-scrolling:touch}
+.fxscroll::-webkit-scrollbar{width:0}
+.fxscroll{scrollbar-width:none}
+.fxscroll:active{cursor:grabbing}
 .fxgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:2px 2px 8px;width:100%}
+/* held = lit constellation (full colour); unheld = dim, undiscovered constellation */
+.fxcell:not(.have) .fxmol{filter:grayscale(1) brightness(1.5) opacity(.3)}
+.fxcell.have .fxmol{filter:drop-shadow(0 0 6px rgba(70,224,255,.6))}
+/* sort options under the catalog */
+/* item 5: 3-segment sliding sort toggle (like the ELEMENT EXTRACT/SYNTH pill) */
+.fxseg{position:relative;display:flex;align-items:stretch;margin:4px auto 6px;flex:none;
+  width:min(264px,84cqw);height:40px;border:1px solid rgba(70,224,255,.5);
+  background:rgba(70,224,255,.08);border-radius:999px;overflow:hidden}
+.fxseg-fill{position:absolute;top:2px;bottom:2px;left:2px;width:calc(33.33% - 1px);border-radius:999px;
+  background:linear-gradient(180deg,rgba(70,224,255,.85),rgba(70,160,255,.55));
+  box-shadow:0 0 10px rgba(70,224,255,.4);transition:transform .22s cubic-bezier(.4,0,.2,1)}
+.fxseg-fill.p0{transform:translateX(0)}
+.fxseg-fill.p1{transform:translateX(100%)}
+.fxseg-fill.p2{transform:translateX(200%)}
+.fxseg-btn{position:relative;z-index:1;flex:1 1 0;border:none;background:transparent;cursor:pointer;
+  font-family:'Rajdhani';font-weight:700;font-size:13px;letter-spacing:1px;color:rgba(180,210,235,.7)}
+.fxseg-btn.on{color:#04121c}
+.fxnote{margin:0 0 8px;flex:none;text-align:center;font-family:'Rajdhani';font-size:12px;
+  line-height:1.35;color:rgba(150,200,235,.75);padding:0 14px}
+/* item 6: constellation-style cells — deep-space gradient + star-node glowing border */
 .fxcell{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
   width:auto;min-height:114px;border-radius:8px;
-  border:1.5px solid rgba(120,160,200,.25);background:rgba(10,16,30,.5);
-  cursor:pointer;padding:18px 4px 4px;opacity:.5;transition:opacity .15s,box-shadow .15s}
+  border:1.5px solid rgba(70,224,255,.18);
+  background:radial-gradient(120% 90% at 50% 16%,rgba(38,66,108,.32),rgba(7,11,24,.74));
+  box-shadow:inset 0 0 14px rgba(8,16,34,.6);
+  cursor:pointer;padding:18px 4px 4px;opacity:.5;transition:opacity .15s,box-shadow .15s,border-color .15s}
 .fxcell .fxnum{position:absolute;top:3px;left:7px;font-family:'Rajdhani';font-weight:800;font-size:13px;letter-spacing:.5px;color:rgba(160,190,225,.75)}
 .fxcell .fxmol{width:100%;height:50px;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .fxcell .fxmol svg{max-width:100%;max-height:100%}
 .fxcell .fxname{font-family:'Rajdhani';font-weight:800;font-size:14px;color:#cfe3ff;letter-spacing:.3px;margin-top:2px}
 .fxcell .fxcnt{font-family:'Rajdhani';font-weight:700;font-size:11px;color:#46ffb0;margin-top:1px}
 .fxcell .fxmk{font-family:'Rajdhani';font-weight:700;font-size:9px;letter-spacing:1px;color:#ffd36e;margin-top:1px}
-.fxcell.have{opacity:1;border-color:#46ffb0;background:rgba(70,255,176,.1);box-shadow:0 0 10px rgba(70,255,176,.25)}
-.fxcell.have .fxname{color:#dffff0;text-shadow:0 0 8px rgba(70,255,176,.6)}
-.fxcell.makeable{opacity:.85;border-color:rgba(255,211,110,.5);background:rgba(255,211,110,.07)}
+.fxcell.have{opacity:1;border-color:#46e0ff;
+  background:radial-gradient(120% 90% at 50% 16%,rgba(70,224,255,.2),rgba(7,13,28,.82));
+  box-shadow:0 0 12px rgba(70,224,255,.45),inset 0 0 16px rgba(70,224,255,.14)}
+.fxcell.have .fxname{color:#dffaff;text-shadow:0 0 8px rgba(70,224,255,.7)}
+.fxcell.makeable{opacity:.9;border-color:rgba(255,211,110,.45);
+  background:radial-gradient(120% 90% at 50% 16%,rgba(255,211,110,.12),rgba(7,11,24,.74))}
+/* item 6: undiscovered formulas — grey frame + grey background, not clickable */
+.fxcell.locked{opacity:.62;cursor:default;border:1.5px solid rgba(140,150,165,.3);
+  background:rgba(34,37,44,.55);box-shadow:none}
+.fxcell.locked:active{transform:none}
+.fxcell.locked .fxnum{color:rgba(170,178,190,.8)}
 .fxcell:active{transform:scale(.96)}
 .cxseg{position:relative;display:flex;align-items:stretch;margin:16px auto 8px;width:min(255px,80cqw);height:44px;
-  border:1px solid rgba(70,224,255,.28);background:rgba(70,224,255,.08);border-radius:999px;overflow:hidden;
+  border:1px solid rgba(70,224,255,.5);background:rgba(70,224,255,.08);border-radius:999px;overflow:hidden;
   box-shadow:0 0 10px rgba(70,224,255,.35),inset 0 0 6px rgba(70,224,255,.12)}
 .cxseg-fill{position:absolute;top:2px;bottom:2px;left:2px;width:62%;border-radius:999px;
   background:linear-gradient(180deg,rgba(70,224,255,.85),rgba(70,160,255,.55));
@@ -290,7 +330,7 @@ body{position:fixed;inset:0}
 .cxseg-qty{position:relative;z-index:1;flex:0 0 64px;border:none;background:transparent;cursor:pointer;
   font-family:'Rajdhani';font-weight:700;font-size:15px;color:#04121c;padding:0}
 .cxseg-qty:active{transform:scale(.94)}
-.cxqtybtn{flex:none;width:48px;height:48px;border-radius:50%;border:1px solid rgba(70,224,255,.28);
+.cxqtybtn{flex:none;width:48px;height:48px;border-radius:50%;border:1px solid rgba(70,224,255,.5);
   background:rgba(70,224,255,.08);color:var(--glow);font-family:'Rajdhani';font-weight:700;font-size:15px;
   cursor:pointer;box-shadow:0 0 10px rgba(70,224,255,.35),inset 0 0 6px rgba(70,224,255,.12);
   display:flex;align-items:center;justify-content:center;padding:0}
@@ -301,7 +341,7 @@ body{position:fixed;inset:0}
 .cxbtn.on{background:linear-gradient(180deg,rgba(70,224,255,.85),rgba(70,160,255,.55));border:1.5px solid var(--glow);color:#04121c;
   box-shadow:0 0 16px rgba(70,224,255,.6),inset 0 0 8px rgba(255,255,255,.25);transform:scale(1.04)}
 .closebtn{width:auto;display:inline-block;padding:10px 28px;margin:0;font-size:14px;border-radius:999px;
-  border:1px solid rgba(70,224,255,.28);background:rgba(70,224,255,.08);color:var(--glow);font-family:'Rajdhani';font-weight:700;letter-spacing:1px;cursor:pointer}
+  border:1px solid rgba(70,224,255,.5);background:rgba(70,224,255,.08);color:var(--glow);font-family:'Rajdhani';font-weight:700;letter-spacing:1px;cursor:pointer}
 .closebtn:active{transform:scale(.97)}
 .modalbox{width:100%;max-width:100%;height:100%;max-height:100%;overflow-y:auto;
   background:transparent;
@@ -328,6 +368,18 @@ body{position:fixed;inset:0}
 .modalbox h4 .x{margin-left:auto;background:none;border:none;color:var(--ink-dim);font-size:20px;cursor:pointer}
 .modalbox .sub{font-size:11px;color:var(--glow);font-family:'Rajdhani';margin-bottom:10px}
 .codexinner .sub{color:var(--glow)}
+/* item 11: element collection-rate panel in the compound detail */
+.cirate{width:min(340px,86%);margin:6px auto 0;padding:8px 10px;border-radius:12px;
+  border:1px solid rgba(70,224,255,.5);background:rgba(70,224,255,.06)}
+.ciratehd{font-family:'Rajdhani';font-weight:700;font-size:12px;letter-spacing:2px;
+  color:var(--glow);text-align:center;margin-bottom:5px}
+.ciraterow{display:flex;align-items:center;justify-content:center;gap:8px;margin:2px 0;font-family:'Rajdhani'}
+.ciratesym{font-weight:800;font-size:16px;width:34px;text-align:center}
+.ciratenow{font-weight:700;font-size:15px;color:#dffaff;min-width:54px;text-align:right}
+.ciratearr{font-size:10px;color:rgba(70,224,255,.7);letter-spacing:1px}
+.ciratenext{font-weight:700;font-size:15px;color:#46ffb0;min-width:54px;text-align:left}
+.ciratenote{margin-top:6px;font-family:'Rajdhani';font-size:11px;line-height:1.4;
+  color:rgba(180,210,235,.7);text-align:center}
 .elgrid{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .elpick{cursor:pointer;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.03);
   padding:7px 9px;min-width:46px;text-align:center;transition:.12s}
@@ -338,7 +390,7 @@ body{position:fixed;inset:0}
 .qtyrow button{width:36px;height:36px;border-radius:9px;border:1px solid var(--line);
   background:rgba(255,255,255,.05);color:var(--ink);font-size:20px;cursor:pointer}
 .qtyrow .qv{font-family:'Rajdhani';font-weight:700;font-size:22px;min-width:50px;text-align:center}
-.mbtn{width:100%;margin-top:10px;padding:12px;border-radius:999px;border:1px solid rgba(70,224,255,.28);
+.mbtn{width:100%;margin-top:10px;padding:12px;border-radius:999px;border:1px solid rgba(70,224,255,.5);
   background:rgba(70,224,255,.08);color:var(--glow);
   font-family:'Rajdhani';font-weight:700;letter-spacing:1px;font-size:13px;cursor:pointer;white-space:nowrap}
 .mbtn:active{transform:scale(.97)}
@@ -383,7 +435,7 @@ body{position:fixed;inset:0}
 .shipcard .d{font-size:10px;color:var(--ink-dim);line-height:1.5;margin-top:6px}
 .hint{font-size:11px;color:var(--ink-dim);font-family:'Rajdhani'}
 .bigbtn{font-family:'Rajdhani';font-weight:700;letter-spacing:2px;font-size:14px;padding:14px 36px;border-radius:999px;width:auto;align-self:center;white-space:nowrap;
-  border:1px solid rgba(70,224,255,.28);cursor:pointer;color:var(--glow);background:rgba(70,224,255,.08);transition:.18s}
+  border:1px solid rgba(70,224,255,.5);cursor:pointer;color:var(--glow);background:rgba(70,224,255,.08);transition:.18s}
 .bigbtn:active{transform:scale(.96)}
 .bigbtn[disabled]{opacity:.3}
 
@@ -400,7 +452,7 @@ body{position:fixed;inset:0}
 /* monster + starfield composite sized to sit fully INSIDE the window frame
    (no overflow past the hexagonal opening); centred in the window's upper area */
 /* starfield bg (Pisces_bg etc.) fills the window; the cut-out monster layers on top */
-.cockpitScreen .ckSky{position:absolute;inset:0;width:100%;height:100%;background-size:cover;background-repeat:no-repeat;background-position:center top;background-color:#000;pointer-events:none;z-index:1;opacity:1;filter:brightness(.8)}
+.cockpitScreen .ckSky{position:absolute;inset:0;width:100%;height:100%;background-size:cover;background-repeat:no-repeat;background-position:center top;background-color:#000;pointer-events:none;z-index:1;opacity:1;filter:brightness(.5)}
 /* Monster layer: behind the frame (.ckBG z-index:2) so it shows through the
    transparent window panes. Cockpit frame > monster > planet. */
 /* Monster sprite is a BLACK-background cut-out; screen blend drops the black into
@@ -487,7 +539,7 @@ body{position:fixed;inset:0}
 .ckZ4grid{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;align-items:flex-start;align-content:flex-start;width:96%;margin:0 auto;overflow:visible}
 .ckEl{position:relative;width:clamp(34px,10cqw,47px);height:clamp(39px,11cqw,53px);color:var(--kc);
   border:1.6px solid var(--kc);background:rgba(8,11,24,.6);border-radius:6px;padding:0;cursor:pointer;
-  transform:skewX(var(--sk,0deg));opacity:0.65}
+  transform:skewX(var(--sk,0deg));opacity:0.82}
 .ckEl>*{transform:none}
 .ckEl.lit{opacity:1}
 .ckEl.lit::before{content:'';position:absolute;left:-2px;right:-2px;top:-2px;bottom:-2px;
@@ -509,7 +561,7 @@ body{position:fixed;inset:0}
 .ckBattleStack{position:absolute;left:12%;right:12%;top:37%;bottom:40.5%;z-index:7;
   display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:1cqh;pointer-events:none}
 .ckHp{position:relative;width:64%;height:2.4cqh;flex:none;
-  border:1px solid rgba(120,230,255,.6);border-radius:999px;background:rgba(0,10,20,.55);
+  border:1px solid #ff9a3c;box-shadow:0 0 6px rgba(255,154,60,.5);border-radius:999px;background:rgba(0,10,20,.55);
   overflow:hidden;pointer-events:none}
 .ckHpFill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#ff5a6a,#ffd24a);
   transition:width .25s ease;border-radius:999px}
@@ -527,6 +579,14 @@ body{position:fixed;inset:0}
 @keyframes ckShakeKf{0%{transform:scale(1)}35%{transform:scale(1.045)}
   65%{transform:scale(0.985)}100%{transform:scale(1)}}
 .ckShake{animation:ckShakeKf .48s ease;transform-origin:center}
+/* item 5: continuous monster shake while taking fire (keeps the centring transform) */
+@keyframes ckMonShakeKf{0%{transform:translate(-50%,-50%)}
+  20%{transform:translate(calc(-50% - 2.5%),calc(-50% + 1.5%))}
+  40%{transform:translate(calc(-50% + 2.5%),calc(-50% - 1.5%))}
+  60%{transform:translate(calc(-50% - 1.5%),calc(-50% + 2%))}
+  80%{transform:translate(calc(-50% + 1.5%),calc(-50% - 1%))}
+  100%{transform:translate(-50%,-50%)}}
+.cockpitScreen .ckMonster.ckMonHurt{animation:ckMonShakeKf .3s linear infinite}
 /* hit glow clipped to the cockpit's octagonal window opening (matches the frame PNG),
    so the red flash hugs the de-cut window outline, not a rectangle */
 .ckHitGlow{position:absolute;inset:0;z-index:4;pointer-events:none;opacity:0;
@@ -542,21 +602,37 @@ body{position:fixed;inset:0}
    On completion (.done) they glow gold, slide down to the dashboard, shrink & fade. */
 /* phase-2 puzzle layout in the window: spinning molecule (subject) on top, blank
    slots beneath it, element pool along the window's bottom edge */
-.ckMolWin.ckPuzzleMol{position:absolute !important;left:16%;right:16%;top:5%;height:32%;
-  width:auto;flex:none;z-index:6;pointer-events:auto;
-  transition:top 1.2s cubic-bezier(.4,0,.2,1),transform 1.2s ease,opacity 1.2s ease,filter .4s ease}
+/* item 4: ONE molecule across the whole fight, driven by state classes.
+   cmBattle = small (50%), low, NON-interactive · cmSolve = risen to the monster spot,
+   full size, interactive · cmRise = one-shot battle->solve rise · cmDone = gold flash +
+   return to the battle position/size. */
+.ckMolWin.ckPuzzleMol{position:absolute !important;left:16%;right:16%;height:30%;
+  width:auto;flex:none;z-index:6;transform-origin:center center}
 .ckMolWin.ckPuzzleMol .ckMol{touch-action:none}
-.ckMolWin.ckPuzzleMol.puzzleDone{top:60%;transform:scale(.42);opacity:0;pointer-events:none;
-  filter:drop-shadow(0 0 22px #ffd24a)}
+.ckMolWin.ckPuzzleMol.cmBattle{top:30%;transform:scale(.5);pointer-events:none;opacity:1}
+.ckMolWin.ckPuzzleMol.cmSolve{top:12%;transform:scale(1);pointer-events:auto;opacity:1}
+@keyframes cmRiseKf{from{top:30%;transform:scale(.5)}to{top:12%;transform:scale(1)}}
+.ckMolWin.ckPuzzleMol.cmRise{animation:cmRiseKf 1.6s cubic-bezier(.2,.7,.2,1)}
+@keyframes cmDoneKf{0%{top:12%;transform:scale(1)}100%{top:30%;transform:scale(.5)}}
+.ckMolWin.ckPuzzleMol.cmDone{top:30%;transform:scale(.5);pointer-events:none;
+  animation:cmDoneKf 1.8s cubic-bezier(.4,0,.2,1);
+  filter:drop-shadow(0 0 32px #ffd24a) drop-shadow(0 0 14px #ffb020)}
+/* item 3 (last round): gold descent — half speed (2.4s) + strong gold, stays VISIBLE
+   (kept on screen until the tap fades the whole cockpit) */
 .ckPuzzleSlots{position:absolute;left:8%;right:8%;top:36%;height:9%;z-index:7;
   display:flex;align-items:center;justify-content:center;pointer-events:auto;
   transition:top 1.1s cubic-bezier(.4,0,.2,1),transform 1.1s ease,opacity 1.1s ease,filter .4s ease}
 .ckPuzzleSlots .ckDragSlots{transform:scale(1.5)}
 .ckPuzzleSlots.done{top:60%;transform:scale(.45);opacity:0;filter:drop-shadow(0 0 18px #ffd24a)}
 /* element circles stay where the pre-kill solved cells were (window's lower edge) */
-.ckPuzzlePoolWrap{position:absolute;left:6%;right:6%;top:51%;height:8%;z-index:7;
-  display:flex;align-items:center;justify-content:center;pointer-events:auto}
-.ckPuzzlePoolWrap .ckDragPool{transform:scale(1.35)}
+/* sit exactly where the pre-kill solved cells were: the battle stack's lower edge
+   (left/right 12%, bottom 40.5%) so the circles never jump */
+.ckPuzzlePoolWrap{position:absolute;left:12%;right:12%;bottom:40.5%;top:auto;height:4.4cqh;z-index:7;
+  display:flex;align-items:flex-end;justify-content:center;pointer-events:auto}
+.ckPuzzlePoolWrap .ckDragPool{gap:2.4%}
+/* item 4: pool tokens reuse .ckSolved layout (pointer-events:none) — re-enable input */
+.ckDragPool,.ckDragPool .ckSolvedRow{pointer-events:auto}
+.ckDragPool .ckDragTok{pointer-events:auto;cursor:pointer}
 .ckPuzzleSlots.done .ckDragSlot{border-color:#ffd24a !important;color:#ffd24a !important;
   background:rgba(255,210,74,.18) !important;box-shadow:0 0 14px #ffd24a}
 .ckDragWrap{display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -569,9 +645,11 @@ body{position:fixed;inset:0}
 .ckDragSlot.filled{border-style:solid;border-color:var(--dc);background:var(--dc);
   color:#001;box-shadow:0 0 6px var(--dc)}
 .ckDragPool{display:flex;gap:4%;flex-wrap:wrap;justify-content:center}
-.ckDragTok{width:4.2cqh;height:4.2cqh;flex:none;aspect-ratio:1;padding:0;border-radius:50%;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;font-size:1.3cqh;font-weight:700;
-  border:1px solid var(--dc);color:var(--dc);background:rgba(8,16,24,.5);user-select:none}
+/* item 7: identical to .ckSolvedDot so the element circles don't change style/position
+   between the battle phase and the post-kill puzzle phase */
+.ckDragTok{width:4.4cqh;height:4.4cqh;flex:none;aspect-ratio:1;padding:0;border-radius:50%;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:2.2cqh;font-weight:700;
+  border:1px solid rgba(120,230,255,.5);color:#001;background:var(--dc);box-shadow:0 0 4px var(--dc);user-select:none}
 .ckDragTok.sel{background:var(--dc);color:#001;box-shadow:0 0 8px var(--dc)}
 @keyframes ckBounceKf{0%,100%{transform:translateX(0)}25%{transform:translateX(-12%)}
   50%{transform:translateX(10%)}75%{transform:translateX(-5%)}}
@@ -586,7 +664,7 @@ body{position:fixed;inset:0}
    EXCLUDED: transparent-by-design buttons — cockpit family keys / element keys
    (labels are baked into the cockpit PNG; a plate would veil them) and the CODEX
    segmented-pill buttons (a plate drew stray vertical lines inside the pill). */
-button:not(.ckKey):not(.ckEl):not(.cxseg-btn):not(.cxseg-qty),.mapbtn{background-color:rgba(13,34,52,.74)!important}
+button:not(.ckKey):not(.ckEl):not(.cxseg-btn):not(.cxseg-qty):not(.cxtab),.mapbtn{background-color:rgba(13,34,52,.74)!important}
 /* hide scrollbars on the periodic-table pane (drag still pans horizontally) */
 .ptscroll{scrollbar-width:none}
 .ptscroll::-webkit-scrollbar{display:none}
@@ -595,6 +673,14 @@ button:not(.ckKey):not(.ckEl):not(.cxseg-btn):not(.cxseg-qty),.mapbtn{background
 @keyframes mapmodalin{from{opacity:0}to{opacity:1}}
 /* "ENTERING BATTLE..." banner pulse while monster art preloads */
 @keyframes ckEnterPulse{0%,100%{opacity:.4}50%{opacity:1}}
+/* item 5: post-win tap catcher — transparent layer above every key; first tap
+   anywhere fades the cockpit out to the map. Keys underneath are unreachable. */
+.ckTapCatch{position:absolute;inset:0;z-index:40;pointer-events:auto;cursor:pointer;background:transparent}
+/* item 8: hint sits at the window's lower edge */
+.ckTapHint{position:absolute;left:0;right:0;top:56%;text-align:center;
+  font-family:'Rajdhani';font-weight:700;font-size:2.1cqh;
+  letter-spacing:3px;color:#cfeeff;text-shadow:0 0 10px rgba(70,224,255,.8);
+  animation:ckEnterPulse 1.3s ease-in-out infinite}
 </style>
 </head>
 <body>
@@ -1101,6 +1187,49 @@ const STRUCT2D={
 };
 // compound name + description + 3 everyday examples
 const CINFO={
+"BF3":{n:"Boron Trifluoride",d:"A strong Lewis-acid gas used as a catalyst.",e:["Polymerization catalyst","Organic synthesis","Semiconductor doping"]},
+"BCl3":{n:"Boron Trichloride",d:"Reactive gas used in electronics and metal refining.",e:["Semiconductor etching","Metal refining","Organic synthesis"]},
+"PCl3":{n:"Phosphorus Trichloride",d:"Key intermediate for organophosphorus chemicals.",e:["Pesticide manufacture","Solvent production","Chemical synthesis"]},
+"PCl5":{n:"Phosphorus Pentachloride",d:"Chlorinating agent in organic chemistry.",e:["Chlorination reactions","Catalyst","Lab reagent"]},
+"OF2":{n:"Oxygen Difluoride",d:"Powerful oxidizer and fluorinating agent.",e:["Rocket oxidizer research","Fluorination","Lab oxidizer"]},
+"NF3":{n:"Nitrogen Trifluoride",d:"Gas used to clean semiconductor equipment.",e:["Chip fabrication cleaning","Plasma etching","Electronics"]},
+"CF4":{n:"Carbon Tetrafluoride",d:"Very stable gas used as a refrigerant and etchant.",e:["Plasma etching","Refrigerant","Electronics"]},
+"SF6":{n:"Sulfur Hexafluoride",d:"Dense insulating gas for high-voltage equipment.",e:["Electrical insulation","Circuit breakers","Leak tracing"]},
+"SiF4":{n:"Silicon Tetrafluoride",d:"Gas formed from silicon and fluorine.",e:["Semiconductor processing","Silicon production","Fumed silica"]},
+"SiCl4":{n:"Silicon Tetrachloride",d:"Liquid used to make pure silicon and optical fiber.",e:["Optical fiber making","Pure silicon","Silicone production"]},
+"CBr4":{n:"Carbon Tetrabromide",d:"Dense compound used as a reagent and flame retardant.",e:["Organic synthesis","Flame retardant","Lab reagent"]},
+"PBr3":{n:"Phosphorus Tribromide",d:"Reagent that converts alcohols to bromides.",e:["Organic synthesis","Brominating agent","Lab reagent"]},
+"AsH3":{n:"Arsine",d:"Toxic gas used in semiconductor manufacturing.",e:["Semiconductor doping","Compound production","Research"]},
+"AsCl3":{n:"Arsenic Trichloride",d:"Oily liquid used in chemical synthesis.",e:["Ceramics","Chemical synthesis","Research"]},
+"GeH4":{n:"Germane",d:"Gas used to deposit germanium films.",e:["Semiconductor films","Solar cells","Optics"]},
+"GeCl4":{n:"Germanium Tetrachloride",d:"Liquid used to make optical fiber and germanium.",e:["Optical fiber","Infrared optics","Pure germanium"]},
+"SnH4":{n:"Stannane",d:"Unstable tin hydride gas.",e:["Thin films","Tin deposition","Research"]},
+"SCl2":{n:"Sulfur Dichloride",d:"Red liquid used to make other sulfur chemicals.",e:["Rubber vulcanization","Synthesis","Agrochemicals"]},
+"SeCl2":{n:"Selenium Dichloride",d:"Unstable selenium chloride used in synthesis.",e:["Selenium chemistry","Synthesis","Research"]},
+"RbBr":{n:"Rubidium Bromide",d:"Salt of rubidium used in research and optics.",e:["Optics","Specialty glass","Research"]},
+"CsBr":{n:"Cesium Bromide",d:"Salt used in optics and radiation detectors.",e:["Infrared optics","X-ray screens","Research"]},
+"CsF":{n:"Cesium Fluoride",d:"Reactive fluoride salt used as a reagent.",e:["Fluorination","Organic synthesis","Etching"]},
+"SrF2":{n:"Strontium Fluoride",d:"Crystal used in optics.",e:["Optical lenses","Fluoride crystals","Research"]},
+"SrBr2":{n:"Strontium Bromide",d:"Salt used in pyrotechnics and medicine.",e:["Pyrotechnics","Medicine (historic)","Research"]},
+"BaF2":{n:"Barium Fluoride",d:"Crystal transparent to infrared and UV light.",e:["Optical windows","Radiation detectors","Research"]},
+"BaI2":{n:"Barium Iodide",d:"Salt of barium and iodine.",e:["Chemical synthesis","Iodide source","Research"]},
+"Mg3N2":{n:"Magnesium Nitride",d:"Yellow solid formed when magnesium burns in nitrogen.",e:["Ceramics","Catalyst","Synthesis"]},
+"Li3N":{n:"Lithium Nitride",d:"Solid that conducts lithium ions.",e:["Hydrogen storage","Battery research","Synthesis"]},
+"AlF3":{n:"Aluminum Fluoride",d:"White solid used in aluminum smelting.",e:["Aluminum smelting","Ceramics","Flux"]},
+"AlBr3":{n:"Aluminum Bromide",d:"Strong Lewis-acid catalyst.",e:["Organic catalyst","Bromination","Synthesis"]},
+"GaCl3":{n:"Gallium Trichloride",d:"Liquid used in semiconductors and synthesis.",e:["Semiconductors","Catalyst","Synthesis"]},
+"KH":{n:"Potassium Hydride",d:"Strong base used in organic chemistry.",e:["Strong base reagent","Organic synthesis","Research"]},
+"NCl3":{n:"Nitrogen Trichloride",d:"Oily, explosive liquid once used to bleach flour.",e:["Flour bleaching (historic)","Chemistry demos","Research"]},
+"PF3":{n:"Phosphorus Trifluoride",d:"Toxic gas that binds metals like carbon monoxide.",e:["Coordination chemistry","Catalysis","Research"]},
+"SiBr4":{n:"Silicon Tetrabromide",d:"Liquid used in synthesis and pure silicon.",e:["Pure silicon","Semiconductors","Synthesis"]},
+"AsF3":{n:"Arsenic Trifluoride",d:"Liquid fluorinating agent.",e:["Fluorination","Synthesis","Research"]},
+"HNO2":{n:"Nitrous Acid",d:"Weak acid used to make diazo compounds.",e:["Dye making","Organic synthesis","Lab reagent"]},
+"SOCl2":{n:"Thionyl Chloride",d:"Reagent that converts acids to acid chlorides.",e:["Organic synthesis","Battery electrolyte","Chlorination"]},
+"POCl3":{n:"Phosphoryl Chloride",d:"Liquid used to make phosphate esters and flame retardants.",e:["Flame retardants","Plasticizers","Synthesis"]},
+"NOCl":{n:"Nitrosyl Chloride",d:"Yellow gas, a component of aqua regia.",e:["Aqua regia","Synthesis","Research"]},
+"NOBr":{n:"Nitrosyl Bromide",d:"Reddish-brown gas used in synthesis.",e:["Organic synthesis","Chemistry","Research"]},
+"CSO":{n:"Carbonyl Sulfide",d:"Common sulfur gas found in the atmosphere.",e:["Atmospheric sulfur","Soil fumigation","Research"]},
+"SO2Cl2":{n:"Sulfuryl Chloride",d:"Liquid used as a chlorinating and sulfonating agent.",e:["Chlorination","Pharmaceuticals","Synthesis"]},
 "AlN":{n:"Aluminum Nitride",d:"Aluminum Nitride — a real compound used in everyday life and industry.",e:["LED substrates", "Heat sinks", "Ceramics"]},
 "BaS":{n:"Barium Sulfide",d:"Barium Sulfide — a real compound used in everyday life and industry.",e:["Pigments", "Luminous paint", "Leather treatment"]},
 "BeO":{n:"Beryllium Oxide",d:"Beryllium Oxide — a real compound used in everyday life and industry.",e:["Heat sinks", "Electronics", "Ceramics"]},
@@ -2204,10 +2333,25 @@ var _planetImgBase='https://raw.githubusercontent.com/skactaeon/astreon-assets/m
 var _planetImgExts=['.webp','.jpg','.png'];
 var _planetImgGeom={r:3757, cx:434, cy:4277};
 var _PLANET_IMG_SCALE=1.5;   // enlarge per-planet surface so its limb hugs the rim arc
+var _PLANET_HY_OFFSET=20;     // DEFAULT nudge (source px, +up/-down) for planets not yet
+                             // hand-tuned. Each image's limb position/arc size differs, so
+                             // approved planets get their own value in _PLANET_HY_ADJ below.
+// Per-planet APPROVED horizon nudge (source px, +up / -down), keyed by planet code.
+// A value here OVERRIDES _PLANET_HY_OFFSET for that planet and is considered LOCKED
+// once Hans confirms it looks right. Unlisted planets fall back to the default.
+// item 7: AUTO-FIT now drives alignment, so these manual tables default to EMPTY.
+// They remain as optional fine-tune overrides on top of the auto fit:
+//   _PLANET_HY_ADJ[code]    = vertical screen-px nudge (+down / -up)
+//   _PLANET_SCALE_ADJ[code] = zoom multiplier on the auto radius (>1 bigger)
+var _PLANET_HY_ADJ={};
+var _PLANET_SCALE_ADJ={};
+// Per-image limb circle (cx,cy,r) in canonical 868x1812 px, from detect_limb.py. The
+// game maps each circle onto the rim arc automatically (no per-planet hand tuning).
+var _planetImgCircle={P01:{cx:434.8,cy:2101.8,r:1493.7},P02:{cx:436.9,cy:2097.6,r:1499.7},P03:{cx:451.3,cy:2155.7,r:1550.7},P04:{cx:443.4,cy:2131.1,r:1523.5},P05:{cx:434.8,cy:2154.0,r:1546.1},P06:{cx:435.3,cy:2062.2,r:1460.0},P07:{cx:439.3,cy:2086.4,r:1480.8},P08:{cx:443.3,cy:2119.5,r:1513.5},P09:{cx:432.8,cy:1998.8,r:1370.1},P10:{cx:441.6,cy:2500.6,r:1787.5},P11:{cx:440.3,cy:2511.2,r:1797.6},P12:{cx:443.7,cy:2376.2,r:1654.0},P13:{cx:435.7,cy:2380.2,r:1671.0},P14:{cx:433.3,cy:2354.9,r:1645.5},P15:{cx:435.1,cy:2376.5,r:1662.4},P16:{cx:435.7,cy:2379.5,r:1668.7},P17:{cx:435.6,cy:2244.2,r:1526.4},P18:{cx:423.3,cy:2254.3,r:1521.7},P19:{cx:424.4,cy:2313.1,r:1590.7},P20:{cx:433.0,cy:2246.8,r:1534.9},P21:{cx:439.8,cy:2027.3,r:1360.7},P22:{cx:412.4,cy:2140.7,r:1537.5},P23:{cx:416.6,cy:2068.3,r:1449.0},P24:{cx:429.1,cy:2459.4,r:1801.8},P25:{cx:418.7,cy:2295.4,r:1654.4},P26:{cx:422.8,cy:2156.2,r:1521.8},P27:{cx:430.4,cy:2232.4,r:1584.7},P28:{cx:432.3,cy:2287.0,r:1637.0},P29:{cx:435.6,cy:2146.7,r:1537.6},P30:{cx:433.2,cy:2167.2,r:1556.5},P31:{cx:433.8,cy:2137.5,r:1526.6},P32:{cx:434.2,cy:2143.7,r:1533.1},P33:{cx:438.6,cy:2158.3,r:1547.7},P34:{cx:437.0,cy:2167.0,r:1557.1},P35:{cx:433.8,cy:2151.2,r:1540.2},P36:{cx:434.1,cy:1872.5,r:1290.3},P37:{cx:434.0,cy:1876.7,r:1293.8},P38:{cx:437.3,cy:1902.3,r:1303.4},P39:{cx:438.1,cy:1866.8,r:1281.3},P40:{cx:435.8,cy:1873.0,r:1286.7},P41:{cx:435.1,cy:1835.2,r:1240.8},P42:{cx:436.4,cy:1821.5,r:1226.1},P43:{cx:437.0,cy:1820.2,r:1222.1},P44:{cx:434.0,cy:1831.3,r:1234.7},P45:{cx:434.9,cy:2136.7,r:1515.6},P46:{cx:437.3,cy:2138.9,r:1493.6},P47:{cx:436.3,cy:2131.2,r:1484.8},P48:{cx:432.4,cy:2173.9,r:1522.0},P49:{cx:431.9,cy:2062.4,r:1436.4},P50:{cx:434.3,cy:2125.2,r:1471.6},P51:{cx:433.1,cy:2190.6,r:1519.8},P52:{cx:439.7,cy:2072.1,r:1409.4},P53:{cx:434.1,cy:2139.4,r:1484.2},P54:{cx:439.7,cy:2212.0,r:1536.2},P55:{cx:438.5,cy:2227.0,r:1518.9},P56:{cx:444.3,cy:2068.1,r:1383.9},P57:{cx:446.8,cy:2098.8,r:1418.1},P58:{cx:434.4,cy:2155.1,r:1435.1},P59:{cx:439.7,cy:2147.6,r:1428.9},P60:{cx:441.2,cy:2119.4,r:1397.2},P61:{cx:438.4,cy:2201.1,r:1478.0},P62:{cx:436.8,cy:2159.0,r:1437.1},P63:{cx:437.0,cy:2167.4,r:1444.8},P64:{cx:443.9,cy:2392.3,r:1706.2},P65:{cx:437.7,cy:2295.6,r:1617.4},P66:{cx:441.7,cy:2267.0,r:1577.1},P67:{cx:433.4,cy:2266.7,r:1601.3},P68:{cx:440.8,cy:2300.0,r:1620.8},P69:{cx:441.1,cy:2238.4,r:1554.8},P70:{cx:434.6,cy:2261.3,r:1605.9},P71:{cx:436.7,cy:2220.8,r:1531.8},P72:{cx:438.7,cy:2035.1,r:1434.3}};
 // Per-image REAL visible-horizon y (at the canonical 868x1812 size), auto-detected
 // by detect_horizon.py. Each planet aligns ITS OWN horizon to the rim arc, since the
 // AI photos place the horizon at different heights. Missing codes fall back to 628.
-var _planetImgHorizon={P01:609,P02:599,P03:606,P04:608,P05:609,P06:603,P07:607,P08:608,P09:630,P10:714,P11:714,P12:723,P13:710,P14:710,P15:715,P16:711,P17:719,P18:734,P19:723,P20:712,P21:668,P22:604,P23:620,P24:658,P25:642,P26:635,P27:648,P28:651,P29:611,P30:611,P31:612,P32:611,P33:612,P34:611,P35:612,P36:583,P37:584,P38:599,P39:586,P40:587,P41:595,P42:596,P43:599,P44:597};
+var _planetImgHorizon={P01:609,P02:599,P03:606,P04:608,P05:609,P06:603,P07:607,P08:608,P09:630,P10:714,P11:714,P12:723,P13:710,P14:710,P15:715,P16:711,P17:719,P18:734,P19:723,P20:712,P21:668,P22:604,P23:620,P24:658,P25:642,P26:635,P27:648,P28:651,P29:611,P30:611,P31:612,P32:611,P33:612,P34:611,P35:612,P36:583,P37:584,P38:599,P39:586,P40:587,P41:595,P42:596,P43:599,P44:597,P45:623,P46:646,P47:647,P48:653,P49:627,P50:655,P51:672,P52:663,P53:656,P54:677,P55:709,P56:685};
 var _planetImgCache={};             // code -> {img, ready, err}
 function planetImgCode(p){
   // The mother planet is itself barren, so barren is NOT excluded; only the solar
@@ -3612,8 +3756,16 @@ function collectorHarvestNow(){
       <span style="font-family:'Rajdhani';font-weight:700;font-size:12px;color:#cfe;margin-top:1px">×${gained[z]}</span></div>`;}
   h+=`</div><div style="text-align:center;margin-top:18px"><button class="closebtn" onclick="closeModal()">${T('continue')}</button></div></div>`;
   openModal(h,false,true);}
+// item 6/11: FORMULA drop rate — the per-tick chance of collecting this planet's whole
+// compound into the CODEX (not its elements). Base = 10/threatLevel %, and every full
+// hour of cumulative stay on the planet adds +0.01%.
+function planetStayHours(p){ return ((p&&p.stayMs)||0)/3600000; }
+function planetRateBonus(p){ return Math.floor(planetStayHours(p))*0.01; }                 // +0.01% / full hr
+function formulaBaseRate(p){ const ps=(p&&p.compId!=null)?threatLevel(p.compId):0; return ps>0?100/(ps*10):0; }  // percent/tick
+function formulaDropRate(p){ return formulaBaseRate(p)+planetRateBonus(p); }               // effective %
 function harvestTick(){const p=curPlanet();
   if(!p.defeated){renderTop();return;}
+  p.stayMs=(p.stayMs||0)+effectiveTickMs();   // accumulate stay time for the rate bonus
   let picks=[];for(let i=0;i<ECON.PICKS_PER_TICK;i++)picks.push(sampleOne(p));
   for(const z of picks){deposit(z,1);G.localGain[z]=Math.min(effectiveCap(),(G.localGain[z]||0)+1);}
   spawnHarvestPopups(picks);
@@ -3621,7 +3773,9 @@ function harvestTick(){const p=curPlanet();
   // planet's compound formula (synced with the element drops). H2O -> 1/((1*2+8)*10)=1/100.
   if(p.compId!=null && COMPOUNDS[p.compId]){
     const ps=threatLevel(p.compId);
-    if(ps>0 && G.rng.int(1,ps*10)===1){
+    // base 1/(ps*10) chance, plus the cumulative-stay bonus (+0.01%/hr) — item 6/11
+    const chance=(ps>0)?(1/(ps*10))+planetRateBonus(p)/100:0;
+    if(chance>0 && G.rng.int(1,1000000)<=Math.round(chance*1000000)){
       const f=COMPOUNDS[p.compId].text;
       G.formulas=G.formulas||{}; G.formulas[f]=(G.formulas[f]||0)+1;
       toast(f+' formula collected','good');
@@ -4431,9 +4585,10 @@ function mol3dStart(canvasId,compId,blank,noDrag,puzzle){
         let fz=p.z, isFilled=true;
         if(puzzle){ fz=puzzle.fill[p.i]; isFilled=(fz!=null); }
         if(puzzle && !isFilled){
-          // empty atom socket: dashed glowing grey ball waiting to be filled
-          ctx.beginPath();ctx.arc(p.sx,p.sy,R,0,7);ctx.fillStyle='rgba(40,55,92,.6)';ctx.fill();
-          ctx.lineWidth=2.4;ctx.setLineDash([4,3]);ctx.strokeStyle='rgba(150,185,235,.9)';ctx.stroke();ctx.setLineDash([]);
+          // empty atom socket in the CURRENT (solid) molecule style — a translucent
+          // sphere with a solid system-cyan rim (no dashed look), awaiting its element.
+          ctx.beginPath();ctx.arc(p.sx,p.sy,R,0,7);ctx.fillStyle='rgba(30,46,82,.55)';ctx.fill();
+          ctx.lineWidth=2.6;ctx.strokeStyle='rgba(120,205,245,.95)';ctx.stroke();
         } else if(blank && !puzzle){
           ctx.beginPath();ctx.arc(p.sx,p.sy,R,0,7);ctx.fillStyle='rgba(20,30,60,.55)';ctx.fill();
           ctx.lineWidth=2.6;ctx.strokeStyle='rgba(225,235,255,.92)';ctx.stroke();
@@ -4494,6 +4649,20 @@ function showCompoundInfo(compId){const f=COMPOUNDS[compId].text;const ci=CINFO[
       <div style="text-align:left">`;
     for(const ex of ci.e)h+=`<div class="sub" style="color:var(--ok);font-size:15px;line-height:1.5;margin:0">${ex}</div>`;
     h+=`</div></div>`;}
+  // item 6: FORMULA drop rate — the chance of collecting the WHOLE compound into the
+  // CODEX (not its elements), plus the cumulative-stay bonus.
+  const _cp=(typeof curPlanet==='function')?curPlanet():null;
+  if(_cp && _cp.defeated && _cp.compId===compId){
+    const hrs=planetStayHours(_cp), bonus=planetRateBonus(_cp);
+    const base=formulaBaseRate(_cp), eff=base+bonus, next=eff+0.01;
+    h+=`<div class="cirate"><div class="ciratehd">FORMULA DROP RATE</div>`;
+    h+=`<div class="ciraterow"><span class="ciratesym" style="color:#9fe7ff;width:auto">${f}</span>`+
+       `<span class="ciratenow">${eff.toFixed(2)}%</span>`+
+       `<span class="ciratearr">▶ +1h ▶</span>`+
+       `<span class="ciratenext">${next.toFixed(2)}%</span></div>`;
+    h+=`<div class="ciratenote">Chance per tick to collect this formula into your CODEX. Stayed ${hrs.toFixed(1)}h here · every cumulative 1h on this planet adds +0.01% (current bonus +${bonus.toFixed(2)}%)</div>`;
+    h+=`</div>`;
+  }
   h+=`</div>`;
   h+=`<div class="fsfoot"><button class="closebtn" onclick="mol3dStop();closeModal();closeMap();closeSheet();renderSceneStatic();checkConstellations()">${T('continue')}</button></div>`;
   openModal(h,false,true);
@@ -4513,7 +4682,7 @@ function solvedStructureSVG(compId,maxW,maxH){
     svg+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="${hexA(EL[z].color,0.5)}" stroke="${EL[z].color}" stroke-width="2.5"/>`;
     svg+=`<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-family="Rajdhani" font-weight="700" font-size="${R*0.9}" fill="#ffffff">${EL[z].sym}</text>`;}
   svg+=`</svg>`;return svg;}
-function compoundSVG(compId,maxW,maxH){const f=COMPOUNDS[compId].text;const st2=STRUCT2D[f];
+function compoundSVG(compId,maxW,maxH,blank){const f=COMPOUNDS[compId].text;const st2=STRUCT2D[f];
   if(!st2)return"";
   const atoms=st2.a,bonds=st2.b;
   let minX=99,maxX=-99,minY=99,maxY=-99;
@@ -4523,11 +4692,18 @@ function compoundSVG(compId,maxW,maxH){const f=COMPOUNDS[compId].text;const st2=
   const svgW=W*scale,svgH=H*scale;
   const tx=x=>(x-minX+padU)*scale,ty=y=>(y-minY+padU)*scale;
   let svg=`<svg viewBox="0 0 ${svgW} ${svgH}" style="display:block;margin:6px auto;max-width:100%;height:auto">`;
+  // item 5: blank mode (undiscovered) draws bonds + EMPTY grey sockets, no colours/symbols
+  // item 6: thinner circle outlines + bond lines in the catalog thumbnails
+  const bondCol=blank?'rgba(150,160,175,.4)':'rgba(150,180,255,.5)';
   for(const [i,j] of bonds){const a=atoms[i],b=atoms[j];
-    svg+=`<line x1="${tx(a[1])}" y1="${ty(a[2])}" x2="${tx(b[1])}" y2="${ty(b[2])}" stroke="rgba(150,180,255,.5)" stroke-width="3"/>`;}
+    svg+=`<line x1="${tx(a[1])}" y1="${ty(a[2])}" x2="${tx(b[1])}" y2="${ty(b[2])}" stroke="${bondCol}" stroke-width="1.4"/>`;}
   for(const a of atoms){const cx=tx(a[1]),cy=ty(a[2]),R=scale*0.34,z=a[0];
-    svg+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="${hexA(EL[z].color,0.5)}" stroke="${EL[z].color}" stroke-width="2.5"/>`;
-    svg+=`<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-family="Rajdhani" font-weight="700" font-size="${R*0.9}" fill="#ffffff">${EL[z].sym}</text>`;}
+    if(blank){
+      svg+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="rgba(40,44,52,.55)" stroke="rgba(150,160,175,.6)" stroke-width="1.1"/>`;
+    } else {
+      svg+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="${hexA(EL[z].color,0.5)}" stroke="${EL[z].color}" stroke-width="1.3"/>`;
+      svg+=`<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-family="Rajdhani" font-weight="700" font-size="${R*0.9}" fill="#ffffff">${EL[z].sym}</text>`;
+    }}
   svg+=`</svg>`;return svg;}
 
 // ---- 9.5 trading post (all planets) ----
@@ -4647,36 +4823,45 @@ function renderScene(ts){
     // game's planet outline coincide.
     const _surf=(typeof curPlanetSurface==='function')?curPlanetSurface(p):null;
     let _surfHy=0;
-    if(_surf && _surf.img){
-      const _code=(typeof planetImgCode==='function')?planetImgCode(p):null;
-      _surfHy=(_code && _planetImgHorizon && _planetImgHorizon[_code]) || 628;   // this image's own horizon
-      // _PLANET_IMG_SCALE (>1) enlarges the whole planet so its curved limb spreads
-      // along MORE of the rim arc, not just touching at the apex. Tunable.
+    let _code=(_surf && typeof planetImgCode==='function')?planetImgCode(p):null;
+    // item 7: AUTO-FIT. Each image's own limb circle (cx,cy,r in canonical 868x1812 px,
+    // detected by detect_limb.py) is mapped onto the cockpit rim arc with NO hand tuning:
+    // the frame radius Rr is computed so the surface COVERs the frame, and the image's
+    // limb apex lands on horizonY. Optional fine-tune nudges stay in _PLANET_*_ADJ.
+    const _circ=(_surf && _surf.img && _code && _planetImgCircle && _planetImgCircle[_code])||null;
+    if(_circ){
+      const FrW=W*_circ.r/868;                                   // cover the frame width
+      const FrB=(H-horizonY)*_circ.r/Math.max(1,(1812-_circ.cy+_circ.r));  // cover below horizon
+      let Fr=Math.max(FrW,FrB)*_arcImgCover*1.04;                 // +4% margin, no edge gaps
+      const _psa=(_code && _PLANET_SCALE_ADJ && _PLANET_SCALE_ADJ[_code]!=null)?_PLANET_SCALE_ADJ[_code]:1;
+      Rr=Fr*_psa;
+    } else if(_surf && _surf.img){
+      // fallback (no detected circle): old baked geometry + global nudge
+      _surfHy=((_code && _planetImgHorizon && _planetImgHorizon[_code]) || 628)+_PLANET_HY_OFFSET;
       const sc=Math.max(W/_surf.img.width,(H-horizonY)/(_surf.img.height-_surfHy))*_arcImgCover*_PLANET_IMG_SCALE;
-      Rr=_planetImgGeom.r*sc;                               // image arc radius, on screen
+      Rr=_planetImgGeom.r*sc;
     }
-    const cy=horizonY+Rr;
+    const _cyNudge=(_circ && _code && _PLANET_HY_ADJ && _PLANET_HY_ADJ[_code]!=null)?_PLANET_HY_ADJ[_code]:0;
+    const cy=horizonY+Rr+_cyNudge;
     G._rimGeo={cx,cy,Rr,horizonY,W,H};
     const spin=t*0.05;
-    // --- Full-frame arc image: drawn UNCLIPPED so the image's own starfield fills
-    //     the upper sky and its curved terrain sits along the horizon. Scaled so the
-    //     image's detected limb radius == Rr, and its limb centre maps to (cx,cy).
+    // --- Full-frame arc image: drawn UNCLIPPED so the image's own starfield fills the
+    //     upper sky and its curved terrain sits along the horizon.
     let _arcImgFull=false;
-    // Unified mapping: the image's baked horizon circle (center _gCx,_gCy, radius
-    // _gR) maps onto the planet circle (cx,cy,Rr). For a per-planet surface Rr was
-    // already set above to the image's arc radius, so this both COVERS the frame and
-    // lands the image horizon on the rim/spectrum arc. Default texture uses its own geom.
     const _drawImg=_surf?_surf.img:((_arcImgReady&&_arcImg)?_arcImg:null);
-    const _gR =_surf?_planetImgGeom.r :_arcImgR;
-    const _gCx=_surf?_planetImgGeom.cx:_arcImgCx;
-    // For a per-planet image, treat (its own horizon + arc radius) as the arc center
-    // so that horizon lands exactly on the rim arc (cy-Rr=horizonY).
-    const _gCy=_surf?(_surfHy+_planetImgGeom.r):_arcImgCy;
     if(ARC_IMG_ON && _drawImg){
-      const scale=(Rr/_gR)*_arcImgCover;
-      const iLeft=cx-_gCx*scale, iTop=cy-_gCy*scale;
       ctx.save();
-      ctx.drawImage(_drawImg, iLeft, iTop, _drawImg.width*scale, _drawImg.height*scale);
+      if(_circ){
+        // map the 868x1812 limb circle onto (cx,cy,Rr): one uniform scale s=Rr/circ.r
+        const s=Rr/_circ.r;
+        ctx.drawImage(_drawImg, cx-_circ.cx*s, cy-_circ.cy*s, 868*s, 1812*s);
+      } else {
+        const _gR =_surf?_planetImgGeom.r :_arcImgR;
+        const _gCx=_surf?_planetImgGeom.cx:_arcImgCx;
+        const _gCy=_surf?(_surfHy+_planetImgGeom.r):_arcImgCy;
+        const scale=(Rr/_gR)*_arcImgCover;
+        ctx.drawImage(_drawImg, cx-_gCx*scale, cy-_gCy*scale, _drawImg.width*scale, _drawImg.height*scale);
+      }
       ctx.restore();
       _arcImgFull=true;
     }
@@ -4918,8 +5103,15 @@ function renderScene(ts){
       const st3=STRUCT2D[f];
       const ry=t*0.45, rx=Math.sin(t*0.3)*0.5+0.45;
       const SCALE=fr*0.42;
-      ctx.save();ctx.globalAlpha=0.9;
-      mol3dPaint(ctx,st3,fcx,fcy,SCALE,rx,ry,false);
+      // item 1: glow like the battle-end gold formula, but in the SYSTEM colour — the
+      // whole molecule silhouette emits a cyan glow. Mimic the CSS double drop-shadow
+      // (0 0 32px + 0 0 14px) by painting the molecule twice with a cyan canvas shadow.
+      ctx.save();
+      ctx.globalAlpha=0.95;
+      ctx.shadowColor='#46e0ff'; ctx.shadowBlur=30;
+      mol3dPaint(ctx,st3,fcx,fcy,SCALE,rx,ry,false);   // outer wide glow
+      ctx.shadowBlur=14;
+      mol3dPaint(ctx,st3,fcx,fcy,SCALE,rx,ry,false);   // inner tight glow
       ctx.restore();
     }
     // ratio + gathered counts are now shown together in the dock chips (renderHolds);
@@ -5541,26 +5733,54 @@ function formulaCatalogNum(){
   _formulaNum={}; order.forEach((o,k)=>{_formulaNum[o.i]=k+1;});
   return _formulaNum;
 }
+var formulaSort='num';   // 'num' (by #) | 'have' (by holdings) | 'abc' (alphabetical)
+function formulaSetSort(s){ if(s===formulaSort)return; formulaSort=s; renderCodex(); setTimeout(attachCodexClose,10); }
 function formulaTabHTML(){
   G.formulas=G.formulas||{};
   const num=formulaCatalogNum();
+  // display order per the chosen sort
+  let order=COMPOUNDS.map((c,i)=>i);
+  if(formulaSort==='abc') order.sort((a,b)=>COMPOUNDS[a].text.localeCompare(COMPOUNDS[b].text));
+  else if(formulaSort==='have') order.sort((a,b)=>{
+    const ca=G.formulas[COMPOUNDS[a].text]||0, cb=G.formulas[COMPOUNDS[b].text]||0;
+    return (cb>0)-(ca>0) || cb-ca || num[a]-num[b];
+  });
+  else order.sort((a,b)=>num[a]-num[b]);
   // (no instruction text) — just a redeem-message line that fades in on synth
   let h=`<p class="cxhint" id="cxRedeemMsg" style="color:#ffd36e;min-height:15px;margin:0 0 6px;font-weight:400;opacity:0;transition:opacity .3s"></p>`;
-  // horizontal-scrolling catalog (like the periodic table); cells carry a spinning
-  // 3D-style structure thumbnail + #number + name + owned count / SYNTH hint.
-  h+=`<div class="ptscroll fxscroll" id="cxScroll"><div class="fxgrid">`;
-  for(let i=0;i<COMPOUNDS.length;i++){
+  // item 5: sort options as a 3-segment SLIDING toggle (like ELEMENT's EXTRACT/SYNTH),
+  // plus a help line explaining the tap-to-synthesize behaviour.
+  const _seg=formulaSort==='num'?'p0':(formulaSort==='have'?'p1':'p2');
+  h+=`<div class="fxseg">`+
+     `<div class="fxseg-fill ${_seg}"></div>`+
+     `<button class="fxseg-btn ${formulaSort==='num'?'on':''}" onclick="formulaSetSort('num')">#</button>`+
+     `<button class="fxseg-btn ${formulaSort==='have'?'on':''}" onclick="formulaSetSort('have')">OWNED</button>`+
+     `<button class="fxseg-btn ${formulaSort==='abc'?'on':''}" onclick="formulaSetSort('abc')">A-Z</button>`+
+     `</div>`;
+  h+=`<p class="fxnote">Tap an unlocked formula to auto-digest held elements and synthesize it.</p>`;
+  // vertical-scrolling catalog (3/row); held = lit constellation, unheld = dim.
+  h+=`<div class="fxscroll" id="cxScroll"><div class="fxgrid">`;
+  for(const i of order){
     const f=COMPOUNDS[i].text; const cnt=G.formulas[f]||0; const has=cnt>0;
-    let canMake=true; const atoms=COMPOUNDS[i].atoms;
-    for(const a of atoms){ if(get(a.z)<a.n){ canMake=false; break; } }
-    const cls=has?'have':(canMake?'makeable':'');
-    const svg=(has && typeof compoundSVG==='function')?compoundSVG(i,66,48):'';
-    h+=`<div class="fxcell ${cls}" data-cid="${i}" onclick="formulaCellTap(${i})">`+
-       `<span class="fxnum">#${String(num[i]).padStart(3,'0')}</span>`+
-       `<div class="fxmol">${svg}</div>`+
-       `<span class="fxname">${f}</span>`+
-       (has?`<span class="fxcnt">×${cnt}</span>`:(canMake?`<span class="fxmk">SYNTH</span>`:''))+
-       `</div>`;
+    const numTxt=`#${String(num[i]).padStart(3,'0')}`;
+    if(has){
+      // discovered: full info + clickable (re-synth from held atoms)
+      const svg=(typeof compoundSVG==='function')?compoundSVG(i,66,48):'';
+      h+=`<div class="fxcell have" data-cid="${i}" onclick="formulaCellTap(${i})">`+
+         `<span class="fxnum">${numTxt}</span>`+
+         `<div class="fxmol">${svg}</div>`+
+         `<span class="fxname">${f}</span>`+
+         `<span class="fxcnt">×${cnt}</span>`+
+         `</div>`;
+    } else {
+      // item 5/6: undiscovered — ONLY the number + a blank formula, grey, no name,
+      // no SYNTH, not clickable (cannot be synthesized directly).
+      const svg=(typeof compoundSVG==='function')?compoundSVG(i,66,48,true):'';
+      h+=`<div class="fxcell locked">`+
+         `<span class="fxnum">${numTxt}</span>`+
+         `<div class="fxmol">${svg}</div>`+
+         `</div>`;
+    }
   }
   h+=`</div></div>`;
   return h;
@@ -5586,9 +5806,23 @@ function closeCodex(){document.getElementById('codexModal').classList.remove('sh
   if(m&&m.classList.contains('show')){const p=curPlanet();if(p&&!p.home&&!p.defeated&&p.b3d)renderBattle();}}
 function attachCodexClose(){const m=document.getElementById('codexModal');
   m.onclick=e=>{if(e.target===m)closeCodex();};
-  // FORMULA tab uses native vertical scroll + plain onclick cells — skip the
-  // ELEMENT tab's horizontal drag-pan / hold-to-trade wiring.
-  if(codexTab==='FORMULA')return;
+  // FORMULA tab: VERTICAL drag-pan (item 3). A real drag suppresses the cell's
+  // onclick so panning never accidentally synthesizes a formula.
+  if(codexTab==='FORMULA'){
+    const ps=document.getElementById('cxScroll'); if(!ps)return;
+    let d=false,sy=0,st=0,moved=false,_lt=0;
+    const down=y=>{d=true;sy=y;st=ps.scrollTop;moved=false;};
+    const move=y=>{if(!d)return;if(Math.abs(y-sy)>5)moved=true;ps.scrollTop=st-(y-sy);};
+    ps.onmousedown=e=>{if(Date.now()-_lt<700)return;down(e.clientY);};
+    ps.onmousemove=e=>{if(Date.now()-_lt<700)return;move(e.clientY);};
+    ps.onmouseup=()=>{d=false;};
+    ps.onmouseleave=()=>{d=false;};
+    ps.ontouchstart=e=>{_lt=Date.now();down(e.touches[0].clientY);};
+    ps.ontouchmove=e=>{_lt=Date.now();move(e.touches[0].clientY);};
+    ps.ontouchend=()=>{d=false;};
+    ps.addEventListener('click',e=>{if(moved){e.stopPropagation();e.preventDefault();moved=false;}},true);
+    return;
+  }
   const ps=document.getElementById('cxScroll');if(ps){
     let d=false,sx=0,sy=0,sl=0,st=0,moved=false,heldZ=0,_lastTouch=0;
     let holdTO=0,holdIV=0,fired=false;
@@ -6450,7 +6684,7 @@ const NACL_MON_IMG='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAbgAAAE3CAMAAA
 
 // Standard monster placement (agreed baseline). Future monsters reuse these
 // values; per-monster overrides can adjust if needed.
-const MON_BASE={mx:50, my:22, mw:80};   // cut-out sprite layer — back to the larger size
+const MON_BASE={mx:50, my:27, mw:88};   // cut-out sprite layer — 110% size, dropped lower to stay inside the window
 // Map a planet to its monster image (null if none). Add entries here per compound.
 function cockpitMonsterImg(p){
   // Prefer the external constellation monster art (PYRION zodiac). The loader
@@ -6474,7 +6708,10 @@ function cockpitMonsterImg(p){
 function cockpitMonsterLayer(img,o){
   o=o||{};
   const mx=(o.mx!=null?o.mx:MON_BASE.mx), my=(o.my!=null?o.my:MON_BASE.my), mw=(o.mw!=null?o.mw:MON_BASE.mw);
-  return `<div class="ckMonster" style="--mx:${mx}%;--my:${my}%;--mw:${mw}%">`+
+  // item 1: the shake is driven by a GLOBAL flag (not a DOM class), so a cockpitRender
+  // mid-volley re-applies it instead of wiping it.
+  const hurt=_monShaking?' ckMonHurt':'';
+  return `<div class="ckMonster${hurt}" style="--mx:${mx}%;--my:${my}%;--mw:${mw}%">`+
          `<div class="ckMonInner" id="ckMonInner">`+
          `<img src="${img}" alt="">`+
          `<div class="ckMonTint" style="--amask:url('${img}')"></div>`+
@@ -6642,16 +6879,23 @@ function cockpitPlayMon(name,opts){
 // Player-attack flicker: alternate the monster between std and hit poses for the
 // whole duration of the player's volley, so it reacts continuously (not a single hit).
 var _monFlickerIV=0;
+var _monShaking=false;
+// when hit, switch to the hurt pose ONCE and HOLD it, while the sprite shakes
+// continuously for the whole volley — no repeated pose swapping. The shake is a
+// GLOBAL flag so any cockpitRender during the volley re-applies the .ckMonHurt class.
 function cockpitMonFlicker(durMs){
-  if(_monFlickerIV){clearInterval(_monFlickerIV);_monFlickerIV=0;}
-  const t0=Date.now(); let on=true;
-  const setHit=()=>{const n=1+Math.floor(Math.random()*2);_monPose={pose:'hit',n,until:t0+durMs+200};cockpitSetMonImgPose('hit',n);};
-  setHit();
-  _monFlickerIV=setInterval(()=>{
-    if(!_cockpit||Date.now()-t0>=durMs){clearInterval(_monFlickerIV);_monFlickerIV=0;_monPose=null;if(_cockpit)cockpitSetMonImgPose('std',1);return;}
-    on=!on;
-    if(on)setHit(); else {_monPose=null;cockpitSetMonImgPose('std',1);}
-  },600);   // fewer pose swaps per volley
+  if(_monFlickerIV){clearTimeout(_monFlickerIV);_monFlickerIV=0;}
+  const t0=Date.now();
+  const n=1+Math.floor(Math.random()*2);
+  _monPose={pose:'hit',n,until:t0+durMs+200};
+  cockpitSetMonImgPose('hit',n);                 // single switch to the hurt image
+  _monShaking=true;
+  const mon=document.querySelector('#cockpitScreen .ckMonster'); if(mon)mon.classList.add('ckMonHurt');
+  _monFlickerIV=setTimeout(()=>{
+    _monFlickerIV=0;_monPose=null;_monShaking=false;
+    if(_cockpit)cockpitSetMonImgPose('std',1);
+    const m=document.querySelector('#cockpitScreen .ckMonster'); if(m)m.classList.remove('ckMonHurt');
+  },durMs);
 }
 // Death particle dissolve: glowing dots scatter outward from the monster area
 // while the sprite fades (DOM dots — independent of the FX canvas).
@@ -6667,13 +6911,13 @@ function cockpitMonDissolve(){
     d.style.cssText=`position:absolute;left:${x}%;top:${y}%;width:${sz}px;height:${sz}px;`+
       `border-radius:50%;z-index:9;pointer-events:none;background:#bfeaff;`+
       `box-shadow:0 0 ${6+sz}px #46a0ff;opacity:1;`+
-      `transition:transform ${2+Math.random()*0.8}s ease-out,opacity ${2+Math.random()*0.8}s ease-out`;
+      `transition:transform ${4+Math.random()*1.4}s ease-out,opacity ${4+Math.random()*1.4}s ease-out`;
     fr.appendChild(d);
     requestAnimationFrame(()=>{
-      d.style.transform=`translate(${(Math.random()*2-1)*90}px,${(Math.random()*2-1)*70-30}px) scale(${0.2+Math.random()*0.4})`;
+      d.style.transform=`translate(${(Math.random()*2-1)*120}px,${(Math.random()*2-1)*95-30}px) scale(${0.2+Math.random()*0.4})`;
       d.style.opacity='0';
     });
-    setTimeout(()=>{ d.remove(); },2900);
+    setTimeout(()=>{ d.remove(); },5400);
   }
 }
 // Public: set/clear a persistent looping state (e.g. low-HP 'severelyInjured').
@@ -7006,27 +7250,35 @@ function combatMonsterStrike(){
   combatScreenShake();
   // Enemy damage shows as a floating "-N" next to the Protons value — NOT on the
   // main dashboard (the dashboard is reserved for the player's own attacks).
-  showProtonHit(dmg);
-  const pe=document.getElementById('ckProtons'); if(pe) pe.textContent=fmtNum(G.points);
+  showProtonHit(dmg);   // updates the banner (incl. the new value) itself
   saveGame&&saveGame();
   if(G.points<=0){ _combat.lock=false; combatPlayerDefeated(); return; }
   // The player may fire again only after the counterattack has played out.
   setTimeout(()=>{ if(_combat)_combat.lock=false; }, 1000);
 }
-// Floating "-N" damage popup beside the Protons value (enemy counterattack).
+// Enemy counterattack: show the protons deduction. The GUARANTEED-visible part is an
+// inline red "-N" INSIDE the proton banner itself (earlier floating popups were
+// unreliable / mis-placed); a floating "-Np" above it adds emphasis.
 function showProtonHit(dmg){
-  // Fixed position just right of the proton banner (which sits at ~50% / 60% of the
-  // frame). Appended to #cockpitScreen at a high z so it always shows.
-  const m=document.getElementById('cockpitScreen'); if(!m)return;
-  const s=document.createElement('div');
-  s.textContent='-'+fmtNum(dmg);
-  s.style.cssText='position:absolute;left:63%;top:58%;z-index:20;pointer-events:none;color:#ff5a5a;'+
-    'font-family:Rajdhani,sans-serif;font-weight:800;font-size:clamp(13px,4cqw,20px);'+
-    'text-shadow:0 0 8px rgba(255,80,80,.95),0 1px 2px #000;white-space:nowrap;'+
-    'opacity:1;transition:opacity 1.2s ease,transform 1.2s ease';
-  m.appendChild(s);
-  requestAnimationFrame(()=>{ s.style.opacity='0'; s.style.transform='translateY(-28px)'; });
-  setTimeout(()=>{ s.remove(); }, 1300);
+  const pe=document.getElementById('ckProtons');
+  if(pe){
+    const val=fmtNum(G.points);   // already decremented by the caller
+    pe.innerHTML=val+' <span style="color:#ff4d4d;text-shadow:0 0 8px rgba(255,70,70,.95)">-'+fmtNum(dmg)+'</span>';
+    if(pe._hitTO)clearTimeout(pe._hitTO);
+    pe._hitTO=setTimeout(()=>{ if(pe)pe.textContent=fmtNum(G.points); }, 1300);
+  }
+  const host=document.getElementById('cockpitScreen');
+  if(host){
+    const s=document.createElement('div');
+    s.textContent='-'+fmtNum(dmg)+'p';
+    s.style.cssText='position:absolute;left:50%;top:55%;transform:translate(-50%,0);z-index:90;'+
+      'pointer-events:none;color:#ff4d4d;font-family:Rajdhani,sans-serif;font-weight:800;font-size:30px;'+
+      'text-shadow:0 0 12px rgba(255,60,60,1),0 2px 3px #000;white-space:nowrap;opacity:1;'+
+      'transition:opacity 1.3s ease,transform 1.3s ease';
+    host.appendChild(s);
+    requestAnimationFrame(()=>{ s.style.opacity='0'; s.style.transform='translate(-50%,-42px)'; });
+    setTimeout(()=>{ s.remove(); }, 1400);
+  }
 }
 // Pisces-style enemy attack FX: several glowing blue circles launched from the
 // monster's hands toward the cockpit.
@@ -7234,12 +7486,20 @@ function cockpitRender(){
   // Phase 2: the spinning 3D formula is the puzzle SUBJECT in the window center; the
   // blank slots sit just below it; the element pool (the elements you guessed) lines
   // the window's bottom edge. The dashboard only shows the instruction text.
-  if(_combat && _combat.phase===2 && _combat.drag){
-    const dn=_combat.drag.done;
-    // 3D blank formula (enlarged, manually rotatable) is the puzzle; the guessed
-    // elements stay as circles along the window bottom (drag them onto the atoms).
-    h+=`<div class="ckMolWin ckPuzzleMol${dn?' puzzleDone':''}" id="ckMolWin"></div>`;
-    if(!dn){ h+=`<div class="ckPuzzlePoolWrap">${combatPuzzlePoolHTML(_combat.drag)}</div>`; }
+  // item 4: ONE molecule for the whole fight. During battle it sits small (50%) at the
+  // battle spot and is NON-interactive; when the monster dies it RISES to the monster
+  // position and becomes the interactive puzzle; once solved it flashes gold and RETURNS
+  // to the original (battle) position and size. Same element throughout.
+  if(_combat && p.compId!=null){
+    let cls='cmBattle';
+    if(_combat.phase===2 && _combat.drag){
+      if(_combat.drag.done){ cls='cmDone'; }
+      else { cls='cmSolve'+((!_combat.rose)?' cmRise':''); if(!_combat.rose)_combat.rose=true; }
+    }
+    h+=`<div class="ckMolWin ckPuzzleMol ${cls}" id="ckMolWin"></div>`;
+    if(_combat.phase===2 && _combat.drag && !_combat.drag.done){
+      h+=`<div class="ckPuzzlePoolWrap">${combatPuzzlePoolHTML(_combat.drag)}</div>`;
+    }
   }
   // The frame's central window is transparent — the live planet main scene
   // (#stars + #sceneCanvas in .stage) shows through it underneath.
@@ -7295,12 +7555,11 @@ function cockpitRender(){
   h+=`<div class="ckHitGlow"></div>`;
   // subtle vignette inside the window for depth/focus (cinematic feel)
   h+=`<div class="ckVignette"></div>`;
-  // Combat overlays: monster HP bar (top of window) + solved-slot circles (lower edge).
+  // Combat overlays (phase 1): HP bar + solved-slot circles. The molecule is now a
+  // separate single element (ckPuzzleMol, rendered above) — NOT part of this stack — so
+  // it can persist visually from battle into the solve step (item 4).
   if(_combat && _combat.phase!==2){
-    // Phase 1 stack (window's lower edge, top -> bottom): molecule, HP bar, cells.
-    // Phase 2 hides this entirely (the formula puzzle takes over the window).
-    const molH=(p.compId!=null)?`<div class="ckMolWin" id="ckMolWin"></div>`:'';
-    h+=`<div class="ckBattleStack">${molH}${combatHpBarHTML(_combat)}${combatSolvedCirclesHTML(_combat)}</div>`;
+    h+=`<div class="ckBattleStack">${combatHpBarHTML(_combat)}${combatSolvedCirclesHTML(_combat)}</div>`;
   }
   h+=`</div>`;
   m.innerHTML=h;
@@ -7501,8 +7760,9 @@ function cockpitSynth(z){
 function cockpitFireNo(){ if(!_cockpit)return; _cockpit.mode='formula'; _cockpit.selZ=null; cockpitRender(); }
 function cockpitFireYes(){
   if(!_cockpit)return;
-  // TURN LOCK: no new shot until the monster's counterattack has resolved.
-  if(_combat&&_combat.lock)return;
+  // TURN LOCK: no new shot until the monster's counterattack has resolved; and no
+  // firing at all once the win sequence has started (_combat.over).
+  if(_combat&&(_combat.lock||_combat.over))return;
   const z=_cockpit.fireZ;
   if(get(z)<=0){toast((EL[z]?EL[z].sym:'?')+' empty','bad'); _cockpit.mode='formula'; cockpitRender(); return;}
   // Firing consumes one held atom of X.
@@ -7515,7 +7775,7 @@ function cockpitFireYes(){
     const r=combatAttack(_combat, z);
     // Monster reacts: hit if it took damage, severelyInjured if low, death on kill.
     if(r.killed){ killed=true; }
-    else { cockpitMonFlicker(3000); }   // flicker std<->hit through the 3s volley
+    else { cockpitMonFlicker(1000); }   // item 1: hurt pose + shake through the 1s volley
     // Dashboard readout: "<sym> DEALT DAMAGE" + the single TOTAL damage number;
     // kind drives the CRITICAL / exact-hit styling.
     _cockpit.lastDmg={total:r.total, kind:r.kind, guessed:r.guessed, sym, z};
@@ -7523,7 +7783,13 @@ function cockpitFireYes(){
     _combat.lock=true;
   }
   saveGame&&saveGame();
-  if(killed){ combatOnKill(); return; }
+  if(killed){
+    // item 1: render once so the LAST guessed element fills its bottom slot
+    // (ckSolved: bottom row <=5, overflow stacks up) BEFORE the kill sequence.
+    cockpitRender();
+    requestAnimationFrame(()=>{ if(typeof combatOnKill==='function')combatOnKill(); });
+    return;
+  }
   _cockpit.mode='formula';
   cockpitRender();
   // IMPORTANT: play projectile FX AFTER cockpitRender(), because render rebuilds
@@ -7532,48 +7798,100 @@ function cockpitFireYes(){
   requestAnimationFrame(()=>{ cockpitFireFX(c); playLaserSfx(); });
   // TURN-BASED counterattack: the monster strikes back AFTER the player's 3s
   // attack FX has finished.
-  if(_combat){ setTimeout(()=>{ combatMonsterStrike(); }, 3150); }
+  if(_combat){ setTimeout(()=>{ combatMonsterStrike(); }, 1150); }
 }
-// Death -> Phase 2: hide monster, float formula to monster position, build drag puzzle.
+// Death -> solve step: monster dissolves (long FX), then the SAME molecule rises into
+// the fill puzzle (one continuous element via the ckPuzzleMol entry animation — no
+// rise-then-rebuild "switch"). Beating the monster is NOT the end — the chemistry
+// puzzle still follows.
 function combatOnKill(){
-  if(_combat)_combat.lock=false;
+  if(_combat){ _combat.lock=true; _combat.over=false; }   // freeze firing; solve step remains
+  _monShaking=false;
   combatStopMonsterTimer();
-  if(_monFlickerIV){clearInterval(_monFlickerIV);_monFlickerIV=0;}
+  if(_monFlickerIV){clearTimeout(_monFlickerIV);_monFlickerIV=0;}
   if(_projRAF){cancelAnimationFrame(_projRAF);_projRAF=0;}
+  const _m0=document.querySelector('#cockpitScreen .ckMonster'); if(_m0)_m0.classList.remove('ckMonHurt');
   cockpitPlayMon('death');
   toast('MONSTER DESTROYED','good');
   // HP bar fades out as the monster dies.
   const _hp=document.querySelector('#cockpitScreen .ckHp');
   if(_hp){ _hp.style.transition='opacity .8s ease'; _hp.style.opacity='0'; }
-  // Float the compound formula (the 3D molecule) up to the monster's center,
-  // enlarging — it becomes the blank formula to fill in phase 2.
-  combatFloatFormula();
-  // Let the death anim + slow particle dissolve play out, THEN enter phase 2.
+  // item 3: let the (longer) death FX play out fully, THEN turn the molecule into the
+  // fill puzzle. item 5: no separate rise — the ckPuzzleMol rises into place itself.
   setTimeout(()=>{
     if(!_cockpit||!_combat)return;
-    cockpitStopMon();                 // monster sprite gone
+    // stop the monster anim WITHOUT resetting it visible, and physically REMOVE the
+    // sprite so it can never flash back after the death FX (item 7, last round).
+    if(typeof _monRAF!=='undefined'&&_monRAF){cancelAnimationFrame(_monRAF);_monRAF=0;}
+    _monAnim=null;_monRest=null;_monPose=null;
+    const mon=document.querySelector('#cockpitScreen .ckMonster'); if(mon)mon.remove();
     combatBuildDragPuzzle(_combat);
     _combat.phase=2;
     _cockpit.mode='formula';
-    cockpitRender();                  // window: spinning formula + slots + pool
-  }, 2700);
+    cockpitRender();                  // molecule rises (CSS) into the puzzle + pool
+  }, 5200);
 }
-// Build the phase-2 drag puzzle: blank slots in formula order + a shuffled token pool.
-// Death FX: a big formula label rises from the center panel up to the monster spot.
+// item 2: the molecule rises to the dead monster's spot at HALF speed, keeping its
+// current solid style (no rebuild into a dashed blank puzzle). _molOrig stores the
+// pre-transform centre so the gold descent can target an absolute screen point.
+let _molOrig=null;
 function combatFloatFormula(){
   const fr=document.querySelector('#cockpitScreen .ckFrame'); if(!fr)return;
-  // Animate the 3D formula molecule (the persistent #ckMolWin canvas) up to the
-  // monster's center while enlarging it — it takes the dead monster's place.
   const win=document.getElementById('ckMolWin'); if(!win)return;
   const frR=fr.getBoundingClientRect(), wR=win.getBoundingClientRect();
   if(!wR.width||!frR.width)return;
-  const mcx=frR.left+frR.width*0.5, mcy=frR.top+frR.height*0.24;   // monster center on screen
-  const wcx=wR.left+wR.width/2,   wcy=wR.top+wR.height/2;
-  const dx=mcx-wcx, dy=mcy-wcy;
-  win.style.transition='transform 0.9s cubic-bezier(.2,.7,.2,1)';
+  _molOrig={cx:wR.left+wR.width/2, cy:wR.top+wR.height/2};
+  const mcx=frR.left+frR.width*0.5, mcy=frR.top+frR.height*0.24;   // monster centre
+  const dx=mcx-_molOrig.cx, dy=mcy-_molOrig.cy;
+  win.style.transition='transform 1.8s cubic-bezier(.2,.7,.2,1)';  // half of the old 0.9s
   win.style.transformOrigin='center center';
   win.style.transform=`translate(${dx.toFixed(1)}px,${dy.toFixed(1)}px) scale(2)`;
   win.style.zIndex='9';
+}
+// item 3: the risen molecule glows gold and descends (half speed) toward the window's
+// lower-middle. Strong double drop-shadow so the gold is obvious.
+function combatGoldDescend(){
+  const fr=document.querySelector('#cockpitScreen .ckFrame'); if(!fr)return;
+  const win=document.getElementById('ckMolWin'); if(!win||!_molOrig)return;
+  const frR=fr.getBoundingClientRect();
+  const tcx=frR.left+frR.width*0.5, tcy=frR.top+frR.height*0.54;   // lower-middle target
+  const dx=tcx-_molOrig.cx, dy=tcy-_molOrig.cy;
+  win.style.transition='transform 2.4s cubic-bezier(.4,0,.2,1),filter 1.2s ease';  // half of 1.2s
+  win.style.filter='drop-shadow(0 0 32px #ffd24a) drop-shadow(0 0 14px #ffb020)';
+  win.style.transform=`translate(${dx.toFixed(1)}px,${dy.toFixed(1)}px) scale(1.2)`;
+}
+// items 3/4/5: acquire the formula, gold descent, dashboard message, then arm the
+// tap-to-continue overlay (which disables every key until the player taps).
+function combatWinFinish(){
+  const p=G.planets[_cockpit.planetId];
+  const f=COMPOUNDS[p.compId].text;
+  p.defeated=true; G.solvedTotal=(G.solvedTotal||0)+1; G.solvedNoSkip=(G.solvedNoSkip||0)+1;
+  G.formulas=G.formulas||{}; G.formulas[f]=(G.formulas[f]||0)+1;
+  delete p.combat;
+  toast(f+' ACQUIRED','good');
+  combatGoldDescend();
+  // item 4: ACQUIRED message on the main dashboard centre panel.
+  const ctr=document.getElementById('ckCenter'); if(ctr)ctr.innerHTML=cockpitCenterHTML(p);
+  saveGame&&saveGame();
+  combatArmTapToMap();
+}
+// item 5: full-window transparent catcher above all keys -> first tap anywhere fades
+// the cockpit out and opens the map. Keys are unreachable while it's up.
+function combatArmTapToMap(){
+  const scr=document.getElementById('cockpitScreen');
+  if(!scr){ cockpitClose(); if(typeof openMap==='function')openMap(); return; }
+  if(scr.querySelector('.ckTapCatch'))return;
+  const ov=document.createElement('div');
+  ov.className='ckTapCatch';
+  ov.innerHTML='<div class="ckTapHint">TAP TO CONTINUE</div>';
+  scr.appendChild(ov);
+  const go=()=>{
+    ov.removeEventListener('pointerdown',go);
+    scr.style.transition='opacity .5s ease'; scr.style.opacity='0';
+    setTimeout(()=>{ scr.style.opacity=''; scr.style.transition=''; cockpitClose(); if(typeof openMap==='function')openMap(); }, 520);
+  };
+  // brief delay so the gold descent is seen before the catcher accepts a tap.
+  setTimeout(()=>{ if(ov.isConnected)ov.addEventListener('pointerdown',go); }, 600);
 }
 function combatBuildDragPuzzle(cb){
   const p=G.planets[_cockpit.planetId];
@@ -7582,9 +7900,9 @@ function combatBuildDragPuzzle(cb){
   // one socket per ATOM of the 3D model (STRUCT2D order), each wants its correct z
   const atoms=(st&&st.a)?st.a.map(a=>a[0]):[];
   const fill=atoms.map(()=>null);
+  // item 6: NO shuffle — keep the exact slot order so the element arrangement is
+  // identical to the pre-death battle layout.
   const pool=cb.slots.map((s,i)=>({z:s.z, used:false, id:i}));
-  for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));
-    const t=pool[i];pool[i]=pool[j];pool[j]=t;}
   cb.drag={ atoms, fill, pool, sel:null, done:false };
 }
 // Drop a dragged element circle onto an atom socket in the rotating 3D model.
@@ -7671,15 +7989,25 @@ function combatPuzzleSlotsHTML(d){
   });
   h+='</div>'; return h;
 }
+// item 6: render the element pool with the SAME bottom-row(<=5) / overflow-up layout
+// as the battle's solved cells (combatSolvedCirclesHTML), at the same window position,
+// so the arrangement never changes between the battle and the solve step. A placed
+// (used) token leaves a hidden placeholder so the remaining circles don't reflow.
 function combatPuzzlePoolHTML(d){
-  let h='<div class="ckDragPool">';
-  d.pool.forEach(t=>{ if(t.used)return;
+  const cell=t=>{
+    if(t.used) return `<span class="ckDragTok" style="visibility:hidden"></span>`;
     const c=cockpitFamColor(cockpitFamCodeOfZ(t.z)||'NM');
     const sel=(_combat&&_combat.drag&&_combat.drag.sel===t.id)?'sel':'';
-    h+=`<span class="ckDragTok ${sel}" data-id="${t.id}" draggable="true" style="--dc:${c}" `+
+    return `<span class="ckDragTok ${sel}" data-id="${t.id}" draggable="true" style="--dc:${c}" `+
        `ondragstart="combatDragStart(event,${t.id})" `+
        `onclick="event.stopPropagation();combatTokenTap(${t.id})">${EL[t.z]?EL[t.z].sym:'?'}</span>`;
-  });
+  };
+  const pool=d.pool, n=pool.length;
+  const bottomN=Math.min(5,n);
+  const bottom=pool.slice(0,bottomN), top=pool.slice(bottomN);
+  let h='<div class="ckSolved ckDragPool">';
+  if(top.length) h+='<div class="ckSolvedRow">'+top.map(cell).join('')+'</div>';
+  h+='<div class="ckSolvedRow">'+bottom.map(cell).join('')+'</div>';
   h+='</div>'; return h;
 }
 function combatDragStart(ev, id){ try{ev.dataTransfer.setData('text/plain',String(id));}catch(e){} }
@@ -7701,12 +8029,18 @@ function combatPuzzleComplete(){
   // ACQUIRE the formula into the player's collection (FORMULA codex).
   G.formulas=G.formulas||{}; G.formulas[f]=(G.formulas[f]||0)+1;
   delete p.combat;
-  toast(f+' ACQUIRED','good');
-  // Re-render: dashboard shows "FORMULA CORRECT / ACQUIRED", and the slots get the
-  // .done class -> gold glow, slide down to the dashboard, shrink & fade away.
-  cockpitRender();
+  // no toast on solve — the dashboard "FORMULA CORRECT / ACQUIRED" is enough.
+  // item 4: gold flash + RETURN to the battle position/size, animated on the EXISTING
+  // molecule element by swapping cmSolve -> cmDone (so the CSS keyframe runs in place).
+  if(_combat){ if(_combat.drag)_combat.drag.done=true; _combat.over=true; }
+  const win=document.getElementById('ckMolWin');
+  if(win){ win.classList.remove('cmSolve','cmRise'); win.classList.add('cmDone'); }
+  const pw=document.querySelector('#cockpitScreen .ckPuzzlePoolWrap'); if(pw)pw.remove();
+  // dashboard now shows "FORMULA CORRECT / ACQUIRED" (p.defeated drives the text)
+  const ctr=document.getElementById('ckCenter'); if(ctr)ctr.innerHTML=cockpitCenterHTML(p);
   saveGame&&saveGame();
-  setTimeout(()=>{ cockpitClose(); if(typeof openMap==='function')openMap(); }, 1700);
+  // tap anywhere (keys dead) -> fade out to the map, instead of auto-jumping.
+  combatArmTapToMap();
 }
 // ===== STAGE 2: family-specific projectile visuals (3s burst) =====
 // Canvas burst from window inner-left/right toward monster center (0.5W, 0.40H).
@@ -7728,7 +8062,7 @@ function cockpitProjectileFX(code, color){
   const tx=W*0.5, ty=H*0.24;                 // monster center (composite sits inside window)
   // Launch points: from OUTSIDE the window's two sides, converging on the monster.
   const lx=-W*0.04, rx=W*1.04, sy=H*0.42;
-  const DUR=3000, t0=performance.now();
+  const DUR=1000, t0=performance.now();   // item 1: attack FX shortened to 1s
   if(_projRAF) cancelAnimationFrame(_projRAF);
   // Per-family particle/stroke generators -------------------------------------
   // T family scatters from both sides; each T-key keeps its own colour already.
