@@ -245,11 +245,16 @@ body{position:fixed;inset:0}
 .cxwrap{}
 .cxbtns{display:flex;gap:12px;margin-bottom:10px;justify-content:center}
 /* CODEX ELEMENT/FORMULA tabs */
-.cxtabs{display:flex;justify-content:center;gap:8px;margin:0 auto 10px;width:100%}
-.cxtab{flex:0 0 auto;min-width:108px;padding:9px 0;border-radius:999px;cursor:pointer;
-  border:1px solid rgba(70,224,255,.3);background:rgba(70,224,255,.06);color:rgba(180,200,230,.6);
-  font-family:'Rajdhani';font-weight:700;font-size:14px;letter-spacing:2px}
-.cxtab.on{background:rgba(70,224,255,.85);color:#04121c;box-shadow:0 0 12px rgba(70,224,255,.5)}
+/* file-folder style tabs: tabs sit on a shared baseline; the active one rises and
+   merges into the content below it */
+.cxtabs{display:flex;justify-content:center;gap:4px;margin:0 auto 0;width:100%;
+  border-bottom:2px solid rgba(70,224,255,.4)}
+.cxtab{flex:0 0 auto;min-width:120px;padding:10px 0;border-radius:10px 10px 0 0;cursor:pointer;
+  border:2px solid rgba(70,224,255,.28);border-bottom:none;background:rgba(10,20,34,.55);
+  color:rgba(180,200,230,.55);font-family:'Rajdhani';font-weight:700;font-size:14px;letter-spacing:2px;
+  margin-bottom:-2px;position:relative}
+.cxtab.on{background:rgba(70,224,255,.16);color:#cfeeff;border-color:rgba(70,224,255,.6);
+  border-bottom:2px solid rgba(70,224,255,.16);box-shadow:0 -3px 10px rgba(70,224,255,.25)}
 /* FORMULA codex grid: scrolls vertically, compounds as pill cells */
 .fxscroll{overflow-y:auto;overflow-x:hidden;max-height:52cqh;width:100%;margin-top:0}
 .fxgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;width:100%;padding:2px 2px 8px}
@@ -5659,9 +5664,11 @@ function _codexAvailH(){
   const app=document.querySelector('.app');
   return (app&&app.clientHeight)||window.innerHeight||780;}
 function presetCodexCell(){
-  const avail=Math.max(150, Math.round(_codexAvailH() - 260));
+  // -330 reserves room for the title, folder tabs, mode pill and hint lines so the
+  // 10-row table fits without vertical clipping.
+  const avail=Math.max(150, Math.round(_codexAvailH() - 330));
   let cell=Math.floor((avail-9*4-16)/10);
-  cell=Math.max(18,Math.min(cell,84));
+  cell=Math.max(18,Math.min(cell,70));
   document.body.style.setProperty('--pcell',cell+'px');}
 function fitCodexTable(){
   const scroll=document.getElementById('cxScroll');if(!scroll)return;
@@ -6533,6 +6540,12 @@ function _monLoop(now){
   let ms=now-_monAnim.start;
   if(ms>=_monAnim.dur){
     if(_monAnim.loop){ _monAnim.start=now; ms=0; }
+    else if(_monAnim.hold){
+      // death etc.: freeze on the LAST frame (e.g. opacity 0) — do NOT reset,
+      // which would briefly flash the monster back to full opacity.
+      _monApplyFrame(_monAnim.clip,_monAnim.dur);
+      _monAnim=null; return;
+    }
     else {
       // one-shot finished → fall back to resting loop or neutral
       _monAnim=null;
@@ -6600,7 +6613,7 @@ function cockpitPlayMon(name,opts){
   if(!clip)return;
   opts=opts||{};
   const dur=clip[clip.length-1].t||1;
-  _monAnim={clip,start:performance.now(),dur,loop:!!opts.loop};
+  _monAnim={clip,start:performance.now(),dur,loop:!!opts.loop,hold:(name==='death')};
   if(!_monRAF)_monRAF=requestAnimationFrame(_monLoop);
 }
 // Player-attack flicker: alternate the monster between std and hit poses for the
@@ -7091,8 +7104,12 @@ function cockpitOpenWhenReady(){
   if(!cn){ cockpitOpen(); return; }
   if(typeof monAssetSet==='function')monAssetSet(p);   // preload ALL poses
   const base=monAssetBase(cn, planetIsBoss(p), 'std', 1);
-  const e0=_monAssetCache[base];
-  if(e0&&(e0.state==='ok'||e0.state==='err')){ cockpitOpen(); return; }
+  const bgBase=MON_ASSET.base+MON_ASSET.dir+cn+'_bg';
+  monAssetLoad(bgBase);                                  // also preload the starfield bg
+  const rdy=(b)=>{ const e=_monAssetCache[b]; return e&&(e.state==='ok'||e.state==='err'); };
+  // wait for BOTH the monster sprite AND the bg, so we never flash the std image
+  // full-window (sky-route fallback) before the bg arrives.
+  if(rdy(base) && rdy(bgBase)){ cockpitOpen(); return; }
   // not ready: show the map-side banner and poll
   const mm=document.getElementById('mapModal');
   let b=document.getElementById('mapEnterBattle');
@@ -7109,9 +7126,7 @@ function cockpitOpenWhenReady(){
   const token=++_ckPendingOpen, t0=Date.now();
   (function wait(){
     if(token!==_ckPendingOpen)return;                 // superseded
-    const e=_monAssetCache[base];
-    const ready=e&&(e.state==='ok'||e.state==='err');
-    if(ready || Date.now()-t0>15000){
+    if((rdy(base)&&rdy(bgBase)) || Date.now()-t0>15000){
       const bb=document.getElementById('mapEnterBattle'); if(bb)bb.style.display='none';
       cockpitOpen(); return;
     }
