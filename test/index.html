@@ -251,20 +251,21 @@ body{position:fixed;inset:0}
 .cxtabs{display:flex;justify-content:stretch;gap:6px;margin:0 auto 0;width:100%;
   border-bottom:2px solid rgba(70,224,255,.3)}
 .cxtab{flex:1;padding:11px 0;cursor:pointer;border:none;
-  clip-path:polygon(11% 0%,100% 0%,89% 100%,0% 100%);
   background:rgba(22,34,54,.5);color:rgba(150,175,205,.42);
   font-family:'Rajdhani';font-weight:700;font-size:13px;letter-spacing:2px}
+/* the SEAM between the two tabs is the diagonal: left tab's right edge slants, the
+   right tab's left edge slants to match */
+.cxtab:first-child{clip-path:polygon(0 0,100% 0,92% 100%,0 100%)}
+.cxtab:last-child{clip-path:polygon(8% 0,100% 0,100% 100%,0 100%)}
 .cxtab.on{background:rgba(70,224,255,.16);color:rgba(190,220,250,.72)}
-/* FORMULA codex grid: scrolls vertically, compounds as pill cells */
-/* FORMULA catalog scrolls HORIZONTALLY (3 rows, drag left/right), no vertical clip */
-.fxscroll{overflow-x:auto;overflow-y:hidden;width:100%;margin-top:0;cursor:grab;-webkit-overflow-scrolling:touch}
-.fxscroll:active{cursor:grabbing}
-.fxgrid{display:grid;grid-template-rows:repeat(3,1fr);grid-auto-flow:column;gap:7px;padding:2px 2px 6px;height:max-content}
+/* FORMULA catalog: vertical scroll (no horizontal drag), 3 columns */
+.fxscroll{overflow-y:auto;overflow-x:hidden;max-height:50cqh;width:100%;margin-top:0;-webkit-overflow-scrolling:touch}
+.fxgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:2px 2px 8px;width:100%}
 .fxcell{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
-  width:24cqw;min-width:96px;height:18cqh;min-height:118px;border-radius:8px;
+  width:auto;min-height:114px;border-radius:8px;
   border:1.5px solid rgba(120,160,200,.25);background:rgba(10,16,30,.5);
-  cursor:pointer;padding:14px 4px 4px;opacity:.5;transition:opacity .15s,box-shadow .15s}
-.fxcell .fxnum{position:absolute;top:3px;left:6px;font-family:'Rajdhani';font-weight:700;font-size:9px;letter-spacing:.5px;color:rgba(150,180,215,.6)}
+  cursor:pointer;padding:18px 4px 4px;opacity:.5;transition:opacity .15s,box-shadow .15s}
+.fxcell .fxnum{position:absolute;top:3px;left:7px;font-family:'Rajdhani';font-weight:800;font-size:13px;letter-spacing:.5px;color:rgba(160,190,225,.75)}
 .fxcell .fxmol{width:100%;height:50px;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .fxcell .fxmol svg{max-width:100%;max-height:100%}
 .fxcell .fxname{font-family:'Rajdhani';font-weight:800;font-size:14px;color:#cfe3ff;letter-spacing:.3px;margin-top:2px}
@@ -399,7 +400,7 @@ body{position:fixed;inset:0}
 /* monster + starfield composite sized to sit fully INSIDE the window frame
    (no overflow past the hexagonal opening); centred in the window's upper area */
 /* starfield bg (Pisces_bg etc.) fills the window; the cut-out monster layers on top */
-.cockpitScreen .ckSky{position:absolute;inset:0;width:100%;height:100%;background-size:cover;background-repeat:no-repeat;background-position:center top;background-color:#000;pointer-events:none;z-index:1;opacity:.5}
+.cockpitScreen .ckSky{position:absolute;inset:0;width:100%;height:100%;background-size:cover;background-repeat:no-repeat;background-position:center top;background-color:#000;pointer-events:none;z-index:1;opacity:1;filter:brightness(.8)}
 /* Monster layer: behind the frame (.ckBG z-index:2) so it shows through the
    transparent window panes. Cockpit frame > monster > planet. */
 /* Monster sprite is a BLACK-background cut-out; screen blend drops the black into
@@ -552,7 +553,8 @@ body{position:fixed;inset:0}
   transition:top 1.1s cubic-bezier(.4,0,.2,1),transform 1.1s ease,opacity 1.1s ease,filter .4s ease}
 .ckPuzzleSlots .ckDragSlots{transform:scale(1.5)}
 .ckPuzzleSlots.done{top:60%;transform:scale(.45);opacity:0;filter:drop-shadow(0 0 18px #ffd24a)}
-.ckPuzzlePoolWrap{position:absolute;left:6%;right:6%;top:46%;height:12%;z-index:7;
+/* element circles stay where the pre-kill solved cells were (window's lower edge) */
+.ckPuzzlePoolWrap{position:absolute;left:6%;right:6%;top:51%;height:8%;z-index:7;
   display:flex;align-items:center;justify-content:center;pointer-events:auto}
 .ckPuzzlePoolWrap .ckDragPool{transform:scale(1.35)}
 .ckPuzzleSlots.done .ckDragSlot{border-color:#ffd24a !important;color:#ffd24a !important;
@@ -4916,7 +4918,7 @@ function renderScene(ts){
       const st3=STRUCT2D[f];
       const ry=t*0.45, rx=Math.sin(t*0.3)*0.5+0.45;
       const SCALE=fr*0.42;
-      ctx.save();ctx.globalAlpha=0.95;   // less transparent
+      ctx.save();ctx.globalAlpha=0.9;
       mol3dPaint(ctx,st3,fcx,fcy,SCALE,rx,ry,false);
       ctx.restore();
     }
@@ -5687,9 +5689,9 @@ function _codexAvailH(){
 function presetCodexCell(){
   // Larger table: smaller reserved margin lets the 10 rows grow, kept just clear of
   // the hint line above and the BACK button below.
-  const avail=Math.max(150, Math.round(_codexAvailH() - 268));
+  const avail=Math.max(150, Math.round(_codexAvailH() - 300));
   let cell=Math.floor((avail-9*4-16)/10);
-  cell=Math.max(18,Math.min(cell,80));
+  cell=Math.max(18,Math.min(cell,64));
   document.body.style.setProperty('--pcell',cell+'px');}
 function fitCodexTable(){
   const scroll=document.getElementById('cxScroll');if(!scroll)return;
@@ -7013,21 +7015,17 @@ function combatMonsterStrike(){
 }
 // Floating "-N" damage popup beside the Protons value (enemy counterattack).
 function showProtonHit(dmg){
-  const pe=document.getElementById('ckProtons');
-  const fr=document.querySelector('#cockpitScreen .ckFrame');
-  if(!pe||!fr)return;
-  const pr=pe.getBoundingClientRect(), frR=fr.getBoundingClientRect();
-  if(!pr.width||!frR.width)return;
+  // Fixed position just right of the proton banner (which sits at ~50% / 60% of the
+  // frame). Appended to #cockpitScreen at a high z so it always shows.
+  const m=document.getElementById('cockpitScreen'); if(!m)return;
   const s=document.createElement('div');
   s.textContent='-'+fmtNum(dmg);
-  s.style.cssText='position:absolute;z-index:9;pointer-events:none;color:#ff5a5a;'+
-    'font-family:Rajdhani,sans-serif;font-weight:800;font-size:clamp(12px,3.6cqw,18px);'+
-    'text-shadow:0 0 8px rgba(255,80,80,.9);white-space:nowrap;'+
+  s.style.cssText='position:absolute;left:63%;top:58%;z-index:20;pointer-events:none;color:#ff5a5a;'+
+    'font-family:Rajdhani,sans-serif;font-weight:800;font-size:clamp(13px,4cqw,20px);'+
+    'text-shadow:0 0 8px rgba(255,80,80,.95),0 1px 2px #000;white-space:nowrap;'+
     'opacity:1;transition:opacity 1.2s ease,transform 1.2s ease';
-  s.style.left=((pr.right-frR.left)+8)+'px';
-  s.style.top=((pr.top-frR.top)+pr.height*0.05)+'px';
-  fr.appendChild(s);
-  requestAnimationFrame(()=>{ s.style.opacity='0'; s.style.transform='translateY(-26px)'; });
+  m.appendChild(s);
+  requestAnimationFrame(()=>{ s.style.opacity='0'; s.style.transform='translateY(-28px)'; });
   setTimeout(()=>{ s.remove(); }, 1300);
 }
 // Pisces-style enemy attack FX: several glowing blue circles launched from the
