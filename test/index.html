@@ -309,9 +309,10 @@ body{position:fixed;inset:0}
   width:min(255px,80cqw);height:44px;border:1px solid rgba(70,224,255,.6);
   background:rgba(70,224,255,.16);border-radius:999px;overflow:hidden;
   box-shadow:0 0 10px rgba(70,224,255,.35),inset 0 0 6px rgba(70,224,255,.12)}
+/* item 3: clearly system-coloured (bright, solid) sliding highlight */
 .fxseg-fill{position:absolute;top:2px;bottom:2px;left:2px;width:calc(33.33% - 1px);border-radius:999px;
-  background:linear-gradient(180deg,rgba(70,224,255,.85),rgba(70,160,255,.55));z-index:0;
-  box-shadow:0 0 10px rgba(70,224,255,.4);transition:transform .28s cubic-bezier(.4,0,.2,1)}
+  background:linear-gradient(180deg,#5fe3ff,#2ba6ff);z-index:0;
+  box-shadow:0 0 12px rgba(70,224,255,.6);transition:transform .28s cubic-bezier(.4,0,.2,1)}
 .fxseg-fill.p0{transform:translateX(0)}
 .fxseg-fill.p1{transform:translateX(100%)}
 .fxseg-fill.p2{transform:translateX(200%)}
@@ -416,9 +417,10 @@ body{position:fixed;inset:0}
   color:var(--glow);text-align:center;margin-bottom:5px}
 .ciraterow{display:flex;align-items:center;justify-content:center;gap:8px;margin:2px 0;font-family:'Rajdhani'}
 .ciratesym{font-weight:800;font-size:16px;width:34px;text-align:center}
-.ciratenow{font-weight:700;font-size:15px;color:#dffaff;min-width:54px;text-align:right}
-.ciratearr{font-size:10px;color:rgba(70,224,255,.7);letter-spacing:1px}
-.ciratenext{font-weight:700;font-size:15px;color:#46ffb0;min-width:54px;text-align:left}
+/* item 1: Current/Next NOT bold; the countdown timer enlarged */
+.ciratenow{font-weight:400;font-size:14px;color:#dffaff;min-width:54px;text-align:right}
+.ciratearr{font-size:18px;font-weight:700;color:rgba(70,224,255,.95);letter-spacing:1px}
+.ciratenext{font-weight:400;font-size:14px;color:#46ffb0;min-width:54px;text-align:left}
 .ciratenote{margin-top:6px;font-family:'Rajdhani';font-size:11px;line-height:1.4;
   color:rgba(180,210,235,.7);text-align:center}
 .elgrid{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
@@ -2262,9 +2264,11 @@ function openWormhole(){G.sheetMode='chapters';setPlanetBg();
   const ORB=["PYRION","HELION","NIVORA","VIRELIOS"];
   let h=`<h4 style="justify-content:center;text-align:center">${T('wormhole')}</h4>`;
   h+=`<div class="sub" style="text-align:center;margin-top:4px;line-height:1.6;font-size:13px">${T('pick_domain')} (-${ECON.WORMHOLE_COST.toLocaleString()}p)</div>`;
-  h+=`<div style="width:100%;display:flex;justify-content:center;margin-top:8px;position:relative">
+  // item 4: centre the sphere vertically in the remaining space so it sits where the
+  // MAP sphere sits (no big jump on the wormhole->map transition).
+  h+=`<div style="width:100%;flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;position:relative">
     <canvas id="whCanvas" style="touch-action:none;cursor:grab"></canvas></div>`;
-  h+=`<div id="whInfo" style="min-height:40px;margin-top:6px"></div>`;
+  h+=`<div id="whInfo" style="min-height:40px;margin-top:6px;flex:none"></div>`;
   document.getElementById('chaptersInner').innerHTML=h;
   document.getElementById('chaptersModal').classList.add('show');
   const m=document.getElementById('chaptersModal');m.onclick=e=>{if(e.target===m)closeChapters();};
@@ -4047,7 +4051,10 @@ function battle3dDraw(){
         ctx.beginPath();ctx.arc(pt.sx,pt.sy,pt.R,0,7);ctx.fillStyle=hexA(col,0.5);ctx.fill();
         ctx.lineWidth=(b.sel===nd.i)?3.4:2.5;ctx.strokeStyle=(b.sel===nd.i)?'#46e0ff':col;ctx.stroke();
         ctx.fillStyle=col;ctx.font=`700 ${pt.R*0.9}px Rajdhani,sans-serif`;
-        ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText((EL[nd.z]&&EL[nd.z].sym)||'?',pt.sx,pt.sy);
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.lineWidth=Math.max(2.2,pt.R*0.16);ctx.strokeStyle='rgba(0,0,0,.85)';ctx.lineJoin='round';
+        ctx.strokeText((EL[nd.z]&&EL[nd.z].sym)||'?',pt.sx,pt.sy);
+        ctx.fillText((EL[nd.z]&&EL[nd.z].sym)||'?',pt.sx,pt.sy);
       }
     }
   }
@@ -4571,7 +4578,10 @@ function mol3dPaint(ctx,st,cx,cy,SCALE,rx,ry,blank,fillA){
         ctx.beginPath();ctx.arc(p.sx,p.sy,R,0,7);ctx.fillStyle=hexA(col,fillA);ctx.fill();
         ctx.lineWidth=2.5;ctx.strokeStyle=col;ctx.stroke();
         ctx.fillStyle=col;ctx.font=`700 ${R*0.9}px Rajdhani,sans-serif`;
-        ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText((EL[p.z]&&EL[p.z].sym)||'?',p.sx,p.sy);
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.lineWidth=Math.max(2.2,R*0.16);ctx.strokeStyle='rgba(0,0,0,.85)';ctx.lineJoin='round';
+        ctx.strokeText((EL[p.z]&&EL[p.z].sym)||'?',p.sx,p.sy);
+        ctx.fillText((EL[p.z]&&EL[p.z].sym)||'?',p.sx,p.sy);
       }
     }
   }
@@ -4656,7 +4666,10 @@ function mol3dStart(canvasId,compId,blank,noDrag,puzzle){
           ctx.beginPath();ctx.arc(p.sx,p.sy,R,0,7);ctx.fillStyle=hexA(col,0.5);ctx.fill();
           ctx.lineWidth=2.5;ctx.strokeStyle=col;ctx.stroke();
           ctx.fillStyle=col;ctx.font=`700 ${R*0.9}px Rajdhani,sans-serif`;
-          ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText((EL[fz]&&EL[fz].sym)||'?',p.sx,p.sy);
+          ctx.textAlign='center';ctx.textBaseline='middle';
+          ctx.lineWidth=Math.max(2.2,R*0.16);ctx.strokeStyle='rgba(0,0,0,.85)';ctx.lineJoin='round';
+          ctx.strokeText((EL[fz]&&EL[fz].sym)||'?',p.sx,p.sy);
+          ctx.fillText((EL[fz]&&EL[fz].sym)||'?',p.sx,p.sy);
         }
       }
     }
@@ -5109,19 +5122,8 @@ function renderScene(ts){
     // item 2: the LARGEST element's halo (the widest segment) gets pushed upward on
     // desktop and can land off the arc apex, reading as un-lit. Add a symmetric,
     // no-offset glow pass for it so the dominant element always glows.
-    if(segs.length){
-      const la=segs[0];   // segs are built in sorted (largest-first) order
-      ctx.shadowOffsetY=0;
-      // item 2: the largest element gets a real multi-layer glow on BOTH platforms —
-      // its stroke width is NOT scaled by haloW (which is ~0 on mobile and left it un-lit).
-      for(let k=4;k>=1;k--){ const f=k/4;
-        ctx.lineWidth=2+(3+14*arcBreath)*f*f;
-        ctx.globalAlpha=(0.14+0.18*arcBreath)*(1-f)*(1-f)+0.06;
-        ctx.shadowBlur=(14+18*f)*(_isMobile?1.5:1);
-        ctx.beginPath();ctx.arc(cx,cy,Rr,la[0],la[1]);
-        ctx.strokeStyle=EL[la[2]].color;ctx.shadowColor=EL[la[2]].color;ctx.stroke();
-      }
-    }
+    // item 5: the dedicated multi-layer glow on the largest element was an anomaly —
+    // removed. Every segment now glows uniformly via the HALO loop above.
     ctx.restore();ctx.shadowBlur=0;ctx.shadowOffsetY=0;ctx.globalAlpha=1;
     // Converge motes/atoms to the planet sphere's geometric center (cx,cy) — the
     // center of the huge curved surface, which sits below the screen, so the dots
