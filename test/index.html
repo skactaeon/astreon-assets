@@ -19,6 +19,18 @@
   box-shadow:0 0 10px 2px rgba(120,220,255,.8);opacity:.5;transition:opacity .3s}
 #notifStar.alert{animation:notifBlinkKf 1.05s ease-in-out infinite}
 @keyframes notifBlinkKf{0%,100%{opacity:.45;transform:scale(1)}50%{opacity:1;transform:scale(1.4)}}
+/* item 11: DOM achievement orbs over the upper starfield */
+#achOrbs{position:absolute;left:0;top:0;right:0;height:30%;pointer-events:none;z-index:6}
+.achOrb{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;cursor:pointer;text-align:center}
+.achOrb .od{width:15px;height:15px;border-radius:50%;margin:0 auto;
+  background:radial-gradient(circle at 40% 35%,#fff,var(--ac) 55%,transparent 100%);
+  box-shadow:0 0 11px 2px var(--ac);animation:achPulseKf 2.4s ease-in-out infinite}
+.achOrb.locked .od{background:radial-gradient(circle at 40% 35%,#aab,#5a6486 55%,transparent 100%);
+  box-shadow:0 0 6px 1px rgba(90,100,134,.6);animation:none;opacity:.6}
+.achOrb .ol{margin-top:5px;font-family:'Orbitron';font-weight:700;font-size:9px;letter-spacing:.4px;
+  color:var(--ac);white-space:nowrap;text-shadow:0 0 6px var(--ac)}
+.achOrb.locked .ol{color:rgba(150,160,185,.7);text-shadow:none}
+@keyframes achPulseKf{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--ink);font-family:'Rajdhani',sans-serif;user-select:none}
 body{position:fixed;inset:0}
@@ -716,6 +728,9 @@ button:not(.ckKey):not(.ckEl):not(.cxseg-btn):not(.cxseg-qty):not(.cxtab),.mapbt
   <div class="stage">
     <div class="infopanel" id="infoPanel"></div>
     <canvas id="sceneCanvas"></canvas>
+    <!-- item 11: achievement orbs drawn as DOM (the canvas version was painted on the
+         hidden #stars background and never showed). Always on top, directly tappable. -->
+    <div id="achOrbs"></div>
     <div class="toast" id="toast"></div>
 
     <!-- planet detail / map / codex share sheet -->
@@ -3352,6 +3367,21 @@ function blend(comp){let r=0,g=0,b=0,w=0;for(const c of comp){const rgb=hex2rgb(
 function hex2rgb(h){h=h.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
 function rgb2hex(r,g,b){return'#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');}
 function hexA(h,a){const[r,g,b]=hex2rgb(h);return`rgba(${r},${g},${b},${a})`;}
+// item 11: DOM-based achievement orbs (the canvas version drew on the hidden #stars
+// layer). Rebuilt only when levels change (cheap; called from renderTop / start).
+let _achOrbSig='';
+function renderAchOrbs(){
+  const host=document.getElementById('achOrbs'); if(!host||typeof ACHIEVEMENTS==='undefined'||!G)return;
+  const pos={voyaris:[13,10],noctis:[87,10],archivis:[15,48],magnis:[85,48]};
+  let sig='', h='';
+  for(const a of ACHIEVEMENTS){
+    const lv=achievementLevel(a.key); const col=achievementColor(a.key);
+    const p=pos[a.key]||[50,20]; sig+=a.key+lv+';';
+    h+=`<div class="achOrb ${lv>0?'':'locked'}" style="left:${p[0]}%;top:${p[1]}%;--ac:${col}" onclick="openAchievement('${a.key}')">`+
+       `<div class="od"></div><div class="ol">${lv>0?(a.en+' · '+SPECTRAL[lv-1]):a.en}</div></div>`;
+  }
+  if(sig!==_achOrbSig){ _achOrbSig=sig; host.innerHTML=h; }
+}
 function drawAchOrb(ctx,cx,cy,r,col,spin,glow,bright){
   const tilt=20*Math.PI/180;
   const small=r<=8;
@@ -6077,6 +6107,7 @@ function closeSheet(){document.getElementById('sheet').classList.remove('up');G.
 // ---- 14. HUD ----
 function renderTop(){let u=0;for(const p of G.planets)if(p.home||p.defeated)u++;
   if(G)syncAchievementStats();
+  if(typeof renderAchOrbs==='function')renderAchOrbs();   // item 11: refresh DOM orbs
   const wc=G.planets.length;
   const pv=document.getElementById('progv');if(pv)pv.textContent=u+"/"+wc;
   const on=document.getElementById('orbName');if(on)on.textContent='《 '+CHAPTERS[G.chapter].orb+' 》';
@@ -6326,7 +6357,8 @@ function startGame(){
     g.addColorStop(0,"#0c1230");g.addColorStop(1,"#03040a");ctx.fillStyle=g;ctx.fillRect(0,0,cv.width,cv.height);
     for(const s of stars){s.a+=s.s;const al=0.3+Math.abs(Math.sin(s.a))*0.7;
       ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,7);ctx.fillStyle=`rgba(180,210,255,${al})`;ctx.fill();}
-    if(typeof _cockpit==='undefined'||!_cockpit)drawAchievements();
+    // item 11: achievement orbs are now DOM (#achOrbs); the hidden-canvas version is off.
+    if(typeof window!=='undefined')window.__achHits=[];
     requestAnimationFrame(loop);}loop();})();
 
 (function(){const cv=document.getElementById('introStars');if(!cv)return;const ctx=cv.getContext('2d');let stars=[];
@@ -6344,7 +6376,8 @@ function startGame(){
 let _audio=null,_muted=false,_musicNodes=null;
 let _volLevel=3;
 let _sfxLevel=3;                 // separate sound-effects volume (0..5)
-const MUSIC_VOL_MAX=0.1375;   // item 1: background music volume halved
+const MUSIC_VOL_MAX=0.3;   // item 13: usable/audible volume range (halving to .1375 made
+                          // every level too quiet to tell apart — felt like "mute only")
 const SFX_SCALE=0.30;
 function bgAudioEl(){return document.getElementById('bgMusic');}
 function musicVol(){return _muted?0:(_volLevel/5)*MUSIC_VOL_MAX;}
