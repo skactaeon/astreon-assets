@@ -14,11 +14,13 @@
 }
 /* items 5/9/10: notification light-point in the upper starfield (down-right of the
    corner). A glowing dot that blinks when there is unseen activity. */
-#notifStar{position:absolute;left:24px;top:42px;z-index:45;cursor:pointer;width:11px;height:11px;border-radius:50%;
+#notifStar{position:absolute;left:46px;top:42px;z-index:45;cursor:pointer;width:11px;height:11px;border-radius:50%;
   background:radial-gradient(circle at 38% 34%,#ffffff,#9fe6ff 45%,rgba(70,224,255,.25) 75%,transparent 100%);
-  box-shadow:0 0 10px 2px rgba(120,220,255,.8);opacity:.5;transition:opacity .3s}
-#notifStar.alert{animation:notifBlinkKf 1.05s ease-in-out infinite}
-@keyframes notifBlinkKf{0%,100%{opacity:.45;transform:scale(1)}50%{opacity:1;transform:scale(1.4)}}
+  box-shadow:0 0 9px 1px rgba(120,220,255,.7);opacity:.5}
+/* item 1: GLOW pulse (no scale), frequency halved (2.1s) */
+#notifStar.alert{animation:notifGlowKf 2.1s ease-in-out infinite}
+@keyframes notifGlowKf{0%,100%{opacity:.5;box-shadow:0 0 8px 1px rgba(120,220,255,.5)}
+  50%{opacity:1;box-shadow:0 0 18px 6px rgba(120,220,255,1)}}
 /* item 11: DOM achievement orbs over the upper starfield */
 #achOrbs{position:absolute;left:0;top:0;right:0;height:30%;pointer-events:none;z-index:6}
 .achOrb{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;cursor:pointer;text-align:center}
@@ -27,8 +29,9 @@
   box-shadow:0 0 11px 2px var(--ac);animation:achPulseKf 2.4s ease-in-out infinite}
 .achOrb.locked .od{background:radial-gradient(circle at 40% 35%,#aab,#5a6486 55%,transparent 100%);
   box-shadow:0 0 6px 1px rgba(90,100,134,.6);animation:none;opacity:.6}
-.achOrb .ol{margin-top:5px;font-family:'Orbitron';font-weight:700;font-size:9px;letter-spacing:.4px;
-  color:var(--ac);white-space:nowrap;text-shadow:0 0 6px var(--ac)}
+/* item 2: label slanted from bottom-left to top-right */
+.achOrb .ol{margin-top:7px;font-family:'Orbitron';font-weight:700;font-size:9px;letter-spacing:.4px;
+  color:var(--ac);white-space:nowrap;text-shadow:0 0 6px var(--ac);transform:rotate(-24deg);transform-origin:left center}
 .achOrb.locked .ol{color:rgba(150,160,185,.7);text-shadow:none}
 @keyframes achPulseKf{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -274,8 +277,10 @@ body{position:fixed;inset:0}
 .cxtab{flex:4 1 0;padding:11px 0;cursor:pointer;border:none;
   font-family:'Rajdhani';font-weight:700;font-size:15px;letter-spacing:1px;
   color:var(--glow);text-shadow:0 0 8px rgba(70,224,255,.5);background:rgba(70,224,255,.12)}
-.cxtab:first-child{clip-path:polygon(0 0,100% 0,93% 100%,0 100%);border-radius:12px 0 0 0}
-.cxtab:last-child{clip-path:polygon(7% 0,100% 0,100% 100%,0 100%);border-radius:0 12px 0 0}
+/* item 4: fixed-px slant on both inner edges so the two seams are PARALLEL regardless
+   of the (different) tab widths */
+.cxtab:first-child{clip-path:polygon(0 0,100% 0,calc(100% - 11px) 100%,0 100%);border-radius:12px 0 0 0}
+.cxtab:last-child{clip-path:polygon(11px 0,100% 0,100% 100%,0 100%);border-radius:0 12px 0 0}
 .cxtab.on{flex-grow:6;background:linear-gradient(180deg,rgba(70,224,255,.85),rgba(70,160,255,.55));
   color:#04121c;text-shadow:none}
 /* FORMULA catalog: vertical scroll (no horizontal drag), 3 columns */
@@ -286,6 +291,9 @@ body{position:fixed;inset:0}
 .fxscroll{scrollbar-width:none}
 .fxscroll:active{cursor:grabbing}
 .fxgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:2px 2px 8px;width:100%}
+/* item 8: centred formula cells (used in the notification panel) */
+.fxgrid.fxgridcenter{display:flex;flex-wrap:wrap;justify-content:center;gap:7px}
+.fxgrid.fxgridcenter .fxcell{flex:0 0 30%;max-width:110px}
 /* held = lit constellation (full colour); unheld = dim, undiscovered constellation */
 .fxcell:not(.have) .fxmol{filter:grayscale(1) brightness(1.5) opacity(.3)}
 .fxcell.have .fxmol{filter:drop-shadow(0 0 6px rgba(70,224,255,.6))}
@@ -293,7 +301,7 @@ body{position:fixed;inset:0}
 /* item 5: 3-segment sliding sort toggle (like the ELEMENT EXTRACT/SYNTH pill) */
 /* item 6: FORMULA sort slider matches the ELEMENTS (cxseg) control exactly — same
    container, fill gradient, and button colour/size. */
-.fxseg{position:relative;display:flex;align-items:stretch;margin:8px auto;flex:none;
+.fxseg{position:relative;display:flex;align-items:stretch;margin:16px auto 8px;flex:none;
   width:min(255px,80cqw);height:44px;border:1px solid rgba(70,224,255,.5);
   background:rgba(70,224,255,.08);border-radius:999px;overflow:hidden;
   box-shadow:0 0 10px rgba(70,224,255,.35),inset 0 0 6px rgba(70,224,255,.12)}
@@ -790,16 +798,7 @@ button:not(.ckKey):not(.ckEl):not(.cxseg-btn):not(.cxseg-qty):not(.cxtab),.mapbt
     <div class="maplabel"><div class="planetslabel" id="orbName">《 PYRION 》</div><span class="navsub" id="progv">1/100</span></div>
     <div class="maphint" id="mapHint">PICK A PLANET TO TRAVEL</div>
     
-    <div id="testDropWrap" style="position:absolute;left:14px;top:64px;z-index:61;display:none;flex-direction:column;align-items:flex-start;gap:6px">
-      <button id="testToggleBtn" onclick="toggleTestMenu()" style="width:auto;padding:6px 14px;border-radius:14px;font-family:'Rajdhani';font-weight:700;font-size:12px;letter-spacing:1.5px;border:1.5px solid rgba(120,200,255,.6);background:rgba(10,18,36,.9);color:#7fc8ff;cursor:pointer;box-shadow:0 0 10px rgba(120,200,255,.25)">TEST &#9662;</button>
-      <div id="testMenu" style="display:none;flex-direction:column;gap:5px;background:rgba(8,11,24,.94);border:1px solid rgba(120,200,255,.3);border-radius:12px;padding:8px">
-        <button id="testTopUpBtn" onclick="testTopUp()" style="width:118px;padding:7px 0;border-radius:9px;font-family:'Rajdhani';font-weight:700;font-size:12px;letter-spacing:1px;border:1px solid rgba(120,224,170,.6);background:rgba(10,30,22,.82);color:#7fe0a8;cursor:pointer">TOPUP</button>
-        <button id="testFillBtn" onclick="fillAll()" style="width:118px;padding:7px 0;border-radius:9px;font-family:'Rajdhani';font-weight:700;font-size:12px;letter-spacing:1px;border:1px solid rgba(255,210,90,.65);background:rgba(40,32,8,.82);color:#ffd24d;cursor:pointer">FILL</button>
-        <button id="testEndBtn" onclick="endgameUnlock()" style="width:118px;padding:7px 0;border-radius:9px;font-family:'Rajdhani';font-weight:700;font-size:12px;letter-spacing:1px;border:1px solid rgba(190,140,255,.65);background:rgba(26,14,40,.82);color:#caa6ff;cursor:pointer">END</button>
-        <button id="testGotoH" onclick="gotoTestChapter(1)" style="width:118px;padding:7px 0;border-radius:9px;font-family:'Rajdhani';font-weight:700;font-size:13px;letter-spacing:1px;border:1px solid rgba(120,200,255,.65);background:rgba(10,24,40,.82);color:#7fc8ff;cursor:pointer">GO HELION</button>
-        <button id="testGotoN" onclick="gotoTestChapter(2)" style="width:118px;padding:7px 0;border-radius:9px;font-family:'Rajdhani';font-weight:700;font-size:13px;letter-spacing:1px;border:1px solid rgba(255,170,90,.65);background:rgba(38,22,8,.82);color:#ffb866;cursor:pointer">GO NIVORA</button>
-      </div>
-    </div>
+    <!-- item 11: TEST button menu removed; TOPUP now lives inside the STORE page. -->
     <div id="collectorDock" onclick="collectorHarvestNow()" style="position:absolute;left:8px;bottom:8px;z-index:62;display:none;cursor:pointer;perspective:300px"></div></div>
   <div class="codexmodal" id="chaptersModal"><div class="codexinner" id="chaptersInner"></div></div>
   <div class="codexmodal" id="zodiacModal"><div class="codexinner" id="zodiacInner"></div></div>
@@ -1964,6 +1963,7 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
+const GAME_VERSION='v1.1';   // item 13: shown on the cover; item 12: save is kept unless this changes
 const ECON={
   PICKS_PER_TICK:1,
   TICK_MS:5000,
@@ -3104,7 +3104,8 @@ function closeStore(){document.getElementById('storeModal').classList.remove('sh
 function renderStore(){const T=I18N[_lang];
   let h=`<h4 style="justify-content:center;text-align:center;flex:none;margin:6px 0 2px;font-size:22px">${T.store}</h4>`;
   h+=`<div class="fscontent storecontent">`+storeBodyMarkup()+`</div>`;
-  h+=`<div class="fsfoot storefoot"><button class="closebtn" onclick="closeStore()">${T.back}</button></div>`;
+  // item 11: TOPUP lives in the STORE now (the only test feature kept)
+  h+=`<div class="fsfoot storefoot" style="gap:12px"><button class="closebtn" onclick="testTopUp()">TOPUP</button><button class="closebtn" onclick="closeStore()">${T.back}</button></div>`;
   document.getElementById('storeInner').innerHTML=h;}
 function setLang(l){_lang='en';renderSetup();}
 function itemPriceUSD(it){return parseFloat(String(it.price).replace(/[^0-9.]/g,''))||0;}
@@ -3372,9 +3373,11 @@ function hexA(h,a){const[r,g,b]=hex2rgb(h);return`rgba(${r},${g},${b},${a})`;}
 let _achOrbSig='';
 function renderAchOrbs(){
   const host=document.getElementById('achOrbs'); if(!host||typeof ACHIEVEMENTS==='undefined'||!G)return;
-  const pos={voyaris:[13,10],noctis:[87,10],archivis:[15,48],magnis:[85,48]};
+  // item 2: Noctis removed; Archivis lower, Voyaris at Archivis's top-right, Magnis right.
+  const pos={voyaris:[31,33],archivis:[16,54],magnis:[85,46]};
   let sig='', h='';
   for(const a of ACHIEVEMENTS){
+    if(a.key==='noctis')continue;
     const lv=achievementLevel(a.key); const col=achievementColor(a.key);
     const p=pos[a.key]||[50,20]; sig+=a.key+lv+';';
     h+=`<div class="achOrb ${lv>0?'':'locked'}" style="left:${p[0]}%;top:${p[1]}%;--ac:${col}" onclick="openAchievement('${a.key}')">`+
@@ -3740,7 +3743,7 @@ function renderCollectorPicker(){
     const els=m.comp.slice().sort((a,b)=>(b.r-a.r)||(a.z-b.z));
     // Element cells use the SAME .dchip format as the main-scene bottom dock
     // (atomic number top-left, symbol centered, rate at the bottom), 7 per row.
-    h+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;justify-content:stretch;width:calc(100% + 34px);margin:0 -17px">`;
+    h+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;justify-content:stretch;width:calc(100% + 16px);margin:0 -8px">`;
     for(const c of els){const z=c.z;const on=_collPick.picks.includes(z);
       const eff=(c.r/_tot*100)*def.eff;
       const pct=_tot>0?fmtPct(eff):'';
@@ -4673,6 +4676,10 @@ function mol3dStart(canvasId,compId,blank,noDrag,puzzle){
   if(!noDrag){cv.addEventListener('pointerdown',pd);window.addEventListener('pointermove',pm);window.addEventListener('pointerup',pu);}
   if(puzzle){
     cv.addEventListener('click',tapAtom);
+    // item 10: explicit touch handler — on mobile a synthetic click may not fire when
+    // touch-action:none is set, so place the held element on touchend (a non-drag tap).
+    cv.addEventListener('touchend',function(ev){ const t=ev.changedTouches&&ev.changedTouches[0];
+      if(t)tapAtom({clientX:t.clientX,clientY:t.clientY}); },{passive:true});
     cv.addEventListener('dragover',e=>e.preventDefault());
     cv.addEventListener('drop',e=>{ e.preventDefault(); if(!puzzle.onDrop)return;
       let id=null; try{id=parseInt(e.dataTransfer.getData('text/plain'),10);}catch(_){}
@@ -4708,12 +4715,13 @@ function showCompoundInfo(compId){const f=COMPOUNDS[compId].text;const ci=CINFO[
     const hrs=planetStayHours(_cp), bonus=planetRateBonus(_cp);
     const base=formulaBaseRate(_cp), eff=base+bonus, next=eff+0.01;
     const owned=(G.formulas&&G.formulas[f])||0;
-    const inHourSec=(hrs*3600)%3600, mm=Math.floor(inHourSec/60), ss=Math.floor(inHourSec%60);
+    // item 9: COUNTDOWN to the next +0.01% (60:00 minus the time into the current hour)
+    const remSec=3600-((hrs*3600)%3600), mm=Math.floor(remSec/60), ss=Math.floor(remSec%60);
     const mmss=('0'+mm).slice(-2)+':'+('0'+ss).slice(-2);
     h+=`<div class="cirate"><div class="ciratehd">FORMULA DROP RATE</div>`;
-    // item 4 line 2: current rate -> live cumulative-stay timer -> next rate
+    // item 9 line 2: current rate · countdown · next rate (no icons)
     h+=`<div class="ciraterow"><span class="ciratenow">${eff.toFixed(2)}%</span>`+
-       `<span class="ciratearr">▶ <span id="cirateTimer">${mmss}</span> ▶</span>`+
+       `<span class="ciratearr"><span id="cirateTimer">${mmss}</span></span>`+
        `<span class="ciratenext">${next.toFixed(2)}%</span></div>`;
     // item 4 line 3: collected / holding counts (same style as the rate row)
     h+=`<div class="ciraterow"><span class="ciratenow">collected ×${owned}</span>`+
@@ -4735,8 +4743,8 @@ function showCompoundInfo(compId){const f=COMPOUNDS[compId].text;const ci=CINFO[
     window._cirateTimerIV=setInterval(()=>{
       const el=document.getElementById('cirateTimer');
       if(!el){ clearInterval(window._cirateTimerIV); window._cirateTimerIV=0; return; }
-      const sec=_snap+(performance.now()-_t0)/1000, ih=sec%3600;
-      const m=Math.floor(ih/60), s=Math.floor(ih%60);
+      const sec=_snap+(performance.now()-_t0)/1000, rem=3600-(sec%3600);
+      const m=Math.floor(rem/60), s=Math.floor(rem%60);
       el.textContent=('0'+m).slice(-2)+':'+('0'+s).slice(-2);
     },1000);
   }}
@@ -5819,7 +5827,14 @@ function formulaCatalogNum(){
   return _formulaNum;
 }
 var formulaSort='num';   // 'num' (by #) | 'have' (by holdings) | 'abc' (alphabetical)
-function formulaSetSort(s){ if(s===formulaSort)return; formulaSort=s; renderCodex(); setTimeout(attachCodexClose,10); }
+function formulaSetSort(s){ if(s===formulaSort)return; formulaSort=s;
+  // item 5: slide the fill on the EXISTING slider (transition), then re-sort the catalog.
+  const fill=document.querySelector('.fxseg-fill');
+  if(fill)fill.className='fxseg-fill '+(s==='num'?'p0':(s==='have'?'p1':'p2'));
+  const idx={num:0,have:1,abc:2}[s];
+  document.querySelectorAll('.fxseg-btn').forEach((b,i)=>b.classList.toggle('on',i===idx));
+  setTimeout(()=>{ renderCodex(); setTimeout(attachCodexClose,10); }, 280);
+}
 function formulaTabHTML(){
   G.formulas=G.formulas||{};
   const num=formulaCatalogNum();
@@ -5831,17 +5846,17 @@ function formulaTabHTML(){
     return (cb>0)-(ca>0) || cb-ca || num[a]-num[b];
   });
   else order.sort((a,b)=>num[a]-num[b]);
-  // (no instruction text) — just a redeem-message line that fades in on synth
-  let h=`<p class="cxhint" id="cxRedeemMsg" style="color:#ffd36e;min-height:15px;margin:0 0 6px;font-weight:400;opacity:0;transition:opacity .3s"></p>`;
-  // item 5: sort options as a 3-segment SLIDING toggle (like ELEMENT's EXTRACT/SYNTH),
-  // plus a help line explaining the tap-to-synthesize behaviour.
+  // item 5: the sort slider goes FIRST (same position/height as the ELEMENTS EXTRACT/SYNTH
+  // pill, which sits right under the tabs). 3-segment sliding toggle.
   const _seg=formulaSort==='num'?'p0':(formulaSort==='have'?'p1':'p2');
-  h+=`<div class="fxseg">`+
+  let h=`<div class="fxseg">`+
      `<div class="fxseg-fill ${_seg}"></div>`+
      `<button class="fxseg-btn ${formulaSort==='num'?'on':''}" onclick="formulaSetSort('num')">#</button>`+
      `<button class="fxseg-btn ${formulaSort==='have'?'on':''}" onclick="formulaSetSort('have')">OWNED</button>`+
      `<button class="fxseg-btn ${formulaSort==='abc'?'on':''}" onclick="formulaSetSort('abc')">A-Z</button>`+
      `</div>`;
+  // redeem-message line (fades in on synth) + the one-line help
+  h+=`<p class="cxhint" id="cxRedeemMsg" style="color:#ffd36e;min-height:15px;margin:0 0 4px;font-weight:400;opacity:0;transition:opacity .3s"></p>`;
   h+=`<p class="fxnote">Tap a formula to synthesize it.</p>`;
   // vertical-scrolling catalog (3/row); held = lit constellation, unheld = dim.
   h+=`<div class="fxscroll" id="cxScroll"><div class="fxgrid">`;
@@ -6175,7 +6190,7 @@ const SAVE_KEY="elementum_save_v1";
 function saveGame(){if(!G)return;
   try{
     const data={
-      v:1, chapter:G.chapter, points:G.points, hold:G.ship.hold,
+      v:1, ver:GAME_VERSION, chapter:G.chapter, points:G.points, hold:G.ship.hold,
       bossUnlocked:G.bossUnlocked, specials:G.specials, virelios:G.virelios, lastSeen:Date.now(),
       maxPoints:G.maxPoints||0, solvedTotal:G.solvedTotal||0, solvedNoSkip:G.solvedNoSkip||0,
       everBasic:G.everBasic||{}, peakBasic:G.peakBasic||{}, mileage:G.mileage||0,
@@ -6193,6 +6208,8 @@ function saveGame(){if(!G)return;
     localStorage.setItem(SAVE_KEY,JSON.stringify(data));
   }catch(e){}}
 function hasSave(){try{return !!localStorage.getItem(SAVE_KEY);}catch(e){return false;}}
+// item 12: read just the saved version (to decide keep-vs-wipe without a full load).
+function savedVersion(){try{const d=JSON.parse(localStorage.getItem(SAVE_KEY));return d&&d.ver;}catch(e){return null;}}
 function loadGame(){
   let data;try{data=JSON.parse(localStorage.getItem(SAVE_KEY));}catch(e){return false;}
   if(!data||data.v!==1)return false;
@@ -6256,28 +6273,37 @@ function showNotification(){
   if(!notifHasContent()){
     h+=`<div class="sub" style="text-align:center;margin:16px 0">Nothing new yet.</div>`;
   } else {
-    // item 6: gathered elements use the SAME .dchip format as the bottom dock.
-    const elGrid=(map)=>{
-      const zs=Object.keys(map).map(Number).sort((a,b)=>map[b]-map[a]);
-      let g=`<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:5px;max-width:330px;margin:8px auto 0;width:100%">`;
-      for(const z of zs.slice(0,18))g+=`<div class="dchip" style="color:${EL[z].color};background:${hexA(EL[z].color,0.3)}">`+
-        `<span class="zz">${z}</span><span class="sy">${EL[z].sym}</span><span class="dv">×${map[z]}</span></div>`;
+    // item 7: gathered elements use the SAME 7-per-row .dchip layout as the bottom dock;
+    // slots with nothing gathered render as an empty (hidden) placeholder.
+    const elGrid=(map, order)=>{
+      const zs=order||Object.keys(map).map(Number).sort((a,b)=>(map[b]||0)-(map[a]||0));
+      let g=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;max-width:340px;margin:8px auto 0;width:100%">`;
+      for(const z of zs){ const n=map[z]||0;
+        if(n<=0){ g+=`<div class="dchip" style="visibility:hidden"></div>`; continue; }
+        g+=`<div class="dchip" style="color:${EL[z].color};background:${hexA(EL[z].color,0.3)}">`+
+           `<span class="zz">${z}</span><span class="sy">${EL[z].sym}</span><span class="dv">×${n}</span></div>`;
+      }
       return g+`</div>`;
     };
+    // session order follows the current planet's dock order, plus any extra elements
+    // gathered elsewhere appended.
+    const _cp=(typeof curPlanet==='function')?curPlanet():null;
+    let dockSeq=(_cp&&_cp.comp&&_cp.comp.length)?_cp.comp.slice().sort((a,b)=>(b.r-a.r)||(a.z-b.z)).map(c=>c.z):[];
+    for(const k of Object.keys(N.el)){ const z=+k; if(dockSeq.indexOf(z)<0)dockSeq.push(z); }
     if(N.off && N.off.total>0){
       h+=`<div class="sub" style="text-align:center;margin-top:8px">While away (${N.off.hours}h) your harvester collected <b style="color:var(--glow)">${N.off.total}</b> atoms:</div>`;
       h+=elGrid(N.off.gained);
     }
     if(Object.keys(N.el).length){
       h+=`<div class="sub" style="text-align:center;margin-top:12px">Elements gathered this session:</div>`;
-      h+=elGrid(N.el);
+      h+=elGrid(N.el, dockSeq);
     }
     const fk=Object.keys(N.fx);
     if(fk.length){
-      // item 6: collected formulas use the SAME CODEX-catalog cell style (3D thumbnail).
+      // item 8: collected formulas — CODEX-catalog cells (3D), horizontally centred.
       const num=(typeof formulaCatalogNum==='function')?formulaCatalogNum():{};
       h+=`<div class="sub" style="text-align:center;margin-top:12px">Formulas collected this session:</div>`;
-      h+=`<div class="fxscroll" style="max-height:30cqh;cursor:default"><div class="fxgrid">`;
+      h+=`<div class="fxscroll" style="max-height:30cqh;cursor:default"><div class="fxgrid fxgridcenter">`;
       for(const f of fk){
         const ci=COMPOUNDS.findIndex(c=>c.text===f); if(ci<0)continue;
         const nt=`#${String(num[ci]||0).padStart(3,'0')}`;
@@ -6296,8 +6322,14 @@ function showNotification(){
 }
 function startGame(){
   const hasSaveBeforeStart=hasSave();
-  if(TEST_MODE){try{localStorage.removeItem(SAVE_KEY);}catch(e){}newGame();}
-  else if(hasSave()){if(!loadGame())newGame();}else newGame();
+  // item 12: keep the save across reloads (so offline income accrues). Only wipe when
+  // the GAME_VERSION changes (i.e. a new build is pushed).
+  let loaded=false;
+  if(hasSave()){
+    if(savedVersion()===GAME_VERSION){ loaded=loadGame(); }
+    else { try{localStorage.removeItem(SAVE_KEY);}catch(e){} }
+  }
+  if(!loaded)newGame();
   document.getElementById('intro').style.display="none";
   setupScene();renderTop();renderHolds();
   window.addEventListener('resize',()=>{setupScene();if(G&&G.sheetMode==='map')drawMap();});
@@ -6309,8 +6341,9 @@ function startGame(){
   // When the cover sequence is driving start, defer the tutorial decision to the
   // post-cover skip overlay (see opening sequence). _tutChoicePending suppresses the
   // automatic start here so the overlay can offer START / SKIP tutorial.
-  if(TEST_MODE){ G.tutorialDone=false; if(!window._tutChoicePending) setTimeout(maybeStartTutorial,700); }
-  else if(!G.tutorialDone && !hasSaveBeforeStart){ if(!window._tutChoicePending) setTimeout(maybeStartTutorial,700); }}
+  // item 12: only offer the tutorial on a genuinely fresh start (no kept save), even in
+  // TEST_MODE — otherwise it would re-appear on every reload now that saves persist.
+  if(!G.tutorialDone && !loaded){ if(!window._tutChoicePending) setTimeout(maybeStartTutorial,700); }}
 
 // starfield
 (function(){const cv=document.getElementById('stars');const ctx=cv.getContext('2d');let stars=[];
@@ -6400,13 +6433,17 @@ function playBg(){
   const src=el.getAttribute('src');
   if(!src||src==='MUSIC_URL_HERE')return;
   ensureBgSrc();
-  el.loop=true;el.volume=musicVol();
+  el.loop=true;el.volume=(_musicNodes&&_musicNodes.musicGain)?1:musicVol();
   _bgWantPlay=true;
   const p=el.play();
   if(p&&p.catch)p.catch(()=>{  });
 }
 function setVolume(n){_volLevel=Math.max(0,Math.min(5,n));_muted=(_volLevel===0);
-  const el=bgAudioEl();if(el){el.volume=musicVol();if(_muted)el.pause();else playBg();}
+  const gain=_musicNodes&&_musicNodes.musicGain;
+  const el=bgAudioEl();
+  if(el){ el.volume=gain?1:musicVol(); if(_muted)el.pause();else playBg(); }
+  // item 6: on mobile el.volume is ignored — drive the Web Audio gain node instead.
+  if(gain){ try{ gain.gain.value=_muted?0:musicVol(); }catch(e){} }
   if(!_audio&&!_muted)startMusic();
   if(_audio&&_audio.state==='suspended'&&_audio.resume)_audio.resume();
   if(G&&G.sheetMode==='setup')renderSetup();}
@@ -6415,6 +6452,17 @@ function startMusic(){
   if(_audio)return;
   try{_audio=new (window.AudioContext||window.webkitAudioContext)();}catch(e){_audio=null;return;}
   const master=_audio.createGain();master.gain.value=1;master.connect(_audio.destination);_musicNodes={master};
+  // item 6: route the bg <audio> through a gain node so volume control works on MOBILE
+  // (mobile browsers ignore HTMLMediaElement.volume). createMediaElementSource is once-only.
+  try{
+    const el=bgAudioEl();
+    if(el && !_musicNodes.musicGain){
+      const srcNode=_audio.createMediaElementSource(el);
+      const mg=_audio.createGain(); mg.gain.value=_muted?0:musicVol();
+      srcNode.connect(mg); mg.connect(_audio.destination);
+      _musicNodes.musicGain=mg; el.volume=1;   // element at full; the gain sets loudness
+    }
+  }catch(e){}
   if(_audio.state==='suspended'&&_audio.resume)_audio.resume();
 }
 // Starship attack SFX: a short burst of descending laser zaps (WebAudio synth).
@@ -6585,6 +6633,13 @@ function toggleMute(){setVolume(_muted?3:0);}
         +'color:#46e0ff;text-shadow:0 0 10px rgba(70,224,255,.85),0 0 4px rgba(0,0,0,.9),0 1px 2px rgba(0,0,0,.9);'
         +'pointer-events:none;z-index:71;animation:tapHintBreath 2s ease-in-out infinite';
       intro.appendChild(hint);
+      // item 13: current version, just above the TAP TO BEGIN prompt
+      var ver=document.createElement('div');
+      ver.textContent=(typeof GAME_VERSION!=='undefined'?GAME_VERSION:'');
+      ver.style.cssText='position:absolute;left:0;right:0;top:67%;text-align:center;'
+        +"font-family:'Rajdhani',sans-serif;font-weight:600;font-size:12px;letter-spacing:3px;"
+        +'color:rgba(150,200,235,.7);text-shadow:0 1px 2px rgba(0,0,0,.9);pointer-events:none;z-index:71';
+      intro.appendChild(ver);
       if(!document.getElementById('tapHintKF')){
         var st=document.createElement('style'); st.id='tapHintKF';
         st.textContent='@keyframes tapHintBreath{0%,100%{opacity:.35}50%{opacity:1}}';
