@@ -12,11 +12,13 @@
   --ok:#46ffb0;--warn:#ffd24a;--bad:#ff5c6e;--panel:rgba(10,16,40,.72);
   --fs-min:10px;   /* item 11: the game's MINIMUM font-size baseline ("set xxx to minimum font") */
 }
-/* items 9/10: notification star at the top-left of the starfield */
-#notifStar{position:absolute;left:10px;top:7px;z-index:45;cursor:pointer;font-size:20px;line-height:1;
-  color:#ffe27a;text-shadow:0 0 9px rgba(255,226,122,.9);user-select:none;opacity:.45;transition:opacity .3s}
+/* items 5/9/10: notification light-point in the upper starfield (down-right of the
+   corner). A glowing dot that blinks when there is unseen activity. */
+#notifStar{position:absolute;left:24px;top:42px;z-index:45;cursor:pointer;width:11px;height:11px;border-radius:50%;
+  background:radial-gradient(circle at 38% 34%,#ffffff,#9fe6ff 45%,rgba(70,224,255,.25) 75%,transparent 100%);
+  box-shadow:0 0 10px 2px rgba(120,220,255,.8);opacity:.5;transition:opacity .3s}
 #notifStar.alert{animation:notifBlinkKf 1.05s ease-in-out infinite}
-@keyframes notifBlinkKf{0%,100%{opacity:.4;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}
+@keyframes notifBlinkKf{0%,100%{opacity:.45;transform:scale(1)}50%{opacity:1;transform:scale(1.4)}}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--ink);font-family:'Rajdhani',sans-serif;user-select:none}
 body{position:fixed;inset:0}
@@ -254,15 +256,15 @@ body{position:fixed;inset:0}
 /* file-folder style tabs: tabs sit on a shared baseline; the active one rises and
    merges into the content below it */
 /* two tabs filling the full width, slanted (parallelogram) edges, muted text */
-/* item 13: ELEMENTS/FORMULAS tabs — EQUAL width, NO slide; the 1px gap is just the
-   spacing between the two tabs. Active tab highlighted (gradient), styled like EXTRACT. */
-.cxtabs{display:flex;gap:1px;width:min(264px,84cqw);margin:0 auto 4px;border-radius:999px;overflow:hidden;
-  border:1px solid rgba(70,224,255,.5);background:rgba(70,224,255,.08);
-  box-shadow:0 0 10px rgba(70,224,255,.35),inset 0 0 6px rgba(70,224,255,.12)}
-.cxtab{flex:1 1 0;padding:10px 0;cursor:pointer;border:none;background:transparent;
+/* item 9: FOLDER-style tabs — active tab is 60% of the width, the inactive 40%, with a
+   1px DIAGONAL seam between them (slanted inner edges + 1px gap). No slide animation. */
+.cxtabs{display:flex;gap:1px;width:min(330px,94cqw);margin:0 auto 4px}
+.cxtab{flex:4 1 0;padding:11px 0;cursor:pointer;border:none;
   font-family:'Rajdhani';font-weight:700;font-size:15px;letter-spacing:1px;
-  color:var(--glow);text-shadow:0 0 8px rgba(70,224,255,.5);transition:background .2s,color .2s}
-.cxtab.on{background:linear-gradient(180deg,rgba(70,224,255,.85),rgba(70,160,255,.55));
+  color:var(--glow);text-shadow:0 0 8px rgba(70,224,255,.5);background:rgba(70,224,255,.12)}
+.cxtab:first-child{clip-path:polygon(0 0,100% 0,93% 100%,0 100%);border-radius:12px 0 0 0}
+.cxtab:last-child{clip-path:polygon(7% 0,100% 0,100% 100%,0 100%);border-radius:0 12px 0 0}
+.cxtab.on{flex-grow:6;background:linear-gradient(180deg,rgba(70,224,255,.85),rgba(70,160,255,.55));
   color:#04121c;text-shadow:none}
 /* FORMULA catalog: vertical scroll (no horizontal drag), 3 columns */
 /* FORMULA catalog: horizontally FIXED, vertical scroll (wheel + drag), 3 cells/row.
@@ -707,9 +709,9 @@ button:not(.ckKey):not(.ckEl):not(.cxseg-btn):not(.cxseg-qty):not(.cxtab),.mapbt
   <div class="topbar">
     <div class="logo" id="logoMain"></div>
   </div>
-  <!-- items 9/10: notification star (top-left of the starfield). Blinks when there is
+  <!-- items 9/10: notification light-point (upper starfield). Blinks when there is
        unseen activity (elements/formulas gathered, offline income). Tap to open. -->
-  <div id="notifStar" onclick="showNotification()">✦</div>
+  <div id="notifStar" onclick="showNotification()"></div>
 
   <div class="stage">
     <div class="infopanel" id="infoPanel"></div>
@@ -2365,7 +2367,7 @@ var _PLANET_HY_ADJ={};
 var _PLANET_SCALE_ADJ={};
 // Per-image limb circle (cx,cy,r) in canonical 868x1812 px, from detect_limb.py. The
 // game maps each circle onto the rim arc automatically (no per-planet hand tuning).
-var _planetImgCircle={P01:{cx:434.8,cy:2101.8,r:1493.7},P02:{cx:436.9,cy:2097.6,r:1499.7},P03:{cx:451.3,cy:2155.7,r:1550.7},P04:{cx:443.4,cy:2131.1,r:1523.5},P05:{cx:434.8,cy:2154.0,r:1546.1},P06:{cx:435.3,cy:2062.2,r:1460.0},P07:{cx:439.3,cy:2086.4,r:1480.8},P08:{cx:443.3,cy:2119.5,r:1513.5},P09:{cx:432.8,cy:1998.8,r:1370.1},P10:{cx:441.6,cy:2500.6,r:1787.5},P11:{cx:440.3,cy:2511.2,r:1797.6},P12:{cx:443.7,cy:2376.2,r:1654.0},P13:{cx:435.7,cy:2380.2,r:1671.0},P14:{cx:433.3,cy:2354.9,r:1645.5},P15:{cx:435.1,cy:2376.5,r:1662.4},P16:{cx:435.7,cy:2379.5,r:1668.7},P17:{cx:435.6,cy:2244.2,r:1526.4},P18:{cx:423.3,cy:2254.3,r:1521.7},P19:{cx:424.4,cy:2313.1,r:1590.7},P20:{cx:433.0,cy:2246.8,r:1534.9},P21:{cx:439.8,cy:2027.3,r:1360.7},P22:{cx:412.4,cy:2140.7,r:1537.5},P23:{cx:416.6,cy:2068.3,r:1449.0},P24:{cx:429.1,cy:2459.4,r:1801.8},P25:{cx:418.7,cy:2295.4,r:1654.4},P26:{cx:422.8,cy:2156.2,r:1521.8},P27:{cx:430.4,cy:2232.4,r:1584.7},P28:{cx:432.3,cy:2287.0,r:1637.0},P29:{cx:435.6,cy:2146.7,r:1537.6},P30:{cx:433.2,cy:2167.2,r:1556.5},P31:{cx:433.8,cy:2137.5,r:1526.6},P32:{cx:434.2,cy:2143.7,r:1533.1},P33:{cx:438.6,cy:2158.3,r:1547.7},P34:{cx:437.0,cy:2167.0,r:1557.1},P35:{cx:433.8,cy:2151.2,r:1540.2},P36:{cx:434.1,cy:1872.5,r:1290.3},P37:{cx:434.0,cy:1876.7,r:1293.8},P38:{cx:437.3,cy:1902.3,r:1303.4},P39:{cx:438.1,cy:1866.8,r:1281.3},P40:{cx:435.8,cy:1873.0,r:1286.7},P41:{cx:435.1,cy:1835.2,r:1240.8},P42:{cx:436.4,cy:1821.5,r:1226.1},P43:{cx:437.0,cy:1820.2,r:1222.1},P44:{cx:434.0,cy:1831.3,r:1234.7},P45:{cx:434.9,cy:2136.7,r:1515.6},P46:{cx:437.3,cy:2138.9,r:1493.6},P47:{cx:436.3,cy:2131.2,r:1484.8},P48:{cx:432.4,cy:2173.9,r:1522.0},P49:{cx:431.9,cy:2062.4,r:1436.4},P50:{cx:434.3,cy:2125.2,r:1471.6},P51:{cx:433.1,cy:2190.6,r:1519.8},P52:{cx:439.7,cy:2072.1,r:1409.4},P53:{cx:434.1,cy:2139.4,r:1484.2},P54:{cx:439.7,cy:2212.0,r:1536.2},P55:{cx:438.5,cy:2227.0,r:1518.9},P56:{cx:444.3,cy:2068.1,r:1383.9},P57:{cx:446.8,cy:2098.8,r:1418.1},P58:{cx:434.4,cy:2155.1,r:1435.1},P59:{cx:439.7,cy:2147.6,r:1428.9},P60:{cx:441.2,cy:2119.4,r:1397.2},P61:{cx:438.4,cy:2201.1,r:1478.0},P62:{cx:436.8,cy:2159.0,r:1437.1},P63:{cx:437.0,cy:2167.4,r:1444.8},P64:{cx:443.9,cy:2392.3,r:1706.2},P65:{cx:437.7,cy:2295.6,r:1617.4},P66:{cx:441.7,cy:2267.0,r:1577.1},P67:{cx:433.4,cy:2266.7,r:1601.3},P68:{cx:440.8,cy:2300.0,r:1620.8},P69:{cx:441.1,cy:2238.4,r:1554.8},P70:{cx:434.6,cy:2261.3,r:1605.9},P71:{cx:436.7,cy:2220.8,r:1531.8},P72:{cx:438.7,cy:2035.1,r:1434.3}};
+var _planetImgCircle={P01:{cx:434.8,cy:2101.8,r:1493.7},P02:{cx:436.9,cy:2097.6,r:1499.7},P03:{cx:451.3,cy:2155.7,r:1550.7},P04:{cx:443.4,cy:2131.1,r:1523.5},P05:{cx:434.8,cy:2154.0,r:1546.1},P06:{cx:435.3,cy:2062.2,r:1460.0},P07:{cx:439.3,cy:2086.4,r:1480.8},P08:{cx:443.3,cy:2119.5,r:1513.5},P09:{cx:432.8,cy:1998.8,r:1370.1},P10:{cx:441.6,cy:2500.6,r:1787.5},P100:{cx:445.7,cy:2062.4,r:1351.0},P11:{cx:440.3,cy:2511.2,r:1797.6},P12:{cx:443.7,cy:2376.2,r:1654.0},P13:{cx:435.7,cy:2380.2,r:1671.0},P14:{cx:433.3,cy:2354.9,r:1645.5},P15:{cx:435.1,cy:2376.5,r:1662.4},P16:{cx:435.7,cy:2379.5,r:1668.7},P17:{cx:435.6,cy:2244.2,r:1526.4},P18:{cx:423.3,cy:2254.3,r:1521.7},P19:{cx:424.4,cy:2313.1,r:1590.7},P20:{cx:433.0,cy:2246.8,r:1534.9},P21:{cx:439.8,cy:2027.3,r:1360.7},P22:{cx:412.4,cy:2140.7,r:1537.5},P23:{cx:416.6,cy:2068.3,r:1449.0},P24:{cx:429.1,cy:2459.4,r:1801.8},P25:{cx:418.7,cy:2295.4,r:1654.4},P26:{cx:422.8,cy:2156.2,r:1521.8},P27:{cx:430.4,cy:2232.4,r:1584.7},P28:{cx:432.3,cy:2287.0,r:1637.0},P29:{cx:435.6,cy:2146.7,r:1537.6},P30:{cx:433.2,cy:2167.2,r:1556.5},P31:{cx:433.8,cy:2137.5,r:1526.6},P32:{cx:434.2,cy:2143.7,r:1533.1},P33:{cx:438.6,cy:2158.3,r:1547.7},P34:{cx:437.0,cy:2167.0,r:1557.1},P35:{cx:433.8,cy:2151.2,r:1540.2},P36:{cx:434.1,cy:1872.5,r:1290.3},P37:{cx:434.0,cy:1876.7,r:1293.8},P38:{cx:437.3,cy:1902.3,r:1303.4},P39:{cx:438.1,cy:1866.8,r:1281.3},P40:{cx:435.8,cy:1873.0,r:1286.7},P41:{cx:435.1,cy:1835.2,r:1240.8},P42:{cx:436.4,cy:1821.5,r:1226.1},P43:{cx:437.0,cy:1820.2,r:1222.1},P44:{cx:434.0,cy:1831.3,r:1234.7},P45:{cx:434.9,cy:2136.7,r:1515.6},P46:{cx:437.3,cy:2138.9,r:1493.6},P47:{cx:436.3,cy:2131.2,r:1484.8},P48:{cx:432.4,cy:2173.9,r:1522.0},P49:{cx:431.9,cy:2062.4,r:1436.4},P50:{cx:434.3,cy:2125.2,r:1471.6},P51:{cx:433.1,cy:2190.6,r:1519.8},P52:{cx:439.7,cy:2072.1,r:1409.4},P53:{cx:434.1,cy:2139.4,r:1484.2},P54:{cx:439.7,cy:2212.0,r:1536.2},P55:{cx:438.5,cy:2227.0,r:1518.9},P56:{cx:444.3,cy:2068.1,r:1383.9},P57:{cx:446.8,cy:2098.8,r:1418.1},P58:{cx:434.4,cy:2155.1,r:1435.1},P59:{cx:439.7,cy:2147.6,r:1428.9},P60:{cx:441.2,cy:2119.4,r:1397.2},P61:{cx:438.4,cy:2201.1,r:1478.0},P62:{cx:436.8,cy:2159.0,r:1437.1},P63:{cx:437.0,cy:2167.4,r:1444.8},P64:{cx:443.9,cy:2392.3,r:1706.2},P65:{cx:437.7,cy:2295.6,r:1617.4},P66:{cx:441.7,cy:2267.0,r:1577.1},P67:{cx:433.4,cy:2266.7,r:1601.3},P68:{cx:440.8,cy:2300.0,r:1620.8},P69:{cx:441.1,cy:2238.4,r:1554.8},P70:{cx:434.6,cy:2261.3,r:1605.9},P71:{cx:436.7,cy:2220.8,r:1531.8},P72:{cx:438.7,cy:2035.1,r:1434.3},P73:{cx:436.3,cy:2386.1,r:1827.9},P74:{cx:442.4,cy:2416.8,r:1819.2},P75:{cx:434.6,cy:2309.0,r:1713.0},P76:{cx:434.3,cy:2003.3,r:1416.9},P77:{cx:446.5,cy:1909.7,r:1292.2},P78:{cx:442.6,cy:2329.7,r:1625.4},P79:{cx:433.5,cy:1803.3,r:1190.5},P80:{cx:434.6,cy:1712.7,r:1112.6},P81:{cx:432.8,cy:2617.5,r:1913.2},P82:{cx:437.0,cy:2124.5,r:1507.0},P83:{cx:426.4,cy:2314.1,r:1627.9},P84:{cx:454.9,cy:1956.3,r:1309.6},P85:{cx:436.0,cy:1950.1,r:1215.8},P86:{cx:432.6,cy:2154.4,r:1609.0},P87:{cx:434.4,cy:1902.9,r:1223.3},P88:{cx:432.8,cy:1826.7,r:1229.8},P89:{cx:441.4,cy:2262.2,r:1632.4},P90:{cx:435.4,cy:2606.7,r:1971.8},P91:{cx:433.1,cy:2271.7,r:1512.4},P92:{cx:438.5,cy:2135.8,r:1555.3},P93:{cx:439.7,cy:1964.4,r:1274.6},P94:{cx:440.2,cy:1945.5,r:1379.4},P95:{cx:434.9,cy:1952.6,r:1288.3},P96:{cx:439.7,cy:2279.1,r:1610.1},P97:{cx:430.1,cy:1978.5,r:1250.6},P98:{cx:435.5,cy:2315.7,r:1669.9},P99:{cx:445.8,cy:2062.5,r:1352.7}};
 // Per-image REAL visible-horizon y (at the canonical 868x1812 size), auto-detected
 // by detect_horizon.py. Each planet aligns ITS OWN horizon to the rim arc, since the
 // AI photos place the horizon at different heights. Missing codes fall back to 628.
@@ -3672,7 +3674,7 @@ function renderCollectorPicker(){
   const m=motherPlanet();if(!m||!m.comp){return;}
   const UC=COLLECTORS.D.color;
   const VERB=(_collMode==='change')?'Change':'Choose';
-  const YIELD={D:'150%',N:'60% each',W:'30% each'};
+  const YIELD={D:'130%',N:'55% each',W:'30% each'};   // item 7: match COLLECTORS.eff (1.3/0.55/0.3)
   let h='';
   if(!_collPick.type){
     // Type-choosing screen: whole block vertically centered in the modal, no BACK.
@@ -4675,22 +4677,39 @@ function showCompoundInfo(compId){const f=COMPOUNDS[compId].text;const ci=CINFO[
   if(_cp && _cp.defeated && _cp.compId===compId){
     const hrs=planetStayHours(_cp), bonus=planetRateBonus(_cp);
     const base=formulaBaseRate(_cp), eff=base+bonus, next=eff+0.01;
-    h+=`<div class="cirate"><div class="ciratehd">FORMULA DROP RATE</div>`;
-    h+=`<div class="ciraterow"><span class="ciratesym" style="color:#9fe7ff;width:auto">${f}</span>`+
-       `<span class="ciratenow">${eff.toFixed(2)}%</span>`+
-       `<span class="ciratearr">▶ +1h ▶</span>`+
-       `<span class="ciratenext">${next.toFixed(2)}%</span></div>`;
-    // item 6: minutes until the next +0.01% step, plus collected / holding counts
-    const stayMin=hrs*60, nextMin=Math.max(1,Math.ceil(60-(stayMin%60)));
     const owned=(G.formulas&&G.formulas[f])||0;
-    h+=`<div class="ciratenote">Next +0.01% in ~${nextMin} min · collected ×${owned} · holding ×${owned}</div>`;
-    h+=`<div class="ciratenote">Chance per tick to collect this formula into your CODEX. Stayed ${hrs.toFixed(1)}h here.</div>`;
+    const inHourSec=(hrs*3600)%3600, mm=Math.floor(inHourSec/60), ss=Math.floor(inHourSec%60);
+    const mmss=('0'+mm).slice(-2)+':'+('0'+ss).slice(-2);
+    h+=`<div class="cirate"><div class="ciratehd">FORMULA DROP RATE</div>`;
+    // item 4 line 2: current rate -> live cumulative-stay timer -> next rate
+    h+=`<div class="ciraterow"><span class="ciratenow">${eff.toFixed(2)}%</span>`+
+       `<span class="ciratearr">▶ <span id="cirateTimer">${mmss}</span> ▶</span>`+
+       `<span class="ciratenext">${next.toFixed(2)}%</span></div>`;
+    // item 4 line 3: collected / holding counts (same style as the rate row)
+    h+=`<div class="ciraterow"><span class="ciratenow">collected ×${owned}</span>`+
+       `<span class="ciratearr">·</span>`+
+       `<span class="ciratenext">holding ×${owned}</span></div>`;
+    // item 4 line 4: detailed description in the system colour
+    h+=`<div class="ciratenote" style="color:var(--glow)">Cumulative stay collection rate. Every full hour on this planet raises the formula drop rate by +0.01%.</div>`;
     h+=`</div>`;
   }
   h+=`</div>`;
   h+=`<div class="fsfoot"><button class="closebtn" onclick="mol3dStop();closeModal();closeMap();closeSheet();renderSceneStatic();checkConstellations()">${T('back')}</button></div>`;
   openModal(h,false,true);
-  setTimeout(()=>mol3dStart('mol3dCanvas',compId),40);}
+  setTimeout(()=>mol3dStart('mol3dCanvas',compId),40);
+  // item 4: live cumulative-stay timer (mm:ss within the current hour). Real-time
+  // interpolated for smoothness; self-clears when the panel closes.
+  if(window._cirateTimerIV){clearInterval(window._cirateTimerIV);window._cirateTimerIV=0;}
+  if(_cp && _cp.defeated && _cp.compId===compId){
+    const _t0=performance.now(), _snap=planetStayHours(_cp)*3600;
+    window._cirateTimerIV=setInterval(()=>{
+      const el=document.getElementById('cirateTimer');
+      if(!el){ clearInterval(window._cirateTimerIV); window._cirateTimerIV=0; return; }
+      const sec=_snap+(performance.now()-_t0)/1000, ih=sec%3600;
+      const m=Math.floor(ih/60), s=Math.floor(ih%60);
+      el.textContent=('0'+m).slice(-2)+':'+('0'+s).slice(-2);
+    },1000);
+  }}
 function solvedStructureSVG(compId,maxW,maxH){
   const slots=buildChain(compId);const bonds=chainBonds(compId);
   let minX=99,maxX=-99,minY=99,maxY=-99;
@@ -5141,15 +5160,12 @@ function renderScene(ts){
       const st3=STRUCT2D[f];
       const ry=t*0.45, rx=Math.sin(t*0.3)*0.5+0.45;
       const SCALE=fr*0.42;
-      // glow like the battle-end gold formula but in the SYSTEM colour — the whole
-      // silhouette emits a cyan glow (double canvas shadow). item 10: the molecule is
-      // fully opaque (globalAlpha 1.0); only the element base-colour FILL is 0.7.
+      // item 2/4: ONE fill pass so the element base-colour alpha is exactly 0.5 (drawing
+      // twice was stacking it to ~0.75). System-colour glow comes from the canvas shadow.
       ctx.save();
       ctx.globalAlpha=1.0;
-      ctx.shadowColor='#46e0ff'; ctx.shadowBlur=30;
-      mol3dPaint(ctx,st3,fcx,fcy,SCALE,rx,ry,false,0.5);   // outer wide glow (item 4: fill 0.5)
-      ctx.shadowBlur=14;
-      mol3dPaint(ctx,st3,fcx,fcy,SCALE,rx,ry,false,0.5);   // inner tight glow
+      ctx.shadowColor='#46e0ff'; ctx.shadowBlur=26;
+      mol3dPaint(ctx,st3,fcx,fcy,SCALE,rx,ry,false,0.5);
       ctx.restore();
     }
     // ratio + gathered counts are now shown together in the dock chips (renderHolds);
@@ -5852,7 +5868,7 @@ function formula3dStart(){
       const ctx=cv._ctx, st=cv._st;
       ctx.clearRect(0,0,cv._w,cv._h);
       let maxR=0.5; for(const at of st.a){const rr=Math.hypot(at[1],at[2],at[3]); if(rr>maxR)maxR=rr;}
-      const SCALE=Math.min(cv._w,cv._h)*0.46/(maxR+0.6);   // 120%-ish vs the old SVG thumb
+      const SCALE=Math.min(cv._w,cv._h)*0.55/(maxR+0.6);   // item 10: enlarged to ~120%
       const ry=t*0.6+(+cv.dataset.cid)*0.7, rx=Math.sin(t*0.4+(+cv.dataset.cid))*0.4+0.4;
       mol3dPaint(ctx,st,cv._w/2,cv._h/2,SCALE,rx,ry,false);
     }
@@ -6209,29 +6225,41 @@ function showNotification(){
   if(!notifHasContent()){
     h+=`<div class="sub" style="text-align:center;margin:16px 0">Nothing new yet.</div>`;
   } else {
+    // item 6: gathered elements use the SAME .dchip format as the bottom dock.
+    const elGrid=(map)=>{
+      const zs=Object.keys(map).map(Number).sort((a,b)=>map[b]-map[a]);
+      let g=`<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:5px;max-width:330px;margin:8px auto 0;width:100%">`;
+      for(const z of zs.slice(0,18))g+=`<div class="dchip" style="color:${EL[z].color};background:${hexA(EL[z].color,0.3)}">`+
+        `<span class="zz">${z}</span><span class="sy">${EL[z].sym}</span><span class="dv">×${map[z]}</span></div>`;
+      return g+`</div>`;
+    };
     if(N.off && N.off.total>0){
-      const oz=Object.keys(N.off.gained).map(Number).sort((a,b)=>N.off.gained[b]-N.off.gained[a]).slice(0,10);
       h+=`<div class="sub" style="text-align:center;margin-top:8px">While away (${N.off.hours}h) your harvester collected <b style="color:var(--glow)">${N.off.total}</b> atoms:</div>`;
-      h+=`<div class="elgrid" style="margin-top:8px;justify-content:center">`;
-      for(const z of oz)h+=`<div class="elpick"><div class="s" style="color:${EL[z].color}">${EL[z].sym}</div><div class="q">×${N.off.gained[z]}</div></div>`;
-      h+=`</div>`;
+      h+=elGrid(N.off.gained);
     }
-    const ez=Object.keys(N.el).map(Number).sort((a,b)=>N.el[b]-N.el[a]);
-    if(ez.length){
+    if(Object.keys(N.el).length){
       h+=`<div class="sub" style="text-align:center;margin-top:12px">Elements gathered this session:</div>`;
-      h+=`<div class="elgrid" style="margin-top:8px;justify-content:center">`;
-      for(const z of ez.slice(0,12))h+=`<div class="elpick"><div class="s" style="color:${EL[z].color}">${EL[z].sym}</div><div class="q">×${N.el[z]}</div></div>`;
-      h+=`</div>`;
+      h+=elGrid(N.el);
     }
     const fk=Object.keys(N.fx);
     if(fk.length){
+      // item 6: collected formulas use the SAME CODEX-catalog cell style (3D thumbnail).
+      const num=(typeof formulaCatalogNum==='function')?formulaCatalogNum():{};
       h+=`<div class="sub" style="text-align:center;margin-top:12px">Formulas collected this session:</div>`;
-      h+=`<div class="sub" style="text-align:center;margin-top:4px;color:var(--glow);line-height:1.6">`+
-         fk.map(f=>`${f} ×${N.fx[f]}`).join(' &nbsp; ')+`</div>`;
+      h+=`<div class="fxscroll" style="max-height:30cqh;cursor:default"><div class="fxgrid">`;
+      for(const f of fk){
+        const ci=COMPOUNDS.findIndex(c=>c.text===f); if(ci<0)continue;
+        const nt=`#${String(num[ci]||0).padStart(3,'0')}`;
+        h+=`<div class="fxcell have"><span class="fxnum">${nt}</span>`+
+           `<canvas class="fxmol fxmol3d" data-cid="${ci}"></canvas>`+
+           `<div class="fxfoot"><span class="fxname">${f}</span><span class="fxcnt">×${N.fx[f]}</span></div></div>`;
+      }
+      h+=`</div></div>`;
     }
   }
   h+=`<div style="text-align:center;margin-top:16px"><button class="closebtn" onclick="closeModal()">${T('back')}</button></div>`;
   openModal(h,false,true);
+  if(typeof formula3dStart==='function')setTimeout(formula3dStart,40);   // spin formula thumbs
   // mark seen + reset the accumulator
   G.notif={el:{},fx:{},off:null,unseen:false}; updateNotifStar();
 }
