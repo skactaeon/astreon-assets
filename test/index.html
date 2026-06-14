@@ -306,13 +306,13 @@ body{position:fixed;inset:0}
 /* item 6: FORMULA sort slider matches the ELEMENTS (cxseg) control exactly — same
    container, fill gradient, and button colour/size. */
 .fxseg{position:relative;display:flex;align-items:stretch;margin:16px auto 8px;flex:none;
-  width:min(255px,80cqw);height:44px;border:1px solid rgba(70,224,255,.6);
-  background:rgba(70,224,255,.16);border-radius:999px;overflow:hidden;
+  width:min(255px,80cqw);height:44px;border:1px solid rgba(70,224,255,.5);
+  background:rgba(70,224,255,.08);border-radius:999px;overflow:hidden;
   box-shadow:0 0 10px rgba(70,224,255,.35),inset 0 0 6px rgba(70,224,255,.12)}
-/* item 3: clearly system-coloured (bright, solid) sliding highlight */
+/* identical to .cxseg-fill (ELEMENTS slider), just 1/3 wide for the 3 segments */
 .fxseg-fill{position:absolute;top:2px;bottom:2px;left:2px;width:calc(33.33% - 1px);border-radius:999px;
-  background:linear-gradient(180deg,#5fe3ff,#2ba6ff);z-index:0;
-  box-shadow:0 0 12px rgba(70,224,255,.6);transition:transform .28s cubic-bezier(.4,0,.2,1)}
+  background:linear-gradient(180deg,rgba(70,224,255,.85),rgba(70,160,255,.55));z-index:0;
+  transition:transform .28s cubic-bezier(.4,0,.2,1)}
 .fxseg-fill.p0{transform:translateX(0)}
 .fxseg-fill.p1{transform:translateX(100%)}
 .fxseg-fill.p2{transform:translateX(200%)}
@@ -2264,11 +2264,9 @@ function openWormhole(){G.sheetMode='chapters';setPlanetBg();
   const ORB=["PYRION","HELION","NIVORA","VIRELIOS"];
   let h=`<h4 style="justify-content:center;text-align:center">${T('wormhole')}</h4>`;
   h+=`<div class="sub" style="text-align:center;margin-top:4px;line-height:1.6;font-size:13px">${T('pick_domain')} (-${ECON.WORMHOLE_COST.toLocaleString()}p)</div>`;
-  // item 4: centre the sphere vertically in the remaining space so it sits where the
-  // MAP sphere sits (no big jump on the wormhole->map transition).
-  h+=`<div style="width:100%;flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;position:relative">
+  h+=`<div style="width:100%;display:flex;justify-content:center;margin-top:8px;position:relative">
     <canvas id="whCanvas" style="touch-action:none;cursor:grab"></canvas></div>`;
-  h+=`<div id="whInfo" style="min-height:40px;margin-top:6px;flex:none"></div>`;
+  h+=`<div id="whInfo" style="min-height:40px;margin-top:6px"></div>`;
   document.getElementById('chaptersInner').innerHTML=h;
   document.getElementById('chaptersModal').classList.add('show');
   const m=document.getElementById('chaptersModal');m.onclick=e=>{if(e.target===m)closeChapters();};
@@ -5774,7 +5772,21 @@ function drawMap(){const cv=document.getElementById('mapCanvas');if(!cv)return;c
       ring(ctx,pt.x,pt.y,R+6,hexA("#ffd24a",blink));
       ring(ctx,pt.x,pt.y,R+10,hexA("#ffd24a",blink*0.45));
     }
-    // item 8: NaCl test marker and PISCES test markers removed.
+    // item 3 (r33): mark TAURUS and AQUARIUS constellation members on the map.
+    if(front && typeof planetConstName==='function'){
+      const cn2=planetConstName(p);
+      if(cn2==='Taurus'||cn2==='Aquarius'){
+        const isB=(typeof planetIsBoss==='function')&&planetIsBoss(p);
+        const mcol=cn2==='Taurus'?"#ffb24a":"#7fd0ff";
+        const pb=0.5+0.5*Math.abs(Math.sin(Date.now()/240));
+        ring(ctx,pt.x,pt.y,R+7,hexA(mcol,pb));
+        ring(ctx,pt.x,pt.y,R+12,hexA(mcol,pb*0.5));
+        ctx.fillStyle=hexA(mcol,0.97);
+        ctx.font=`800 ${Math.max(9,R*0.6)}px 'Rajdhani'`;ctx.textAlign="center";ctx.textBaseline="bottom";
+        ctx.shadowBlur=8;ctx.shadowColor=mcol;
+        ctx.fillText("★ "+cn2.toUpperCase()+(isB?" BOSS":""),pt.x,pt.y-R-13);ctx.shadowBlur=0;
+      }
+    }
     if(front){const label=p.home?"MOTHER":(p.defeated?planetLabel(p):planetCode(p));
       ctx.fillStyle=solved?contrastColor(base):"rgba(220,235,255,.9)";
       ctx.font=`700 ${Math.max(9,R*0.6)}px 'Rajdhani'`;ctx.textAlign="center";ctx.textBaseline="middle";
