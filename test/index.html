@@ -10,7 +10,13 @@
   --bg0:#03040a;--bg1:#070b1c;--bg2:#0c1230;--ink:#e8f0ff;--ink-dim:#8a96c8;
   --line:rgba(120,160,255,.14);--glow:#46e0ff;--glow2:#b985ff;--glow3:#ff5cae;
   --ok:#46ffb0;--warn:#ffd24a;--bad:#ff5c6e;--panel:rgba(10,16,40,.72);
+  --fs-min:10px;   /* item 11: the game's MINIMUM font-size baseline ("set xxx to minimum font") */
 }
+/* items 9/10: notification star at the top-left of the starfield */
+#notifStar{position:absolute;left:10px;top:7px;z-index:45;cursor:pointer;font-size:20px;line-height:1;
+  color:#ffe27a;text-shadow:0 0 9px rgba(255,226,122,.9);user-select:none;opacity:.45;transition:opacity .3s}
+#notifStar.alert{animation:notifBlinkKf 1.05s ease-in-out infinite}
+@keyframes notifBlinkKf{0%,100%{opacity:.4;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--ink);font-family:'Rajdhani',sans-serif;user-select:none}
 body{position:fixed;inset:0}
@@ -62,15 +68,15 @@ body{position:fixed;inset:0}
   letter-spacing:2px;color:var(--ink-dim)}
 .scenelabel b{color:var(--glow);font-size:14px}
 .infopanel{position:absolute;top:8px;left:14px;right:14px;z-index:3;pointer-events:none}
-.infopanel .sec{font-size:8px;letter-spacing:2px;color:var(--ink-dim);text-transform:uppercase;margin:6px 0 3px}
+.infopanel .sec{font-size:var(--fs-min);letter-spacing:2px;color:var(--ink-dim);text-transform:uppercase;margin:6px 0 3px}
 .infopanel .ratiobar{display:flex;height:7px;border-radius:5px;overflow:hidden;border:1px solid var(--line)}
 .infopanel .ratiobar i{height:100%}
-.infopanel .rlist{display:flex;flex-wrap:wrap;gap:2px 8px;font-family:'Rajdhani';font-size:9px;color:var(--ink-dim);margin-top:3px}
+.infopanel .rlist{display:flex;flex-wrap:wrap;gap:2px 8px;font-family:'Rajdhani';font-size:var(--fs-min);color:var(--ink-dim);margin-top:3px}
 .infopanel .gain{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
 .infopanel .gain span{font-family:'Rajdhani';font-size:10px;border:1px solid var(--line);border-radius:50%;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center}
 .infopanel .gain .gchip{flex-direction:column;width:34px;height:34px;gap:0;line-height:1}
 .infopanel .gain .gchip b{font-family:'Rajdhani';font-size:11px;font-weight:700}
-.infopanel .gain .gchip i{font-style:normal;font-size:8px;color:var(--ink-dim)}
+.infopanel .gain .gchip i{font-style:normal;font-size:var(--fs-min);color:var(--ink-dim)}
 
 /* harvest popups */
 .hpop{position:absolute;z-index:5;font-family:'Rajdhani';font-weight:700;font-size:18px;
@@ -248,21 +254,16 @@ body{position:fixed;inset:0}
 /* file-folder style tabs: tabs sit on a shared baseline; the active one rises and
    merges into the content below it */
 /* two tabs filling the full width, slanted (parallelogram) edges, muted text */
-.cxtabs{display:flex;justify-content:stretch;gap:6px;margin:0 auto 0;width:100%;
-  border-bottom:2px solid rgba(70,224,255,.3)}
-/* item 4: tabs in the system colour (#46e0ff). The inactive tab sits RECESSED
-   (pushed back + inner shadow); the active tab rises FORWARD (system glow). */
-.cxtab{flex:1;padding:11px 0;cursor:pointer;border:none;position:relative;
-  background:rgba(70,224,255,.08);color:rgba(120,200,235,.5);transform:translateY(2px);
-  box-shadow:inset 0 -3px 9px rgba(0,8,16,.45),inset 0 1px 0 rgba(70,224,255,.12);
-  transition:background .2s,color .2s,transform .2s,box-shadow .2s;
-  font-family:'Rajdhani';font-weight:700;font-size:13px;letter-spacing:2px}
-/* the SEAM between the two tabs is the diagonal: left tab's right edge slants, the
-   right tab's left edge slants to match */
-.cxtab:first-child{clip-path:polygon(0 0,100% 0,92% 100%,0 100%)}
-.cxtab:last-child{clip-path:polygon(8% 0,100% 0,100% 100%,0 100%)}
-.cxtab.on{background:rgba(70,224,255,.5) !important;color:#eaf6ff !important;transform:translateY(0) !important;z-index:2;
-  box-shadow:0 -3px 14px rgba(70,224,255,.6),inset 0 2px 0 rgba(255,255,255,.28),inset 0 0 0 1px rgba(120,230,255,.6) !important}
+/* item 13: ELEMENTS/FORMULAS tabs — EQUAL width, NO slide; the 1px gap is just the
+   spacing between the two tabs. Active tab highlighted (gradient), styled like EXTRACT. */
+.cxtabs{display:flex;gap:1px;width:min(264px,84cqw);margin:0 auto 4px;border-radius:999px;overflow:hidden;
+  border:1px solid rgba(70,224,255,.5);background:rgba(70,224,255,.08);
+  box-shadow:0 0 10px rgba(70,224,255,.35),inset 0 0 6px rgba(70,224,255,.12)}
+.cxtab{flex:1 1 0;padding:10px 0;cursor:pointer;border:none;background:transparent;
+  font-family:'Rajdhani';font-weight:700;font-size:15px;letter-spacing:1px;
+  color:var(--glow);text-shadow:0 0 8px rgba(70,224,255,.5);transition:background .2s,color .2s}
+.cxtab.on{background:linear-gradient(180deg,rgba(70,224,255,.85),rgba(70,160,255,.55));
+  color:#04121c;text-shadow:none}
 /* FORMULA catalog: vertical scroll (no horizontal drag), 3 columns */
 /* FORMULA catalog: horizontally FIXED, vertical scroll (wheel + drag), 3 cells/row.
    Fills the available column height and scrolls all entries (flex:1 + min-height:0). */
@@ -276,20 +277,25 @@ body{position:fixed;inset:0}
 .fxcell.have .fxmol{filter:drop-shadow(0 0 6px rgba(70,224,255,.6))}
 /* sort options under the catalog */
 /* item 5: 3-segment sliding sort toggle (like the ELEMENT EXTRACT/SYNTH pill) */
-.fxseg{position:relative;display:flex;align-items:stretch;margin:4px auto 6px;flex:none;
-  width:min(264px,84cqw);height:40px;border:1px solid rgba(70,224,255,.5);
-  background:rgba(70,224,255,.08);border-radius:999px;overflow:hidden}
+/* item 6: FORMULA sort slider matches the ELEMENTS (cxseg) control exactly — same
+   container, fill gradient, and button colour/size. */
+.fxseg{position:relative;display:flex;align-items:stretch;margin:8px auto;flex:none;
+  width:min(255px,80cqw);height:44px;border:1px solid rgba(70,224,255,.5);
+  background:rgba(70,224,255,.08);border-radius:999px;overflow:hidden;
+  box-shadow:0 0 10px rgba(70,224,255,.35),inset 0 0 6px rgba(70,224,255,.12)}
 .fxseg-fill{position:absolute;top:2px;bottom:2px;left:2px;width:calc(33.33% - 1px);border-radius:999px;
-  background:linear-gradient(180deg,rgba(70,224,255,.85),rgba(70,160,255,.55));
-  box-shadow:0 0 10px rgba(70,224,255,.4);transition:transform .22s cubic-bezier(.4,0,.2,1)}
+  background:linear-gradient(180deg,rgba(70,224,255,.85),rgba(70,160,255,.55));z-index:0;
+  box-shadow:0 0 10px rgba(70,224,255,.4);transition:transform .28s cubic-bezier(.4,0,.2,1)}
 .fxseg-fill.p0{transform:translateX(0)}
 .fxseg-fill.p1{transform:translateX(100%)}
 .fxseg-fill.p2{transform:translateX(200%)}
 .fxseg-btn{position:relative;z-index:1;flex:1 1 0;border:none;background:transparent;cursor:pointer;
-  font-family:'Rajdhani';font-weight:700;font-size:13px;letter-spacing:1px;color:rgba(180,210,235,.7)}
-.fxseg-btn.on{color:#04121c}
-.fxnote{margin:0 0 8px;flex:none;text-align:center;font-family:'Rajdhani';font-size:12px;
-  line-height:1.35;color:rgba(150,200,235,.75);padding:0 14px}
+  font-family:'Rajdhani';font-weight:700;font-size:15px;letter-spacing:.5px;color:var(--glow);
+  text-shadow:0 0 8px rgba(70,224,255,.5);padding:0}
+.fxseg-btn.on{color:#04121c;text-shadow:none}
+/* item 9/12: FORMULA help text matches EXTRACT desc (cxhint: 15px, --glow), ONE line */
+.fxnote{margin:0 0 8px;flex:none;text-align:center;font-family:'Rajdhani';font-size:15px;
+  line-height:1.4;color:var(--glow);padding:0 14px;white-space:nowrap}
 /* item 6: constellation-style cells — deep-space gradient + star-node glowing border */
 .fxcell{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
   width:auto;min-height:114px;border-radius:8px;
@@ -300,8 +306,17 @@ body{position:fixed;inset:0}
 .fxcell .fxnum{position:absolute;top:3px;left:7px;font-family:'Rajdhani';font-weight:800;font-size:13px;letter-spacing:.5px;color:rgba(160,190,225,.75)}
 .fxcell .fxmol{width:100%;height:50px;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .fxcell .fxmol svg{max-width:100%;max-height:100%}
+/* item 7: held formulas render a 3D canvas, 120% taller than the old 2D thumbnail */
+.fxcell .fxmol3d{width:100%;height:60px;display:block}
 .fxcell .fxname{font-family:'Rajdhani';font-weight:800;font-size:14px;color:#cfe3ff;letter-spacing:.3px;margin-top:2px}
 .fxcell .fxcnt{font-family:'Rajdhani';font-weight:700;font-size:11px;color:#46ffb0;margin-top:1px}
+/* item 8: name bottom-left, owned count bottom-right.
+   item 14: the 3D molecule is vertically centred; the name/count row is pinned bottom. */
+.fxcell.have{justify-content:center;padding-bottom:22px}
+.fxcell .fxfoot{position:absolute;left:0;right:0;bottom:5px;display:flex;justify-content:space-between;
+  align-items:flex-end;padding:0 8px;margin-top:0;gap:4px}
+.fxcell .fxfoot .fxname{margin:0;text-align:left;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fxcell .fxfoot .fxcnt{margin:0;text-align:right;flex:none}
 .fxcell .fxmk{font-family:'Rajdhani';font-weight:700;font-size:9px;letter-spacing:1px;color:#ffd36e;margin-top:1px}
 .fxcell.have{opacity:1;border-color:#46e0ff;
   background:radial-gradient(120% 90% at 50% 16%,rgba(70,224,255,.2),rgba(7,13,28,.82));
@@ -692,6 +707,9 @@ button:not(.ckKey):not(.ckEl):not(.cxseg-btn):not(.cxseg-qty):not(.cxtab),.mapbt
   <div class="topbar">
     <div class="logo" id="logoMain"></div>
   </div>
+  <!-- items 9/10: notification star (top-left of the starfield). Blinks when there is
+       unseen activity (elements/formulas gathered, offline income). Tap to open. -->
+  <div id="notifStar" onclick="showNotification()">✦</div>
 
   <div class="stage">
     <div class="infopanel" id="infoPanel"></div>
@@ -3055,7 +3073,7 @@ function storeBodyMarkup(){const T=I18N[_lang];
       h+=`<div onclick="buyItem('${it.key}')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2px;height:clamp(74px,13.5cqh,100px);border:1px solid ${isB?'#ffd36e':'var(--line)'};border-radius:9px;padding:5px 4px;cursor:pointer;background:${isB?'rgba(255,211,110,.06)':'rgba(120,160,255,.03)'};${dim}">
         <div style="color:${cc};line-height:0;transform:scale(.78)">${ic}</div>
         <div style="font-family:'Rajdhani';font-weight:700;font-size:10.5px;color:var(--ink);line-height:1.08">${T[it.key]||it.name}</div>
-        ${it.desc?`<div style="font-family:'Rajdhani';font-weight:400;font-size:8.5px;color:var(--glow);line-height:1.12;opacity:.85">${it.desc}</div>`:''}
+        ${it.desc?`<div style="font-family:'Rajdhani';font-weight:400;font-size:var(--fs-min);color:var(--glow);line-height:1.12;opacity:.85">${it.desc}</div>`:''}
         <div style="font-family:'Rajdhani';font-weight:700;font-size:11px;color:${ownedThis?'var(--ok)':cc}">${tag}</div>
       </div>`;}
   }
@@ -3611,8 +3629,8 @@ function sampleExcl(p,ex){let tot=0;for(const c of p.comp)if(c.z!==ex)tot+=c.r;i
   let r=G.rng.int(1,tot),acc=0;for(const c of p.comp){if(c.z===ex)continue;acc+=c.r;if(r<=acc)return c.z;}return ex;}
 // ---- Collector system: travel income from chosen mother-star elements ----
 const COLLECTORS={
-  D:{id:'D',slots:1,eff:1.5,  color:'#5fd0ff',label:'1 element · 150%'},
-  N:{id:'N',slots:2,eff:0.6,  color:'#5fe0a0',label:'2 elements · 60% each'},
+  D:{id:'D',slots:1,eff:1.3,  color:'#5fd0ff',label:'1 element · 130%'},
+  N:{id:'N',slots:2,eff:0.55, color:'#5fe0a0',label:'2 elements · 55% each'},
   W:{id:'W',slots:3,eff:0.3,  color:'#ffd26e',label:'3 elements · 30% each'},
 };
 function motherPlanet(){const ch=G.chapters[0];return ch&&ch.planets?ch.planets[0]:null;}
@@ -3690,7 +3708,7 @@ function renderCollectorPicker(){
     const els=m.comp.slice().sort((a,b)=>(b.r-a.r)||(a.z-b.z));
     // Element cells use the SAME .dchip format as the main-scene bottom dock
     // (atomic number top-left, symbol centered, rate at the bottom), 7 per row.
-    h+=`<div style="display:grid;grid-template-columns:repeat(7, minmax(0, 47px));gap:5px;justify-content:center;max-width:370px;margin:0 auto;width:100%">`;
+    h+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;justify-content:stretch;margin:0 auto;width:100%">`;
     for(const c of els){const z=c.z;const on=_collPick.picks.includes(z);
       const eff=(c.r/_tot*100)*def.eff;
       const pct=_tot>0?fmtPct(eff):'';
@@ -3767,7 +3785,8 @@ function harvestTick(){const p=curPlanet();
   if(!p.defeated){renderTop();return;}
   p.stayMs=(p.stayMs||0)+effectiveTickMs();   // accumulate stay time for the rate bonus
   let picks=[];for(let i=0;i<ECON.PICKS_PER_TICK;i++)picks.push(sampleOne(p));
-  for(const z of picks){deposit(z,1);G.localGain[z]=Math.min(effectiveCap(),(G.localGain[z]||0)+1);}
+  for(const z of picks){deposit(z,1);G.localGain[z]=Math.min(effectiveCap(),(G.localGain[z]||0)+1);
+    if(typeof notifEl==='function')notifEl(z,1);}   // item 9: accumulate into the notification star
   spawnHarvestPopups(picks);
   // Stay-to-collect: each harvest tick has a 1/(protonSum*10) chance to obtain this
   // planet's compound formula (synced with the element drops). H2O -> 1/((1*2+8)*10)=1/100.
@@ -3778,7 +3797,7 @@ function harvestTick(){const p=curPlanet();
     if(chance>0 && G.rng.int(1,1000000)<=Math.round(chance*1000000)){
       const f=COMPOUNDS[p.compId].text;
       G.formulas=G.formulas||{}; G.formulas[f]=(G.formulas[f]||0)+1;
-      toast(f+' formula collected','good');
+      if(typeof notifFx==='function')notifFx(f,1);   // item 9: log into the notification star
       if(G.sheetMode==='codex'&&codexTab==='FORMULA'){renderCodex();setTimeout(attachCodexClose,10);}
     }
   }
@@ -4483,7 +4502,8 @@ function stopSpecialDiscovery(){
   if(_spDiscRAF){cancelAnimationFrame(_spDiscRAF);_spDiscRAF=0;}
 }
 let _mol3d=null; // {raf, canvas, ...}
-function mol3dPaint(ctx,st,cx,cy,SCALE,rx,ry,blank){
+function mol3dPaint(ctx,st,cx,cy,SCALE,rx,ry,blank,fillA){
+  if(fillA==null)fillA=0.5;   // item 10: atom base-colour fill alpha (default 0.5)
   function rot(p){let[x,y,z]=p;
     let c=Math.cos(ry),s=Math.sin(ry);let x1=x*c+z*s,z1=-x*s+z*c;
     let c2=Math.cos(rx),s2=Math.sin(rx);let y2=y*c2-z1*s2,z2=y*s2+z1*c2;
@@ -4509,7 +4529,7 @@ function mol3dPaint(ctx,st,cx,cy,SCALE,rx,ry,blank){
         ctx.beginPath();ctx.arc(p.sx,p.sy,R,0,7);ctx.fillStyle='rgba(20,30,60,.55)';ctx.fill();
         ctx.lineWidth=2.6;ctx.strokeStyle='rgba(225,235,255,.92)';ctx.stroke();
       }else{
-        ctx.beginPath();ctx.arc(p.sx,p.sy,R,0,7);ctx.fillStyle=hexA(col,0.5);ctx.fill();
+        ctx.beginPath();ctx.arc(p.sx,p.sy,R,0,7);ctx.fillStyle=hexA(col,fillA);ctx.fill();
         ctx.lineWidth=2.5;ctx.strokeStyle=col;ctx.stroke();
         ctx.fillStyle='#ffffff';ctx.font=`700 ${R*0.9}px Rajdhani,sans-serif`;
         ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText((EL[p.z]&&EL[p.z].sym)||'?',p.sx,p.sy);
@@ -4647,7 +4667,7 @@ function showCompoundInfo(compId){const f=COMPOUNDS[compId].text;const ci=CINFO[
       <div class="sub" style="text-align:right;color:var(--ok);font-size:15px;line-height:1.3;margin:0">${T('examples')}</div>
       <div style="width:1px;align-self:stretch;background:#46ffb0"></div>
       <div style="text-align:left">`;
-    for(const ex of ci.e)h+=`<div class="sub" style="color:var(--ok);font-size:15px;line-height:1.5;margin:0">${ex}</div>`;
+    for(const ex of ci.e)h+=`<div class="sub" style="color:var(--ok);font-size:var(--fs-min);line-height:1.5;margin:0">${ex}</div>`;
     h+=`</div></div>`;}
   // item 6: FORMULA drop rate — the chance of collecting the WHOLE compound into the
   // CODEX (not its elements), plus the cumulative-stay bonus.
@@ -4660,11 +4680,15 @@ function showCompoundInfo(compId){const f=COMPOUNDS[compId].text;const ci=CINFO[
        `<span class="ciratenow">${eff.toFixed(2)}%</span>`+
        `<span class="ciratearr">▶ +1h ▶</span>`+
        `<span class="ciratenext">${next.toFixed(2)}%</span></div>`;
-    h+=`<div class="ciratenote">Chance per tick to collect this formula into your CODEX. Stayed ${hrs.toFixed(1)}h here · every cumulative 1h on this planet adds +0.01% (current bonus +${bonus.toFixed(2)}%)</div>`;
+    // item 6: minutes until the next +0.01% step, plus collected / holding counts
+    const stayMin=hrs*60, nextMin=Math.max(1,Math.ceil(60-(stayMin%60)));
+    const owned=(G.formulas&&G.formulas[f])||0;
+    h+=`<div class="ciratenote">Next +0.01% in ~${nextMin} min · collected ×${owned} · holding ×${owned}</div>`;
+    h+=`<div class="ciratenote">Chance per tick to collect this formula into your CODEX. Stayed ${hrs.toFixed(1)}h here.</div>`;
     h+=`</div>`;
   }
   h+=`</div>`;
-  h+=`<div class="fsfoot"><button class="closebtn" onclick="mol3dStop();closeModal();closeMap();closeSheet();renderSceneStatic();checkConstellations()">${T('continue')}</button></div>`;
+  h+=`<div class="fsfoot"><button class="closebtn" onclick="mol3dStop();closeModal();closeMap();closeSheet();renderSceneStatic();checkConstellations()">${T('back')}</button></div>`;
   openModal(h,false,true);
   setTimeout(()=>mol3dStart('mol3dCanvas',compId),40);}
 function solvedStructureSVG(compId,maxW,maxH){
@@ -5021,6 +5045,20 @@ function renderScene(ts){
       ctx.beginPath();ctx.arc(cx,cy,Rr,a0s,a1s);
       ctx.strokeStyle=EL[z].color;ctx.shadowColor=EL[z].color;ctx.stroke();}
     }
+    // item 2: the LARGEST element's halo (the widest segment) gets pushed upward on
+    // desktop and can land off the arc apex, reading as un-lit. Add a symmetric,
+    // no-offset glow pass for it so the dominant element always glows.
+    if(segs.length){
+      const la=segs[0];   // segs are built in sorted (largest-first) order
+      ctx.shadowOffsetY=0;
+      for(let k=4;k>=1;k--){ const f=k/4;
+        ctx.lineWidth=(3+ (5+30*arcBreath)*f*f)*haloW;
+        ctx.globalAlpha=(0.12+0.18*arcBreath)*(1-f)*(1-f)+0.04;
+        ctx.shadowBlur=(12+16*f)*haloBlur;
+        ctx.beginPath();ctx.arc(cx,cy,Rr,la[0],la[1]);
+        ctx.strokeStyle=EL[la[2]].color;ctx.shadowColor=EL[la[2]].color;ctx.stroke();
+      }
+    }
     ctx.restore();ctx.shadowBlur=0;ctx.shadowOffsetY=0;ctx.globalAlpha=1;
     // Converge motes/atoms to the planet sphere's geometric center (cx,cy) — the
     // center of the huge curved surface, which sits below the screen, so the dots
@@ -5103,15 +5141,15 @@ function renderScene(ts){
       const st3=STRUCT2D[f];
       const ry=t*0.45, rx=Math.sin(t*0.3)*0.5+0.45;
       const SCALE=fr*0.42;
-      // item 1: glow like the battle-end gold formula, but in the SYSTEM colour — the
-      // whole molecule silhouette emits a cyan glow. Mimic the CSS double drop-shadow
-      // (0 0 32px + 0 0 14px) by painting the molecule twice with a cyan canvas shadow.
+      // glow like the battle-end gold formula but in the SYSTEM colour — the whole
+      // silhouette emits a cyan glow (double canvas shadow). item 10: the molecule is
+      // fully opaque (globalAlpha 1.0); only the element base-colour FILL is 0.7.
       ctx.save();
-      ctx.globalAlpha=0.95;
+      ctx.globalAlpha=1.0;
       ctx.shadowColor='#46e0ff'; ctx.shadowBlur=30;
-      mol3dPaint(ctx,st3,fcx,fcy,SCALE,rx,ry,false);   // outer wide glow
+      mol3dPaint(ctx,st3,fcx,fcy,SCALE,rx,ry,false,0.5);   // outer wide glow (item 4: fill 0.5)
       ctx.shadowBlur=14;
-      mol3dPaint(ctx,st3,fcx,fcy,SCALE,rx,ry,false);   // inner tight glow
+      mol3dPaint(ctx,st3,fcx,fcy,SCALE,rx,ry,false,0.5);   // inner tight glow
       ctx.restore();
     }
     // ratio + gathered counts are now shown together in the dock chips (renderHolds);
@@ -5720,7 +5758,8 @@ function ring(ctx,x,y,r,col){ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.lineWidth=1.
 
 let codexMode='EXTRACT';
 let codexTab='ELEMENT';   // ELEMENT (periodic table) | FORMULA (compound codex)
-function codexSetTab(t){ if(t===codexTab)return; codexTab=t; renderCodex(); setTimeout(attachCodexClose,10); }
+function codexSetTab(t){ if(t===codexTab)return; codexTab=t;   // item 13: no slide
+  renderCodex(); setTimeout(attachCodexClose,10); }
 // FORMULA codex: every compound in the game, owned ones lit + count, tap to synthesize.
 var _formulaNum=null;
 function formulaCatalogNum(){
@@ -5757,20 +5796,19 @@ function formulaTabHTML(){
      `<button class="fxseg-btn ${formulaSort==='have'?'on':''}" onclick="formulaSetSort('have')">OWNED</button>`+
      `<button class="fxseg-btn ${formulaSort==='abc'?'on':''}" onclick="formulaSetSort('abc')">A-Z</button>`+
      `</div>`;
-  h+=`<p class="fxnote">Tap an unlocked formula to auto-digest held elements and synthesize it.</p>`;
+  h+=`<p class="fxnote">Tap a formula to synthesize it.</p>`;
   // vertical-scrolling catalog (3/row); held = lit constellation, unheld = dim.
   h+=`<div class="fxscroll" id="cxScroll"><div class="fxgrid">`;
   for(const i of order){
     const f=COMPOUNDS[i].text; const cnt=G.formulas[f]||0; const has=cnt>0;
     const numTxt=`#${String(num[i]).padStart(3,'0')}`;
     if(has){
-      // discovered: full info + clickable (re-synth from held atoms)
-      const svg=(typeof compoundSVG==='function')?compoundSVG(i,66,48):'';
+      // item 7: discovered formulas show a freely-tumbling 3D molecule (120% size).
+      // item 8: name bottom-left, owned count bottom-right.
       h+=`<div class="fxcell have" data-cid="${i}" onclick="formulaCellTap(${i})">`+
          `<span class="fxnum">${numTxt}</span>`+
-         `<div class="fxmol">${svg}</div>`+
-         `<span class="fxname">${f}</span>`+
-         `<span class="fxcnt">×${cnt}</span>`+
+         `<canvas class="fxmol fxmol3d" data-cid="${i}"></canvas>`+
+         `<div class="fxfoot"><span class="fxname">${f}</span><span class="fxcnt">×${cnt}</span></div>`+
          `</div>`;
     } else {
       // item 5/6: undiscovered — ONLY the number + a blank formula, grey, no name,
@@ -5784,6 +5822,43 @@ function formulaTabHTML(){
   }
   h+=`</div></div>`;
   return h;
+}
+// item 7: one shared RAF drives every held-formula 3D thumbnail (auto-tumble). Only
+// canvases currently scrolled into view are drawn, so the catalog stays cheap.
+let _fx3dRAF=0;
+function formula3dStop(){ if(_fx3dRAF){cancelAnimationFrame(_fx3dRAF);_fx3dRAF=0;} }
+function formula3dStart(){
+  formula3dStop();
+  const cvs=Array.prototype.slice.call(document.querySelectorAll('.fxmol3d'));
+  if(!cvs.length)return;
+  const DPR=Math.min(window.devicePixelRatio||1,2);
+  for(const cv of cvs){
+    const w=cv.clientWidth||64, hh=cv.clientHeight||60;
+    cv.width=w*DPR; cv.height=hh*DPR;
+    cv._ctx=cv.getContext('2d'); cv._ctx.setTransform(DPR,0,0,DPR,0,0);
+    cv._w=w; cv._h=hh;
+    const f=COMPOUNDS[+cv.dataset.cid]&&COMPOUNDS[+cv.dataset.cid].text;
+    cv._st=(f&&STRUCT2D[f]&&typeof mol3dCentered==='function')?mol3dCentered(STRUCT2D[f]):null;
+  }
+  const sc=document.getElementById('cxScroll');
+  function tick(){
+    if(!document.body.contains(cvs[0])){ _fx3dRAF=0; return; }
+    const t=performance.now()*0.001;
+    const sr=sc?sc.getBoundingClientRect():null;
+    for(const cv of cvs){
+      if(!cv._st)continue;
+      const r=cv.getBoundingClientRect();
+      if(sr&&(r.bottom<sr.top-60||r.top>sr.bottom+60))continue;   // skip off-screen
+      const ctx=cv._ctx, st=cv._st;
+      ctx.clearRect(0,0,cv._w,cv._h);
+      let maxR=0.5; for(const at of st.a){const rr=Math.hypot(at[1],at[2],at[3]); if(rr>maxR)maxR=rr;}
+      const SCALE=Math.min(cv._w,cv._h)*0.46/(maxR+0.6);   // 120%-ish vs the old SVG thumb
+      const ry=t*0.6+(+cv.dataset.cid)*0.7, rx=Math.sin(t*0.4+(+cv.dataset.cid))*0.4+0.4;
+      mol3dPaint(ctx,st,cv._w/2,cv._h/2,SCALE,rx,ry,false);
+    }
+    _fx3dRAF=requestAnimationFrame(tick);
+  }
+  _fx3dRAF=requestAnimationFrame(tick);
 }
 // Tap a compound cell -> synthesize it from held atoms (consumes the elements).
 function formulaCellTap(compId){
@@ -5802,6 +5877,7 @@ function openCodex(){G.sheetMode='codex';renderCodex();setPlanetBg();
   document.getElementById('codexModal').classList.add('show');
   setTimeout(attachCodexClose,30);}
 function closeCodex(){document.getElementById('codexModal').classList.remove('show');G.sheetMode=null;
+  if(typeof formula3dStop==='function')formula3dStop();
   const m=document.getElementById('modal');
   if(m&&m.classList.contains('show')){const p=curPlanet();if(p&&!p.home&&!p.defeated&&p.b3d)renderBattle();}}
 function attachCodexClose(){const m=document.getElementById('codexModal');
@@ -5865,15 +5941,17 @@ function attachCodexClose(){const m=document.getElementById('codexModal');
 function renderCodex(){
   let h=`<h4 style="position:relative;width:100%;text-align:center">${T('codex')}
     <span id="cxProtons" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:14px;font-weight:400;color:#ffd36e;text-shadow:0 0 6px rgba(255,211,110,.5);letter-spacing:0;text-align:right">${fmtNum(G.points)} ${T('protons')}</span></h4>`;
-  // ELEMENT / FORMULA tabs
+  // ELEMENTS / FORMULAS tabs — a sliding segmented control (active is wider, 6:4)
+  if(typeof formula3dStop==='function')formula3dStop();   // stop catalog spinners on re-render
   h+=`<div class="cxtabs">
-    <button class="cxtab ${codexTab==='ELEMENT'?'on':''}" onclick="codexSetTab('ELEMENT')">ELEMENT</button>
-    <button class="cxtab ${codexTab==='FORMULA'?'on':''}" onclick="codexSetTab('FORMULA')">FORMULA</button></div>`;
+    <button class="cxtab ${codexTab==='ELEMENT'?'on':''}" onclick="codexSetTab('ELEMENT')">ELEMENTS</button>
+    <button class="cxtab ${codexTab==='FORMULA'?'on':''}" onclick="codexSetTab('FORMULA')">FORMULAS</button></div>`;
   if(codexTab==='FORMULA'){
     h+=formulaTabHTML();
     h+=`<button class="closebtn" style="margin-top:7px;margin-bottom:6px" onclick="closeCodex()">${T('back')}</button>`;
     document.getElementById('codexInner').innerHTML=h;
     setTimeout(attachCodexClose,10);
+    setTimeout(formula3dStart,40);   // item 7: spin the held-formula 3D thumbnails
     return;
   }
   const qLabel=codexQty===0?'MAX':('×'+codexQty);
@@ -5993,7 +6071,7 @@ function renderTop(){let u=0;for(const p of G.planets)if(p.home||p.defeated)u++;
 function renderInfoPanel(){const el=document.getElementById('infoPanel');if(!el)return;el.innerHTML="";}
 // Dock display mode: 0=element drop rate, 1=current gathered quantity, 2=current holding quantity.
 var dockMode=0;
-const DOCK_MODES=['ELEMENT DROP RATE','CURRENT GATHERED QUANTITY','CURRENT HOLDING QUANTITY'];
+const DOCK_MODES=['ELEMENT DROP RATE','CURRENT HOLDING QUANTITY'];   // item 8: gathered removed
 function cycleDockMode(){ dockMode=(dockMode+1)%DOCK_MODES.length; renderHolds(); }
 function renderHolds(){const el=document.getElementById('holds');el.innerHTML="";
   const p=curPlanet();
@@ -6019,7 +6097,7 @@ function renderHolds(){const el=document.getElementById('holds');el.innerHTML=""
     const holding=(G.ship&&G.ship.hold)?(G.ship.hold[z]||0):0;
     // Keep every element in its fixed slot. In the quantity modes, elements with nothing
     // gathered/held render as an invisible placeholder so the grid never reflows.
-    if(dockMode!==0 && gathered<=0 && holding<=0){
+    if(dockMode!==0 && holding<=0){   // item 8: holding mode hides empty slots
       const ph=document.createElement('div');
       ph.className='dchip placeholder';
       ph.style.visibility='hidden';
@@ -6029,8 +6107,7 @@ function renderHolds(){const el=document.getElementById('holds');el.innerHTML=""
     // value shown depends on the active dock mode
     let val='';
     if(dockMode===0){ val=ratioByZ[z]!=null?fmtPct(ratioByZ[z]*100):''; }
-    else if(dockMode===1){ val=gathered>0?('×'+gathered):'0'; }
-    else { val=holding>0?('×'+holding):'0'; }
+    else { val=holding>0?('×'+holding):'0'; }   // item 8: only rate + holding now
     const c=document.createElement('div');
     c.className='dchip';
     c.style.color=EL[z].color;
@@ -6104,7 +6181,7 @@ function applyOffline(lastSeen){
     const y=collectorYield(elapsedMs);
     if(y){const gained={};let total=0;
       for(const zs in y){const z=+zs;const add=deposit(z,y[zs]);if(add>0){gained[z]=(gained[z]||0)+add;total+=add;}}
-      if(total>0)G._offlineReport={total,gained,hours:(Math.min(elapsedMs,effectiveOfflineCapHr()*3600*1000)/3600000).toFixed(1),collector:G.collector.type};}
+      if(total>0)notifSetOffline({total,gained,hours:(Math.min(elapsedMs,effectiveOfflineCapHr()*3600*1000)/3600000).toFixed(1),collector:G.collector.type});}
     return;
   }
   const capMs=effectiveOfflineCapHr()*3600*1000;
@@ -6114,17 +6191,50 @@ function applyOffline(lastSeen){
   const gained={};let total=0;
   for(let i=0;i<ticks;i++){for(let k=0;k<ECON.PICKS_PER_TICK;k++){
     const z=sampleOne(p);const add=deposit(z,1);if(add>0){gained[z]=(gained[z]||0)+add;total+=add;}}}
-  G._offlineReport={total,gained,hours:(Math.min(elapsedMs,capMs)/3600000).toFixed(1)};}
-function showOfflineReport(){if(!G._offlineReport)return;const r=G._offlineReport;G._offlineReport=null;
-  if(r.total<=0)return;
-  const zs=Object.keys(r.gained).map(Number).sort((a,b)=>r.gained[b]-r.gained[a]).slice(0,8);
-  const isZh=false;
-  let h=`<h4 style="justify-content:center;text-align:center">${'WELCOME BACK'}</h4>`;
-  h+=`<div class="sub" style="text-align:center;margin-top:8px">${'While away ('+r.hours+'h) your harvester collected '}<b style="color:var(--glow)">${r.total}</b> ${'atoms:'}</div>`;
-  h+=`<div class="elgrid" style="margin-top:10px;justify-content:center">`;
-  for(const z of zs)h+=`<div class="elpick"><div class="s" style="color:${EL[z].color}">${EL[z].sym}</div><div class="q">×${r.gained[z]}</div></div>`;
-  h+=`</div><div style="text-align:center;margin-top:14px"><button class="closebtn" onclick="closeModal()">${T('continue')}</button></div>`;
-  openModal(h,false,true);}
+  if(total>0)notifSetOffline({total,gained,hours:(Math.min(elapsedMs,capMs)/3600000).toFixed(1)});}
+// items 9/10: NOTIFICATION accumulator. Elements/formulas gathered during play, and the
+// offline-income report, all funnel here (the standalone WELCOME-BACK screen is gone).
+// The top-left star blinks while there is unseen content; tapping opens the panel.
+function notifInit(){ if(!G.notif)G.notif={el:{},fx:{},off:null,unseen:false}; return G.notif; }
+function notifEl(z,n){ const N=notifInit(); N.el[z]=(N.el[z]||0)+(n||1); N.unseen=true; updateNotifStar(); }
+function notifFx(f,n){ const N=notifInit(); N.fx[f]=(N.fx[f]||0)+(n||1); N.unseen=true; updateNotifStar(); }
+function notifSetOffline(r){ const N=notifInit(); N.off=r; N.unseen=true; updateNotifStar(); }
+function notifHasContent(){ const N=notifInit();
+  return N.off||Object.keys(N.el).length||Object.keys(N.fx).length; }
+function updateNotifStar(){ const s=document.getElementById('notifStar'); if(!s)return;
+  const N=notifInit(); s.classList.toggle('alert', !!(N.unseen && notifHasContent())); }
+function showNotification(){
+  const N=notifInit();
+  let h=`<h4 style="justify-content:center;text-align:center">NOTIFICATION</h4>`;
+  if(!notifHasContent()){
+    h+=`<div class="sub" style="text-align:center;margin:16px 0">Nothing new yet.</div>`;
+  } else {
+    if(N.off && N.off.total>0){
+      const oz=Object.keys(N.off.gained).map(Number).sort((a,b)=>N.off.gained[b]-N.off.gained[a]).slice(0,10);
+      h+=`<div class="sub" style="text-align:center;margin-top:8px">While away (${N.off.hours}h) your harvester collected <b style="color:var(--glow)">${N.off.total}</b> atoms:</div>`;
+      h+=`<div class="elgrid" style="margin-top:8px;justify-content:center">`;
+      for(const z of oz)h+=`<div class="elpick"><div class="s" style="color:${EL[z].color}">${EL[z].sym}</div><div class="q">×${N.off.gained[z]}</div></div>`;
+      h+=`</div>`;
+    }
+    const ez=Object.keys(N.el).map(Number).sort((a,b)=>N.el[b]-N.el[a]);
+    if(ez.length){
+      h+=`<div class="sub" style="text-align:center;margin-top:12px">Elements gathered this session:</div>`;
+      h+=`<div class="elgrid" style="margin-top:8px;justify-content:center">`;
+      for(const z of ez.slice(0,12))h+=`<div class="elpick"><div class="s" style="color:${EL[z].color}">${EL[z].sym}</div><div class="q">×${N.el[z]}</div></div>`;
+      h+=`</div>`;
+    }
+    const fk=Object.keys(N.fx);
+    if(fk.length){
+      h+=`<div class="sub" style="text-align:center;margin-top:12px">Formulas collected this session:</div>`;
+      h+=`<div class="sub" style="text-align:center;margin-top:4px;color:var(--glow);line-height:1.6">`+
+         fk.map(f=>`${f} ×${N.fx[f]}`).join(' &nbsp; ')+`</div>`;
+    }
+  }
+  h+=`<div style="text-align:center;margin-top:16px"><button class="closebtn" onclick="closeModal()">${T('back')}</button></div>`;
+  openModal(h,false,true);
+  // mark seen + reset the accumulator
+  G.notif={el:{},fx:{},off:null,unseen:false}; updateNotifStar();
+}
 function startGame(){
   const hasSaveBeforeStart=hasSave();
   if(TEST_MODE){try{localStorage.removeItem(SAVE_KEY);}catch(e){}newGame();}
@@ -6136,7 +6246,7 @@ function startGame(){
   setInterval(saveGame,15000);
   requestAnimationFrame(renderScene);
   startMusic();
-  setTimeout(showOfflineReport,400);
+  setTimeout(updateNotifStar,400);   // item 10: offline content now lives in the notification star
   // When the cover sequence is driving start, defer the tutorial decision to the
   // post-cover skip overlay (see opening sequence). _tutChoicePending suppresses the
   // automatic start here so the overlay can offer START / SKIP tutorial.
@@ -6163,19 +6273,20 @@ function startGame(){
     for(let i=0;i<n;i++){
       const a=ACHIEVEMENTS[i];
       const lv=achievementLevel(a.key);
-      if(lv<=0)continue;
+      // item 19: ALWAYS show all four achievement orbs so the system is visible and
+      // tappable; locked ones render dim grey (no level), earned ones glow in colour.
       const pos=achPos(a.corner);const x=pos.x,y=pos.y;
-      const col=achievementColor(a.key);
+      const col=achievementColor(a.key);   // grey (#5a6486) when lv<=0
       achPhase[i]+=0.045;
       const R=4.16;
-      drawAchOrb(ctx,x,y,R,col,achPhase[i],true, lv/7);
+      drawAchOrb(ctx,x,y,R,col,achPhase[i], lv>0, lv>0?lv/7:0.14);
       ctx.save();
       ctx.translate(x,y+R*2.6+12);
       ctx.rotate(-30*Math.PI/180);
       ctx.textAlign="center";ctx.textBaseline="middle";
       ctx.font="700 12px 'Orbitron'";
-      ctx.fillStyle=hexA(col,0.92);
-      ctx.fillText(a.en+" · "+SPECTRAL[lv-1],0,0);
+      ctx.fillStyle=hexA(col, lv>0?0.92:0.5);
+      ctx.fillText(lv>0?(a.en+" · "+SPECTRAL[lv-1]):a.en, 0,0);
       ctx.restore();
       const sx=cv.width/innerWidth||1, sy=cv.height/innerHeight||1;
       hits.push({key:a.key,x:x/sx,y:y/sy,r:Math.max(20,(R*2.6)/sx)});
@@ -6205,7 +6316,7 @@ function startGame(){
 let _audio=null,_muted=false,_musicNodes=null;
 let _volLevel=3;
 let _sfxLevel=3;                 // separate sound-effects volume (0..5)
-const MUSIC_VOL_MAX=0.275;
+const MUSIC_VOL_MAX=0.1375;   // item 1: background music volume halved
 const SFX_SCALE=0.30;
 function bgAudioEl(){return document.getElementById('bgMusic');}
 function musicVol(){return _muted?0:(_volLevel/5)*MUSIC_VOL_MAX;}
@@ -6402,10 +6513,12 @@ function toggleMute(){setVolume(_muted?3:0);}
     // Music autostarts here; browsers may defer until first touch (kickstart handles that).
     try{ startMusic(); }catch(e){}
     intro.style.opacity='1';
-    // The cover no longer auto-advances, so show a subtle "tap to begin" prompt.
+    // item 1: show LOADING until the page's assets are ready, THEN "TAP TO BEGIN".
+    var _coverReady=false;
     try{
       var hint=document.createElement('div');
-      hint.textContent='TAP TO BEGIN';
+      hint.id='coverHint';
+      hint.textContent='LOADING';
       hint.style.cssText='position:absolute;left:0;right:0;top:72%;text-align:center;'
         +"font-family:'Rajdhani',sans-serif;font-weight:600;font-size:15px;letter-spacing:4px;"
         +'color:#46e0ff;text-shadow:0 0 10px rgba(70,224,255,.85),0 0 4px rgba(0,0,0,.9),0 1px 2px rgba(0,0,0,.9);'
@@ -6417,8 +6530,13 @@ function toggleMute(){setVolume(_muted?3:0);}
         document.head.appendChild(st);
       }
     }catch(e){}
-    // Wait for a tap to begin — no auto-advance.
-    intro.addEventListener('pointerdown', function(){ leave(intro); }, {once:true});
+    function _coverMarkReady(){ if(_coverReady)return; _coverReady=true;
+      var hh=document.getElementById('coverHint'); if(hh)hh.textContent='TAP TO BEGIN'; }
+    if(document.readyState==='complete')_coverMarkReady();
+    else window.addEventListener('load',_coverMarkReady,{once:true});
+    setTimeout(_coverMarkReady,8000);   // safety: never trap the player on LOADING
+    // Tap to begin — ignored until ready.
+    intro.addEventListener('pointerdown', function(){ if(_coverReady)leave(intro); });
   }
   if(document.readyState!=='loading')runCover();
   else document.addEventListener('DOMContentLoaded',runCover);
@@ -6433,7 +6551,7 @@ const TUT_STEPS=[
     rect:()=>({x:0.14,y:0.47,w:0.72,h:0.17})},
   {key:'falling', title:'Element Gathered', sub:'From the current planet',
     rect:()=>({x:0.08,y:0.30,w:0.84,h:0.52})},
-  {key:'dock', title:'Element Dock', sub:'Touch for check Drop Rate/Gathered/Holding',
+  {key:'dock', title:'Element Dock', sub:'Touch to check Drop Rate / Holding',
     rect:()=>{
       const dt=document.querySelector('.docktitle');const dock=document.querySelector('.dock');
       if(!dt||!dock)return tutDockFullRect();
@@ -7260,24 +7378,20 @@ function combatMonsterStrike(){
 // inline red "-N" INSIDE the proton banner itself (earlier floating popups were
 // unreliable / mis-placed); a floating "-Np" above it adds emphasis.
 function showProtonHit(dmg){
+  // item 15: the protons VALUE stays centred and fixed; the "-N" appears as an EXTRA
+  // absolutely positioned to the RIGHT of the value (it does not shift the value).
   const pe=document.getElementById('ckProtons');
   if(pe){
-    const val=fmtNum(G.points);   // already decremented by the caller
-    pe.innerHTML=val+' <span style="color:#ff4d4d;text-shadow:0 0 8px rgba(255,70,70,.95)">-'+fmtNum(dmg)+'</span>';
+    pe.textContent=fmtNum(G.points);          // centred value, position unchanged
+    pe.style.position='relative';
+    const d=document.createElement('span');
+    d.className='ckProtDelta';
+    d.textContent='-'+fmtNum(dmg);
+    d.style.cssText='position:absolute;left:100%;top:50%;transform:translateY(-50%);margin-left:8px;'+
+      'color:#ff4d4d;text-shadow:0 0 8px rgba(255,70,70,.95);white-space:nowrap';
+    pe.appendChild(d);                         // absolute -> does not affect centring
     if(pe._hitTO)clearTimeout(pe._hitTO);
-    pe._hitTO=setTimeout(()=>{ if(pe)pe.textContent=fmtNum(G.points); }, 1300);
-  }
-  const host=document.getElementById('cockpitScreen');
-  if(host){
-    const s=document.createElement('div');
-    s.textContent='-'+fmtNum(dmg)+'p';
-    s.style.cssText='position:absolute;left:50%;top:55%;transform:translate(-50%,0);z-index:90;'+
-      'pointer-events:none;color:#ff4d4d;font-family:Rajdhani,sans-serif;font-weight:800;font-size:30px;'+
-      'text-shadow:0 0 12px rgba(255,60,60,1),0 2px 3px #000;white-space:nowrap;opacity:1;'+
-      'transition:opacity 1.3s ease,transform 1.3s ease';
-    host.appendChild(s);
-    requestAnimationFrame(()=>{ s.style.opacity='0'; s.style.transform='translate(-50%,-42px)'; });
-    setTimeout(()=>{ s.remove(); }, 1400);
+    pe._hitTO=setTimeout(()=>{ const x=pe.querySelector('.ckProtDelta'); if(x)x.remove(); }, 1300);
   }
 }
 // Pisces-style enemy attack FX: several glowing blue circles launched from the
@@ -7812,7 +7926,7 @@ function combatOnKill(){
   if(_projRAF){cancelAnimationFrame(_projRAF);_projRAF=0;}
   const _m0=document.querySelector('#cockpitScreen .ckMonster'); if(_m0)_m0.classList.remove('ckMonHurt');
   cockpitPlayMon('death');
-  toast('MONSTER DESTROYED','good');
+  // item 16: no toast when the monster is defeated
   // HP bar fades out as the monster dies.
   const _hp=document.querySelector('#cockpitScreen .ckHp');
   if(_hp){ _hp.style.transition='opacity .8s ease'; _hp.style.opacity='0'; }
@@ -7911,7 +8025,11 @@ function combatAtomDrop(atomIdx, tokenId){
   const d=_combat.drag;
   if(atomIdx==null||atomIdx<0||atomIdx>=d.fill.length||d.fill[atomIdx]!=null)return;
   const tok=d.pool.find(t=>t.id===tokenId); if(!tok||tok.used)return;
-  if(tok.z===d.atoms[atomIdx]){
+  // item 17: a 2-atom molecule (e.g. ZnS) has no positional order — the two sockets are
+  // visually interchangeable, so any element may go in any socket. Larger molecules keep
+  // the per-socket element constraint.
+  const noOrder=(d.atoms.length<=2);
+  if(noOrder || tok.z===d.atoms[atomIdx]){
     d.fill[atomIdx]=tok.z; tok.used=true;
     if(d.fill.every(x=>x!=null)){ d.done=true; combatPuzzleComplete(); return; }
     cockpitRender();
@@ -8028,6 +8146,7 @@ function combatPuzzleComplete(){
   p.defeated=true; G.solvedTotal=(G.solvedTotal||0)+1; G.solvedNoSkip=(G.solvedNoSkip||0)+1;
   // ACQUIRE the formula into the player's collection (FORMULA codex).
   G.formulas=G.formulas||{}; G.formulas[f]=(G.formulas[f]||0)+1;
+  if(typeof notifFx==='function')notifFx(f,1);   // item 9: log into the notification star
   delete p.combat;
   // no toast on solve — the dashboard "FORMULA CORRECT / ACQUIRED" is enough.
   // item 4: gold flash + RETURN to the battle position/size, animated on the EXISTING
