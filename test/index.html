@@ -14,12 +14,16 @@
 }
 /* items 5/9/10: notification light-point in the upper starfield (down-right of the
    corner). A glowing dot that blinks when there is unseen activity. */
-#notifStar{position:absolute;left:46px;top:42px;z-index:45;cursor:pointer;width:11px;height:11px;border-radius:50%;
+/* items 3/5: bigger transparent tap target (30px); the visible glowing dot is the
+   centred ::before. Breathing-glow only (no scale); period ~4.5s to match the rim. */
+#notifStar{position:absolute;left:54px;top:52px;z-index:45;cursor:pointer;width:30px;height:30px}
+#notifStar::before{content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:11px;height:11px;border-radius:50%;
   background:radial-gradient(circle at 38% 34%,#ffffff,#9fe6ff 45%,rgba(70,224,255,.25) 75%,transparent 100%);
-  box-shadow:0 0 9px 1px rgba(120,220,255,.7);opacity:.5}
-/* item 1: GLOW pulse (no scale), frequency halved (2.1s) */
-#notifStar.alert{animation:notifGlowKf 2.1s ease-in-out infinite}
-@keyframes notifGlowKf{0%,100%{opacity:.5;box-shadow:0 0 8px 1px rgba(120,220,255,.5)}
+  box-shadow:0 0 9px 1px rgba(120,220,255,.7);opacity:.55}
+#notifStar.alert::before{animation:notifGlowKf 4.5s ease-in-out infinite}
+/* item 3: even at the dimmest point the glow never disappears */
+@keyframes notifGlowKf{0%,100%{opacity:.55;box-shadow:0 0 8px 1px rgba(120,220,255,.55)}
   50%{opacity:1;box-shadow:0 0 18px 6px rgba(120,220,255,1)}}
 /* item 11: DOM achievement orbs over the upper starfield */
 #achOrbs{position:absolute;left:0;top:0;right:0;height:30%;pointer-events:none;z-index:6}
@@ -302,8 +306,8 @@ body{position:fixed;inset:0}
 /* item 6: FORMULA sort slider matches the ELEMENTS (cxseg) control exactly — same
    container, fill gradient, and button colour/size. */
 .fxseg{position:relative;display:flex;align-items:stretch;margin:16px auto 8px;flex:none;
-  width:min(255px,80cqw);height:44px;border:1px solid rgba(70,224,255,.5);
-  background:rgba(70,224,255,.08);border-radius:999px;overflow:hidden;
+  width:min(255px,80cqw);height:44px;border:1px solid rgba(70,224,255,.6);
+  background:rgba(70,224,255,.16);border-radius:999px;overflow:hidden;
   box-shadow:0 0 10px rgba(70,224,255,.35),inset 0 0 6px rgba(70,224,255,.12)}
 .fxseg-fill{position:absolute;top:2px;bottom:2px;left:2px;width:calc(33.33% - 1px);border-radius:999px;
   background:linear-gradient(180deg,rgba(70,224,255,.85),rgba(70,160,255,.55));z-index:0;
@@ -3374,7 +3378,7 @@ let _achOrbSig='';
 function renderAchOrbs(){
   const host=document.getElementById('achOrbs'); if(!host||typeof ACHIEVEMENTS==='undefined'||!G)return;
   // item 2: Noctis removed; Archivis lower, Voyaris at Archivis's top-right, Magnis right.
-  const pos={voyaris:[31,33],archivis:[16,54],magnis:[85,46]};
+  const pos={voyaris:[35,47],archivis:[16,66],magnis:[85,46]};
   let sig='', h='';
   for(const a of ACHIEVEMENTS){
     if(a.key==='noctis')continue;
@@ -4034,7 +4038,7 @@ function battle3dDraw(){
       const ax=a.sx+ux*a.R,ay=a.sy+uy*a.R,bx=bb.sx-ux*bb.R,by=bb.sy-uy*bb.R;
       const offs=it.o===1?[0]:it.o===2?[-3.5,3.5]:[-6,0,6];
       for(const off of offs){ctx.beginPath();ctx.moveTo(ax+ox*off,ay+oy*off);ctx.lineTo(bx+ox*off,by+oy*off);
-        ctx.strokeStyle='rgba(150,180,255,.5)';ctx.lineWidth=3;ctx.lineCap='round';ctx.stroke();}
+        ctx.strokeStyle='rgba(255,255,255,.65)';ctx.lineWidth=3;ctx.lineCap='round';ctx.stroke();}
     }else{const nd=b.nodes[it.p.i],pt=it.p;
       if(nd.z==null){
         ctx.beginPath();ctx.arc(pt.sx,pt.sy,pt.R,0,7);ctx.fillStyle='rgba(20,30,60,.55)';ctx.fill();
@@ -4042,7 +4046,7 @@ function battle3dDraw(){
       }else{const col=(EL[nd.z]&&EL[nd.z].color)||'#aaa';
         ctx.beginPath();ctx.arc(pt.sx,pt.sy,pt.R,0,7);ctx.fillStyle=hexA(col,0.5);ctx.fill();
         ctx.lineWidth=(b.sel===nd.i)?3.4:2.5;ctx.strokeStyle=(b.sel===nd.i)?'#46e0ff':col;ctx.stroke();
-        ctx.fillStyle=(nd.z===1)?'#222':'#fff';ctx.font=`700 ${pt.R*0.9}px Rajdhani,sans-serif`;
+        ctx.fillStyle=col;ctx.font=`700 ${pt.R*0.9}px Rajdhani,sans-serif`;
         ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText((EL[nd.z]&&EL[nd.z].sym)||'?',pt.sx,pt.sy);
       }
     }
@@ -4558,7 +4562,7 @@ function mol3dPaint(ctx,st,cx,cy,SCALE,rx,ry,blank,fillA){
       const ax=a.sx+ux*Ra*0.92,ay=a.sy+uy*Ra*0.92,bx=b.sx-ux*Rb*0.92,by=b.sy-uy*Rb*0.92;
       const offs=it.o===1?[0]:it.o===2?[-3.5,3.5]:[-6,0,6];
       for(const off of offs){ctx.beginPath();ctx.moveTo(ax+ox*off,ay+oy*off);ctx.lineTo(bx+ox*off,by+oy*off);
-        ctx.strokeStyle='rgba(150,180,255,.5)';ctx.lineWidth=3;ctx.lineCap='round';ctx.stroke();}
+        ctx.strokeStyle='rgba(255,255,255,.65)';ctx.lineWidth=3;ctx.lineCap='round';ctx.stroke();}
     }else{const p=it.p,col=(EL[p.z]&&EL[p.z].color)||'#aaaaaa';const R=SCALE*radOf(p.z)*p.scale*0.62;
       if(blank){
         ctx.beginPath();ctx.arc(p.sx,p.sy,R,0,7);ctx.fillStyle='rgba(20,30,60,.55)';ctx.fill();
@@ -4566,7 +4570,7 @@ function mol3dPaint(ctx,st,cx,cy,SCALE,rx,ry,blank,fillA){
       }else{
         ctx.beginPath();ctx.arc(p.sx,p.sy,R,0,7);ctx.fillStyle=hexA(col,fillA);ctx.fill();
         ctx.lineWidth=2.5;ctx.strokeStyle=col;ctx.stroke();
-        ctx.fillStyle='#ffffff';ctx.font=`700 ${R*0.9}px Rajdhani,sans-serif`;
+        ctx.fillStyle=col;ctx.font=`700 ${R*0.9}px Rajdhani,sans-serif`;
         ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText((EL[p.z]&&EL[p.z].sym)||'?',p.sx,p.sy);
       }
     }
@@ -4635,7 +4639,7 @@ function mol3dStart(canvasId,compId,blank,noDrag,puzzle){
         const ax=a.sx+ux*Ra*0.92,ay=a.sy+uy*Ra*0.92,bx=b.sx-ux*Rb*0.92,by=b.sy-uy*Rb*0.92;
         const offs=it.o===1?[0]:it.o===2?[-3.5,3.5]:[-6,0,6];
         for(const off of offs){ctx.beginPath();ctx.moveTo(ax+ox*off,ay+oy*off);ctx.lineTo(bx+ox*off,by+oy*off);
-          ctx.strokeStyle='rgba(150,180,255,.5)';ctx.lineWidth=3;ctx.lineCap='round';ctx.stroke();}
+          ctx.strokeStyle='rgba(255,255,255,.65)';ctx.lineWidth=3;ctx.lineCap='round';ctx.stroke();}
       }else{const p=it.p;const R=SCALE*radOf(p.z)*p.scale*0.62;
         let fz=p.z, isFilled=true;
         if(puzzle){ fz=puzzle.fill[p.i]; isFilled=(fz!=null); }
@@ -4651,7 +4655,7 @@ function mol3dStart(canvasId,compId,blank,noDrag,puzzle){
           const col=(EL[fz]&&EL[fz].color)||'#aaaaaa';
           ctx.beginPath();ctx.arc(p.sx,p.sy,R,0,7);ctx.fillStyle=hexA(col,0.5);ctx.fill();
           ctx.lineWidth=2.5;ctx.strokeStyle=col;ctx.stroke();
-          ctx.fillStyle='#ffffff';ctx.font=`700 ${R*0.9}px Rajdhani,sans-serif`;
+          ctx.fillStyle=col;ctx.font=`700 ${R*0.9}px Rajdhani,sans-serif`;
           ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText((EL[fz]&&EL[fz].sym)||'?',p.sx,p.sy);
         }
       }
@@ -4720,9 +4724,9 @@ function showCompoundInfo(compId){const f=COMPOUNDS[compId].text;const ci=CINFO[
     const mmss=('0'+mm).slice(-2)+':'+('0'+ss).slice(-2);
     h+=`<div class="cirate"><div class="ciratehd">FORMULA DROP RATE</div>`;
     // item 9 line 2: current rate · countdown · next rate (no icons)
-    h+=`<div class="ciraterow"><span class="ciratenow">${eff.toFixed(2)}%</span>`+
+    h+=`<div class="ciraterow"><span class="ciratenow">Current ${eff.toFixed(2)}%</span>`+
        `<span class="ciratearr"><span id="cirateTimer">${mmss}</span></span>`+
-       `<span class="ciratenext">${next.toFixed(2)}%</span></div>`;
+       `<span class="ciratenext">Next ${next.toFixed(2)}%</span></div>`;
     // item 4 line 3: collected / holding counts (same style as the rate row)
     h+=`<div class="ciraterow"><span class="ciratenow">collected ×${owned}</span>`+
        `<span class="ciratearr">·</span>`+
@@ -5108,10 +5112,12 @@ function renderScene(ts){
     if(segs.length){
       const la=segs[0];   // segs are built in sorted (largest-first) order
       ctx.shadowOffsetY=0;
+      // item 2: the largest element gets a real multi-layer glow on BOTH platforms —
+      // its stroke width is NOT scaled by haloW (which is ~0 on mobile and left it un-lit).
       for(let k=4;k>=1;k--){ const f=k/4;
-        ctx.lineWidth=(3+ (5+30*arcBreath)*f*f)*haloW;
-        ctx.globalAlpha=(0.12+0.18*arcBreath)*(1-f)*(1-f)+0.04;
-        ctx.shadowBlur=(12+16*f)*haloBlur;
+        ctx.lineWidth=2+(3+14*arcBreath)*f*f;
+        ctx.globalAlpha=(0.14+0.18*arcBreath)*(1-f)*(1-f)+0.06;
+        ctx.shadowBlur=(14+18*f)*(_isMobile?1.5:1);
         ctx.beginPath();ctx.arc(cx,cy,Rr,la[0],la[1]);
         ctx.strokeStyle=EL[la[2]].color;ctx.shadowColor=EL[la[2]].color;ctx.stroke();
       }
@@ -5449,7 +5455,6 @@ function openPlanet(pid){G.selected=pid;G.sheetMode='planet';const p=G.planets[p
       const bd=isPisces?(isBoss?'rgba(255,90,120,.8)':'rgba(120,230,255,.7)'):'rgba(120,140,180,.4)';
       h+=`<div style="margin:0 0 8px;padding:6px 8px;border:1px solid ${bd};border-radius:8px;background:${bg};font-size:11px;line-height:1.35;text-align:left">`+
          `<b style="font-family:'Rajdhani';letter-spacing:.5px">★ ${cn.toUpperCase()}${isBoss?' · BOSS':' · normal'}</b>`+
-         (isPisces?` <span style="opacity:.85">◄ PISCES TEST</span>`:'')+
          `<br><span style="opacity:.7;word-break:break-all">${url}</span>`+
          (isBoss?`<br><span style="opacity:.6;word-break:break-all">fallback: ${nurl}</span>`:'')+
          `</div>`;
@@ -5767,28 +5772,7 @@ function drawMap(){const cv=document.getElementById('mapCanvas');if(!cv)return;c
       ring(ctx,pt.x,pt.y,R+6,hexA("#ffd24a",blink));
       ring(ctx,pt.x,pt.y,R+10,hexA("#ffd24a",blink*0.45));
     }
-    if(front && isNaClPlanet(p)){
-      // TEST marker for the NaCl monster planet: pulsing magenta double ring + tag.
-      const pb=0.5+0.5*Math.abs(Math.sin(Date.now()/220));
-      ring(ctx,pt.x,pt.y,R+7,hexA("#ff4ff0",pb));
-      ring(ctx,pt.x,pt.y,R+12,hexA("#ff4ff0",pb*0.5));
-      ctx.fillStyle=hexA("#ff8af6",0.95);
-      ctx.font=`800 ${Math.max(9,R*0.62)}px 'Rajdhani'`;ctx.textAlign="center";ctx.textBaseline="bottom";
-      ctx.shadowBlur=8;ctx.shadowColor="#ff4ff0";
-      ctx.fillText("★ NaCl TEST",pt.x,pt.y-R-13);ctx.shadowBlur=0;
-    }
-    // TEST marker for PISCES constellation members (boss = red, normal = cyan).
-    if(front && typeof planetConstName==='function' && planetConstName(p)==='Pisces'){
-      const isB=(typeof planetIsBoss==='function')&&planetIsBoss(p);
-      const col=isB?"#ff5a6a":"#46e0ff";
-      const pb=0.5+0.5*Math.abs(Math.sin(Date.now()/240));
-      ring(ctx,pt.x,pt.y,R+7,hexA(col,pb));
-      ring(ctx,pt.x,pt.y,R+12,hexA(col,pb*0.5));
-      ctx.fillStyle=hexA(isB?"#ff9aa6":"#9fe7ff",0.97);
-      ctx.font=`800 ${Math.max(9,R*0.62)}px 'Rajdhani'`;ctx.textAlign="center";ctx.textBaseline="bottom";
-      ctx.shadowBlur=8;ctx.shadowColor=col;
-      ctx.fillText(isB?"★ PISCES BOSS":"★ PISCES",pt.x,pt.y-R-13);ctx.shadowBlur=0;
-    }
+    // item 8: NaCl test marker and PISCES test markers removed.
     if(front){const label=p.home?"MOTHER":(p.defeated?planetLabel(p):planetCode(p));
       ctx.fillStyle=solved?contrastColor(base):"rgba(220,235,255,.9)";
       ctx.font=`700 ${Math.max(9,R*0.6)}px 'Rajdhani'`;ctx.textAlign="center";ctx.textBaseline="middle";
@@ -6277,7 +6261,7 @@ function showNotification(){
     // slots with nothing gathered render as an empty (hidden) placeholder.
     const elGrid=(map, order)=>{
       const zs=order||Object.keys(map).map(Number).sort((a,b)=>(map[b]||0)-(map[a]||0));
-      let g=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;max-width:340px;margin:8px auto 0;width:100%">`;
+      let g=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;width:calc(100% + 16px);margin:8px -8px 0">`;
       for(const z of zs){ const n=map[z]||0;
         if(n<=0){ g+=`<div class="dchip" style="visibility:hidden"></div>`; continue; }
         g+=`<div class="dchip" style="color:${EL[z].color};background:${hexA(EL[z].color,0.3)}">`+
