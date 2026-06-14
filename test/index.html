@@ -3740,7 +3740,7 @@ function renderCollectorPicker(){
     const els=m.comp.slice().sort((a,b)=>(b.r-a.r)||(a.z-b.z));
     // Element cells use the SAME .dchip format as the main-scene bottom dock
     // (atomic number top-left, symbol centered, rate at the bottom), 7 per row.
-    h+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;justify-content:stretch;margin:0 auto;width:100%">`;
+    h+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;justify-content:stretch;width:calc(100% + 34px);margin:0 -17px">`;
     for(const c of els){const z=c.z;const on=_collPick.picks.includes(z);
       const eff=(c.r/_tot*100)*def.eff;
       const pct=_tot>0?fmtPct(eff):'';
