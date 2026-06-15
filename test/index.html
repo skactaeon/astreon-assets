@@ -38,7 +38,7 @@
    middle stays directly under the star's centre */
 .achOrb .ol{margin-top:13px;font-family:'Orbitron';font-weight:700;font-size:9px;letter-spacing:.4px;
   color:var(--ac);white-space:nowrap;text-shadow:0 0 6px var(--ac);text-align:center;
-  transform:rotate(-24deg);transform-origin:center center}
+  transform:translate(10px,-7px) rotate(-24deg);transform-origin:center center}
 .achOrb.locked .ol{color:rgba(150,160,185,.7);text-shadow:none}
 @keyframes achPulseKf{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -284,7 +284,7 @@ body{position:fixed;inset:0}
 .cxtab{flex:3 1 0;padding:11px 0;cursor:pointer;border:none;
   font-family:'Rajdhani';font-weight:700;font-size:15px;letter-spacing:1px;
   color:var(--glow);text-shadow:0 0 8px rgba(70,224,255,.5);background:rgba(70,224,255,.12);
-  transition:flex-grow .28s cubic-bezier(.4,0,.2,1),background .28s ease,color .28s ease}
+  transition:flex-grow .56s cubic-bezier(.4,0,.2,1),background .56s ease,color .56s ease}
 /* item 4: fixed-px slant on both inner edges so the two seams are PARALLEL regardless
    of the (different) tab widths */
 .cxtab:first-child{clip-path:polygon(0 0,100% 0,calc(100% - 11px) 100%,0 100%);border-radius:12px 0 0 0}
@@ -352,7 +352,7 @@ body{position:fixed;inset:0}
   background:radial-gradient(120% 90% at 50% 16%,rgba(255,211,110,.12),rgba(7,11,24,.74))}
 /* item 6: undiscovered formulas — grey frame + grey background, not clickable */
 .fxcell.locked{opacity:.62;cursor:default;border:1.5px solid rgba(140,150,165,.3);
-  background:rgba(34,37,44,.55);box-shadow:none}
+  background:rgba(34,37,44,.55);box-shadow:none;justify-content:center}
 .fxcell.locked:active{transform:none}
 .fxcell.locked .fxnum{color:rgba(170,178,190,.8)}
 .fxcell:active{transform:scale(.96)}
@@ -1701,7 +1701,7 @@ function genUniverse(seed,chap){const r=RNG(seed);const planets=[];
   const tierPool=compoundsByTier(chap.compTier,chap.id);
   const usedComp=new Set();
   const homeId=0;const mother=planets[0];
-  mother.home=true;mother.revealed=true;mother.defeated=true;mother.codeNum=r.int(1,99);
+  mother.home=true;mother.revealed=true;mother.defeated=true;mother.codeNum=r.int(1,44);   // only P01..P44 images exist -> label matches image
   mother.comp=randComp(r,chap.id);mother.compId=null;mother.barren=true;
   if(chap.id===0){const h2o=FORMULAS.indexOf("H2O");
     if(h2o>=0){mother.compId=h2o;mother.motherFormula=true;}
@@ -1969,7 +1969,7 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.7';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v1.8';   // item 13: shown on the cover; item 12: save is kept unless this changes
 const ECON={
   PICKS_PER_TICK:1,
   TICK_MS:5000,
@@ -2398,7 +2398,14 @@ function planetImgCode(p){
   // The mother planet is itself barren, so barren is NOT excluded; only the solar
   // special planets (with a solarName) keep the embedded default texture.
   if(!p || p.solarName) return null;
-  try{ return planetCode(p).replace('-',''); }catch(_){ return null; }   // "P-28" -> "P28"
+  // Only Planet_P01..P44 images exist in the assets repo, but codes can run higher
+  // (mother codeNum up to 99, planet ids up to 99). Wrap the number into 1..44 so NO
+  // planet ever 404s onto the broken-image fallback. e.g. P96 -> P08.
+  try{ const c=planetCode(p).replace('-','');
+    const m=c.match(/^([A-Za-z]+)(\d+)$/);
+    if(m){ const n=((parseInt(m[2],10)-1)%44+44)%44+1; return m[1]+String(n).padStart(2,'0'); }
+    return c;
+  }catch(_){ return null; }
 }
 function loadPlanetImg(code){
   let e=_planetImgCache[code]; if(e) return e;
@@ -3749,7 +3756,7 @@ function renderCollectorPicker(){
     const els=m.comp.slice().sort((a,b)=>(b.r-a.r)||(a.z-b.z));
     // Element cells use the SAME .dchip format as the main-scene bottom dock
     // (atomic number top-left, symbol centered, rate at the bottom), 7 per row.
-    h+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;justify-content:stretch;width:calc(100% + 40px);margin:0 -20px">`;
+    h+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;justify-content:stretch;width:calc(100% + 32px);margin:0 -16px">`;
     for(const c of els){const z=c.z;const on=_collPick.picks.includes(z);
       const eff=(c.r/_tot*100)*def.eff;
       const pct=_tot>0?fmtPct(eff):'';
@@ -4546,8 +4553,12 @@ function stopSpecialDiscovery(){
   if(_spDiscRAF){cancelAnimationFrame(_spDiscRAF);_spDiscRAF=0;}
 }
 let _mol3d=null; // {raf, canvas, ...}
-function mol3dPaint(ctx,st,cx,cy,SCALE,rx,ry,blank,fillA){
+function mol3dPaint(ctx,st,cx,cy,SCALE,rx,ry,blank,fillA,opts){
   if(fillA==null)fillA=0.5;   // item 10: atom base-colour fill alpha (default 0.5)
+  opts=opts||{};
+  const rS=(opts.rScale!=null)?opts.rScale:0.62;     // atom radius factor (catalog enlarges)
+  const atomLW=(opts.atomLW!=null)?opts.atomLW:2.5;  // atom outline width (catalog thins)
+  const bondLW=(opts.bondLW!=null)?opts.bondLW:3;    // bond line width (catalog thins)
   function rot(p){let[x,y,z]=p;
     let c=Math.cos(ry),s=Math.sin(ry);let x1=x*c+z*s,z1=-x*s+z*c;
     let c2=Math.cos(rx),s2=Math.sin(rx);let y2=y*c2-z1*s2,z2=y*s2+z1*c2;
@@ -4562,19 +4573,19 @@ function mol3dPaint(ctx,st,cx,cy,SCALE,rx,ry,blank,fillA){
   items.sort((a,b)=>a.depth-b.depth);
   for(const it of items){
     if(it.type==='bond'){const a=pts[it.i],b=pts[it.j];
-      const Ra=SCALE*radOf(a.z)*a.scale*0.62,Rb=SCALE*radOf(b.z)*b.scale*0.62;
+      const Ra=SCALE*radOf(a.z)*a.scale*rS,Rb=SCALE*radOf(b.z)*b.scale*rS;
       const dx=b.sx-a.sx,dy=b.sy-a.sy,len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len,ox=-uy,oy=ux;
       const ax=a.sx+ux*Ra*0.92,ay=a.sy+uy*Ra*0.92,bx=b.sx-ux*Rb*0.92,by=b.sy-uy*Rb*0.92;
       const offs=it.o===1?[0]:it.o===2?[-3.5,3.5]:[-6,0,6];
       for(const off of offs){ctx.beginPath();ctx.moveTo(ax+ox*off,ay+oy*off);ctx.lineTo(bx+ox*off,by+oy*off);
-        ctx.strokeStyle='rgba(255,255,255,.65)';ctx.lineWidth=3;ctx.lineCap='round';ctx.stroke();}
-    }else{const p=it.p,col=(EL[p.z]&&EL[p.z].color)||'#aaaaaa';const R=SCALE*radOf(p.z)*p.scale*0.62;
+        ctx.strokeStyle='rgba(255,255,255,.65)';ctx.lineWidth=bondLW;ctx.lineCap='round';ctx.stroke();}
+    }else{const p=it.p,col=(EL[p.z]&&EL[p.z].color)||'#aaaaaa';const R=SCALE*radOf(p.z)*p.scale*rS;
       if(blank){
         ctx.beginPath();ctx.arc(p.sx,p.sy,R,0,7);ctx.fillStyle='rgba(20,30,60,.55)';ctx.fill();
         ctx.lineWidth=2.6;ctx.strokeStyle='rgba(225,235,255,.92)';ctx.stroke();
       }else{
         ctx.beginPath();ctx.arc(p.sx,p.sy,R,0,7);ctx.fillStyle=hexA(col,fillA);ctx.fill();
-        ctx.lineWidth=2.5;ctx.strokeStyle=col;ctx.stroke();
+        ctx.lineWidth=atomLW;ctx.strokeStyle=col;ctx.stroke();
         ctx.fillStyle=col;ctx.font=`700 ${R*0.9}px Rajdhani,sans-serif`;
         ctx.textAlign='center';ctx.textBaseline='middle';
         ctx.lineWidth=Math.max(2.2,R*0.16);ctx.strokeStyle='rgba(0,0,0,.85)';ctx.lineJoin='round';
@@ -5817,7 +5828,7 @@ function codexSetTab(t){ if(t===codexTab)return; codexTab=t;
   if(tabs.length===2){
     tabs[0].classList.toggle('on', t==='ELEMENT');
     tabs[1].classList.toggle('on', t==='FORMULA');
-    setTimeout(()=>{ renderCodex(); setTimeout(attachCodexClose,10); }, 280);
+    setTimeout(()=>{ renderCodex(); setTimeout(attachCodexClose,10); }, 560);
   } else { renderCodex(); setTimeout(attachCodexClose,10); }
 }
 // FORMULA codex: every compound in the game, owned ones lit + count, tap to synthesize.
@@ -5923,7 +5934,7 @@ function formula3dStart(){
       let maxR=0.5; for(const at of st.a){const rr=Math.hypot(at[1],at[2],at[3]); if(rr>maxR)maxR=rr;}
       const SCALE=Math.min(cv._w,cv._h)*0.55/(maxR+0.6);   // item 10: enlarged to ~120%
       const ry=t*0.6+(+cv.dataset.cid)*0.7, rx=Math.sin(t*0.4+(+cv.dataset.cid))*0.4+0.4;
-      mol3dPaint(ctx,st,cv._w/2,cv._h/2,SCALE,rx,ry,false);
+      mol3dPaint(ctx,st,cv._w/2,cv._h/2,SCALE,rx,ry,false,null,{rScale:0.82,atomLW:1.3,bondLW:1.6});
     }
     _fx3dRAF=requestAnimationFrame(tick);
   }
