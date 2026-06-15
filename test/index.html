@@ -34,9 +34,11 @@
   box-shadow:0 0 9px 1px var(--ac);animation:achPulseKf 2.4s ease-in-out infinite}
 .achOrb.locked .od{background:radial-gradient(circle at 40% 35%,#aab,#5a6486 55%,transparent 100%);
   box-shadow:0 0 6px 1px rgba(90,100,134,.6);animation:none;opacity:.6}
-/* item: label centred straight under the star (no slant) */
+/* item: slanted bottom-left→top-right, but pivoting on its OWN centre so the label's
+   middle stays directly under the star's centre */
 .achOrb .ol{margin-top:13px;font-family:'Orbitron';font-weight:700;font-size:9px;letter-spacing:.4px;
-  color:var(--ac);white-space:nowrap;text-shadow:0 0 6px var(--ac);text-align:center}
+  color:var(--ac);white-space:nowrap;text-shadow:0 0 6px var(--ac);text-align:center;
+  transform:rotate(-24deg);transform-origin:center center}
 .achOrb.locked .ol{color:rgba(150,160,185,.7);text-shadow:none}
 @keyframes achPulseKf{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -592,7 +594,7 @@ body{position:fixed;inset:0}
    sky composite (z1, DOM order later) but behind the window frame, so projectiles
    read as happening out in space, seen through the glass. */
 .ckFX{position:absolute;inset:0;z-index:1;pointer-events:none}
-.ckFXCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+.ckFXCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:12;pointer-events:none}
 .ckDot{position:absolute;width:7px;height:7px;border-radius:50%;will-change:transform,opacity}
 /* ---- combat overlays ---- */
 /* window stack: monster (top, my 15%) > formula molecule > HP bar > solved slots */
@@ -1967,7 +1969,7 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.6';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v1.7';   // item 13: shown on the cover; item 12: save is kept unless this changes
 const ECON={
   PICKS_PER_TICK:1,
   TICK_MS:5000,
@@ -3747,7 +3749,7 @@ function renderCollectorPicker(){
     const els=m.comp.slice().sort((a,b)=>(b.r-a.r)||(a.z-b.z));
     // Element cells use the SAME .dchip format as the main-scene bottom dock
     // (atomic number top-left, symbol centered, rate at the bottom), 7 per row.
-    h+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;justify-content:stretch;width:calc(100% + 16px);margin:0 -8px">`;
+    h+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;justify-content:stretch;width:calc(100% + 40px);margin:0 -20px">`;
     for(const c of els){const z=c.z;const on=_collPick.picks.includes(z);
       const eff=(c.r/_tot*100)*def.eff;
       const pct=_tot>0?fmtPct(eff):'';
@@ -7110,7 +7112,7 @@ const GENERIC_MON_ANIM={
   hit:[{t:0},{t:60,x:3,y:-2,tint:'#ff4040',glow:20},{t:140,x:-3,y:2,glow:8},{t:210,x:2,y:-1},{t:300}],
   attack:[{t:0},{t:120,y:5,scale:1.05,tint:'#60c0ff',glow:26},{t:300,y:-4,scale:1.1,glow:40},{t:520}],
   severelyInjured:[{t:0},{t:150,y:6,scale:0.97,rot:3,tint:'#ff3030'},{t:300,y:3,scale:0.99,rot:-1},{t:450,y:6,scale:0.97,rot:3,tint:'#ff3030'},{t:600}],
-  death:[{t:0},{t:250,tint:'#ffffff',glow:46},{t:1500,opacity:0,scale:0.94}]
+  death:[{t:0},{t:250,tint:'#ffffff',glow:46},{t:4800,opacity:0,scale:0.94}]   // item 5: fade synced with the ~5.4s particle dissolve
 };
 // Active external-art pose (survives re-renders; cockpitMonsterImgActive reads it).
 let _monPose=null, _monPoseT=0;
@@ -7564,39 +7566,50 @@ function showProtonHit(dmg){
     pe._hitTO=setTimeout(()=>{ const x=pe.querySelector('.ckProtDelta'); if(x)x.remove(); }, 1300);
   }
 }
-// Pisces-style enemy attack FX: several glowing blue circles launched from the
-// monster's hands toward the cockpit.
+// Enemy attack FX: several glowing CRESCENT MOONS bloom over the player's formula.
+// Colour by constellation — Pisces = blue, Taurus = gold. The FX runs for exactly the
+// monster's attack-pose duration (~700ms) so the two end together. Drawn on the
+// top-most layer (.ckFXCanvas z-index:12).
 function cockpitEnemyFX(){
   const cv=document.getElementById('ckFXCanvas'); if(!cv)return;
   const W=Math.max(2,cv.offsetWidth), H=Math.max(2,cv.offsetHeight);
   const dpr=Math.min(2,window.devicePixelRatio||1);
   cv.width=W*dpr; cv.height=H*dpr;
   const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
-  // PISCES attack: several glowing blue rings of VARIED size bloom over the player's
-  // formula (the molecule the monster is striking), pulsing out and fading.
-  const tx=W*0.5, ty=H*0.43;                  // formula molecule position
-  const rings=[];
-  for(let i=0;i<7;i++)rings.push({
-    cx:tx+(Math.random()*2-1)*W*0.17,
-    cy:ty+(Math.random()*2-1)*H*0.06,
-    max:12+Math.random()*46,                  // varied radii
-    off:Math.random()*0.45,
-    w:2+Math.random()*3.5});
-  const DUR=1100,t0=performance.now();
+  const p=_cockpit?G.planets[_cockpit.planetId]:null;
+  const cn=(p&&typeof planetConstName==='function')?planetConstName(p):null;
+  const gold=(cn==='Taurus');
+  const cMain=gold?'#ffb84a':'#46a0ff', cGlow=gold?'#ffe6a0':'#bfeaff';
+  const tx=W*0.5, ty=H*0.33;                  // moved UP (was 0.43)
+  const moons=[];
+  for(let i=0;i<7;i++)moons.push({
+    cx:tx+(Math.random()*2-1)*W*0.18,
+    cy:ty+(Math.random()*2-1)*H*0.07,
+    max:10+Math.random()*30,
+    off:Math.random()*0.3,
+    rot:Math.random()*6.28});
+  const DUR=700,t0=performance.now();         // == attack-pose duration -> end together
   if(_projRAF)cancelAnimationFrame(_projRAF);
   let _impacted=false;
+  function crescent(cx,cy,r,rot){             // lune between an outer + offset inner circle
+    const off=r*0.5, ir=r*0.95;
+    ctx.beginPath();
+    ctx.arc(cx,cy,r, rot+Math.PI*0.5, rot+Math.PI*1.5, false);
+    ctx.arc(cx+Math.cos(rot)*off, cy+Math.sin(rot)*off, ir, rot+Math.PI*1.5, rot+Math.PI*0.5, true);
+    ctx.closePath();
+  }
   function frame(now){
-    const t=now-t0; if(t>=DUR+300){ ctx.clearRect(0,0,W,H); _projRAF=0; return; }
+    const t=now-t0; if(t>=DUR){ ctx.clearRect(0,0,W,H); _projRAF=0; return; }
     ctx.clearRect(0,0,W,H);
-    for(const rg of rings){ const k=Math.max(0,Math.min(1,(t/DUR)-rg.off)); if(k<=0)continue;
-      const rad=rg.max*k, a=Math.sin(Math.PI*k)*0.9;
-      ctx.globalAlpha=a; ctx.strokeStyle='#46a0ff'; ctx.lineWidth=rg.w; ctx.shadowBlur=14; ctx.shadowColor='#46a0ff';
-      ctx.beginPath(); ctx.arc(rg.cx,rg.cy,rad,0,6.28); ctx.stroke();
-      ctx.globalAlpha=a*0.55; ctx.strokeStyle='#bfeaff'; ctx.lineWidth=rg.w*0.5;
-      ctx.beginPath(); ctx.arc(rg.cx,rg.cy,rad*0.66,0,6.28); ctx.stroke();
+    for(const m of moons){ const k=Math.max(0,Math.min(1,(t/DUR)-m.off)); if(k<=0)continue;
+      const rad=m.max*(0.4+0.6*k), a=Math.sin(Math.PI*k)*0.95;
+      ctx.globalAlpha=a; ctx.shadowBlur=16; ctx.shadowColor=cMain; ctx.fillStyle=cMain;
+      crescent(m.cx,m.cy,rad,m.rot); ctx.fill();
+      ctx.globalAlpha=a*0.7; ctx.shadowBlur=8; ctx.fillStyle=cGlow;
+      crescent(m.cx,m.cy,rad*0.7,m.rot); ctx.fill();
     }
     ctx.shadowBlur=0; ctx.globalAlpha=1;
-    if(t>DUR*0.45 && !_impacted){ _impacted=true; if(typeof combatScreenShake==='function')combatScreenShake(); }
+    if(t>DUR*0.4 && !_impacted){ _impacted=true; if(typeof combatScreenShake==='function')combatScreenShake(); }
     _projRAF=requestAnimationFrame(frame);
   }
   _projRAF=requestAnimationFrame(frame);
@@ -7658,13 +7671,19 @@ function cockpitOpenWhenReady(){
   const cn=(p&&typeof planetConstName==='function')?planetConstName(p):null;
   if(!cn){ cockpitOpen(); return; }
   if(typeof monAssetSet==='function')monAssetSet(p);   // preload ALL poses
-  const base=monAssetBase(cn, planetIsBoss(p), 'std', 1);
+  const isBoss=(typeof planetIsBoss==='function')&&planetIsBoss(p);
+  const base=monAssetBase(cn, isBoss, 'std', 1);
+  const nbBase=monAssetBase(cn, false, 'std', 1);        // non-boss fallback sprite
   const bgBase=MON_ASSET.base+MON_ASSET.dir+cn+'_bg';
   monAssetLoad(bgBase);                                  // also preload the starfield bg
+  if(isBoss)monAssetLoad(nbBase);                        // and the fallback, in case boss art is missing
   const rdy=(b)=>{ const e=_monAssetCache[b]; return e&&(e.state==='ok'||e.state==='err'); };
-  // wait for BOTH the monster sprite AND the bg, so we never flash the std image
-  // full-window (sky-route fallback) before the bg arrives.
-  if(rdy(base) && rdy(bgBase)){ cockpitOpen(); return; }
+  // monster is "ready" once its sprite has settled; if a BOSS's own art ERRORED it will
+  // display the non-boss sprite, so wait for that fallback instead of flashing empty.
+  const monReady=()=>{ if(!rdy(base))return false;
+    const e=_monAssetCache[base]; return (isBoss && e && e.state==='err') ? rdy(nbBase) : true; };
+  // wait for BOTH the monster sprite AND the starfield bg before entering.
+  if(monReady() && rdy(bgBase)){ cockpitOpen(); return; }
   // not ready: show the map-side banner and poll
   const mm=document.getElementById('mapModal');
   let b=document.getElementById('mapEnterBattle');
@@ -7681,7 +7700,7 @@ function cockpitOpenWhenReady(){
   const token=++_ckPendingOpen, t0=Date.now();
   (function wait(){
     if(token!==_ckPendingOpen)return;                 // superseded
-    if((rdy(base)&&rdy(bgBase)) || Date.now()-t0>15000){
+    if((monReady()&&rdy(bgBase)) || Date.now()-t0>15000){
       const bb=document.getElementById('mapEnterBattle'); if(bb)bb.style.display='none';
       cockpitOpen(); return;
     }
@@ -8121,7 +8140,7 @@ function combatOnKill(){
     _combat.phase=2;
     _cockpit.mode='formula';
     cockpitRender();                  // molecule rises (CSS) into the puzzle + pool
-  }, 5200);
+  }, 5000);   // item 6: rise right after the hurt sprite has faded out (t:4800)
 }
 // item 2: the molecule rises to the dead monster's spot at HALF speed, keeping its
 // current solid style (no rebuild into a dashed blank puzzle). _molOrig stores the
