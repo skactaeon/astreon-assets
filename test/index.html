@@ -1975,7 +1975,7 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.13';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v1.14';   // item 13: shown on the cover; item 12: save is kept unless this changes
 const ECON={
   PICKS_PER_TICK:1,
   TICK_MS:5000,
@@ -4795,7 +4795,7 @@ function showCompoundInfo(compId){const f=COMPOUNDS[compId].text;const ci=CINFO[
       const sec=_snap+((performance.now()-_t0)/1000)*_mul, rem=3600-(sec%3600);
       const m=Math.floor(rem/60), s=Math.floor(rem%60);
       el.textContent=('0'+m).slice(-2)+':'+('0'+s).slice(-2);
-    },1000);
+    },500);   // update every 0.5s so the 2x countdown ticks down by 1 each step (no 2s jumps)
   }}
 function solvedStructureSVG(compId,maxW,maxH){
   const slots=buildChain(compId);const bonds=chainBonds(compId);
