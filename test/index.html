@@ -796,7 +796,7 @@ button:not(.ckKey):not(.ckEl):not(.cxseg-btn):not(.cxseg-qty):not(.cxtab),.mapbt
   <div class="mapmodal" id="mapModal"><canvas id="mapCanvas"></canvas>
     <div class="maptopbar">
       <div class="navitem"><button class="mapbtn pillbtn" onclick="openCodex()">CODEX</button></div>
-      <button class="mapbtn pillbtn" id="constBtn" onclick="openZodiac()" style="visibility:hidden">STARS</button>
+      <button class="mapbtn pillbtn" id="constBtn" onclick="openZodiac()">STARS</button>
       <button class="mapbtn pillbtn" onclick="openSetup()">SETUP</button>
       <div class="navitem" style="display:flex;flex-direction:column;align-items:center;gap:3px">
         <button class="mapbtn pillbtn storebtn" onclick="openStore()">STORE</button>
@@ -1975,7 +1975,7 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.15';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v1.16';   // item 13: shown on the cover; item 12: save is kept unless this changes
 const ECON={
   PICKS_PER_TICK:1,
   TICK_MS:5000,
@@ -2161,7 +2161,7 @@ function anyConstFound(){if(!G.chapters)return false;
     for(let k=0;k<ch.constellations.length;k++){const c=ch.constellations[k];
       if(c.members.every(id=>{const p=ch.planets[id];return p.defeated||p.home||p.barren;}))return true;}}
   return false;}
-function updateConstBtn(){const b=document.getElementById('constBtn');if(b)b.style.visibility=anyConstFound()?'visible':'hidden';}
+function updateConstBtn(){const b=document.getElementById('constBtn');if(b)b.style.visibility='visible';}   // item: STARS always shown (no unlock gate)
 function checkConstellations(){if(!G.constellations)return;
   for(let k=0;k<G.constellations.length;k++){const c=G.constellations[k];
     if(c.awarded)continue;
@@ -6782,12 +6782,12 @@ const TUT_STEPS=[
     }},
   {key:'ring', title:'Planet Ring', sub:'Its glowing elemental signature',
     rect:()=>({x:0.04,y:0.27,w:0.92,h:0.42})},
-  {key:'stars', title:'Star Field', sub:'Distant planets you can travel to',
-    rect:()=>({x:0.05,y:0.03,w:0.90,h:0.23})},
   {key:'notif', title:'Notification Star', sub:'Tap it for offline gains & new finds',
-    rect:()=>tutElRect('#notifStar',12)||{x:0.10,y:0.04,w:0.15,h:0.06}},
+    circle:true, rect:()=>tutElRect('#notifStar',12)||{x:0.10,y:0.04,w:0.15,h:0.06}},
   {key:'ach', title:'Achievement Stars', sub:'Tap a star to see your milestones',
     rect:()=>tutElRect('#achOrbs',2)||{x:0.05,y:0.02,w:0.90,h:0.22}},
+  {key:'stars', title:'Star Field', sub:'Distant planets you can travel to',
+    rect:()=>({x:0.05,y:0.03,w:0.90,h:0.23})},
 ];
 // Tutorial overlay lives INSIDE #viewport, whose coordinate space is the fixed
 // 415x900 design canvas. So all highlight math must be in design pixels, NOT
@@ -6999,6 +6999,42 @@ function tutorialShow(){
     _tutPrevKey=s.key;
     return;
   }
+  if(s.circle){
+    // single circular spotlight (e.g. the notification star) — appears fresh, NO morph in
+    spot.style.display='none';
+    {const ee=document.getElementById('tutEllipse');if(ee)ee.style.display='none';}
+    const r=s.rect();
+    const cxp=ox+(r.x+r.w/2)*vw, cyp=oy+(r.y+r.h/2)*vh;
+    const rad=Math.max(r.w*vw,r.h*vh)/2;
+    circ.style.transition='none';
+    circ.style.display='block';
+    circ.style.left=(cxp-rad)+'px';circ.style.top=(cyp-rad)+'px';circ.style.width=(2*rad)+'px';circ.style.height=(2*rad)+'px';
+    void circ.offsetWidth; circ.style.transition='';
+    if(cyp > oy+vh*0.6){ cap.style.bottom=(SH-(cyp-rad)+14)+'px'; cap.style.top=''; }
+    else { cap.style.top=(cyp+rad+18)+'px'; cap.style.bottom=''; }
+    _tutPrevKey=s.key;
+    return;
+  }
+  if(s.key==='ach'){
+    // three separate circular spotlights — one per achievement star — NO morph in
+    spot.style.display='none'; circ.style.display='none';
+    arc.style.display='block'; arc.style.opacity='1'; arc.style.background='none';
+    {const ee=document.getElementById('tutEllipse');if(ee)ee.style.display='none';}
+    const ods=Array.prototype.slice.call(document.querySelectorAll('#achOrbs .achOrb .od'));
+    const cs=[];
+    if(ods.length){ for(const od of ods){const b=od.getBoundingClientRect(); if(b.width)cs.push({cx:b.left+b.width/2,cy:b.top+b.height/2,r:Math.max(b.width,b.height)/2+15});} }
+    if(!cs.length){ const r=s.rect(); cs.push({cx:ox+(r.x+r.w/2)*vw,cy:oy+(r.y+r.h/2)*vh,r:Math.max(r.w*vw,r.h*vh)/2}); }
+    const dPath=cs.map(c=>`M ${(c.cx-c.r).toFixed(1)} ${c.cy.toFixed(1)} a ${c.r.toFixed(1)} ${c.r.toFixed(1)} 0 1 0 ${(2*c.r).toFixed(1)} 0 a ${c.r.toFixed(1)} ${c.r.toFixed(1)} 0 1 0 ${(-2*c.r).toFixed(1)} 0 Z`).join(' ');
+    const hole=document.getElementById('tutMaskHole');
+    hole.setAttribute('d',dPath); hole.setAttribute('fill','black'); hole.setAttribute('stroke','none');
+    const dim=document.getElementById('tutDimRect'); dim.style.display='block';
+    const pathEl=document.getElementById('tutArcPath');
+    pathEl.setAttribute('d',dPath); pathEl.style.fill='none'; pathEl.style.stroke='rgba(95,208,255,.9)'; pathEl.style.strokeWidth='1.5'; pathEl.style.strokeLinecap='round'; pathEl.style.strokeLinejoin='round'; pathEl.style.opacity='1';
+    let maxB=0; for(const c of cs)maxB=Math.max(maxB,c.cy+c.r);
+    cap.style.top=(maxB+18)+'px';cap.style.bottom='';
+    _tutPrevKey=s.key;
+    return;
+  }
   spot.style.display='block';
   spot.style.borderRadius=(18*k)+'px';
   const r=s.rect();
@@ -7007,7 +7043,10 @@ function tutorialShow(){
   // focus transition only on the very first step
   spot.classList.remove('focusin');
   if(_tutStep===0){ void spot.offsetWidth; spot.classList.add('focusin'); }
-  if(s.key==='formula' || s.key==='dock'){
+  if(s.capAbove){
+    // caption sits ABOVE the focus box (its bottom 14px above the box top)
+    cap.style.bottom=(SH-y+14)+'px';cap.style.top='';
+  } else if(s.key==='formula' || s.key==='dock'){
     // Steps 2-4 share one fixed caption position so the text doesn't jump around.
     // Sits below step 2's focus box (bottom = 0.47+0.17 = 0.64) and above step 4's dock box.
     cap.style.top=(oy+0.64*vh)+'px';cap.style.bottom='';
@@ -7070,20 +7109,27 @@ function tutAsk(title,msg,onStart,onSkip){
 }
 // Per-area guides (highlight the live elements in each screen; every rect has a fallback).
 const MAP_TUT_STEPS=[
-  {key:'mglobe', title:'Galaxy Map', sub:'Drag to rotate · tap a planet',
-    rect:()=>tutElRect('#mapCanvas',6)||{x:0.08,y:0.16,w:0.84,h:0.52}},
-  {key:'mconst', title:'Constellations', sub:'Defeat every member to complete one',
-    rect:()=>{const r=tutElRect('#mapCanvas'); return r?{x:r.x,y:r.y,w:r.w,h:r.h*0.5}:{x:0.08,y:0.16,w:0.84,h:0.26};}},
-  {key:'mnav', title:'Travel & Back', sub:'Spend protons to move; tap a world to enter',
-    rect:()=>tutElRect('.maptopbar',4)||{x:0.04,y:0.0,w:0.92,h:0.08}},
+  {key:'mglobe', title:'Galaxy Map', sub:'Drag to rotate · tap a planet to travel or battle',
+    rect:()=>tutElRect('#mapCanvas',6)||{x:0.08,y:0.18,w:0.84,h:0.5}},
+  {key:'mregion', title:'Star Region', sub:'PYRION — every world in your current domain',
+    circle:true, rect:()=>tutElRect('#orbName',10)||{x:0.30,y:0.15,w:0.40,h:0.05}},
+  {key:'mcodex', title:'CODEX', sub:'Your gathered elements & formula catalog',
+    circle:true, rect:()=>tutElRect('.maptopbar .navitem button',8)||tutElRect('#constBtn',8)||{x:0.04,y:0.0,w:0.24,h:0.07}},
+  {key:'mstars', title:'STARS', sub:'Browse the zodiac constellations you have found',
+    circle:true, rect:()=>tutElRect('#constBtn',8)||{x:0.37,y:0.0,w:0.26,h:0.07}},
+  {key:'mcoll', title:'Collector', sub:'Auto-gathers mother-planet elements while you travel',
+    circle:true, rect:()=>tutElRect('#collectorDock',8)||{x:0.02,y:0.85,w:0.22,h:0.12}},
+  {key:'mworm', title:'Wormhole', sub:'Jump to another star region',
+    circle:true, rect:()=>tutElRect('#wormholeWrap',8)||{x:0.76,y:0.85,w:0.22,h:0.12}},
 ];
 const CODEX_TUT_STEPS=[
   {key:'ctabs', title:'Codex Tabs', sub:'ELEMENTS table · FORMULAS catalog',
     rect:()=>tutElRect('.cxtabs',6)||{x:0.06,y:0.10,w:0.88,h:0.07}},
-  {key:'cseg', title:'Extract / Synth', sub:'EXTRACT atoms → protons · SYNTH the reverse',
+  {key:'cseg', title:'Extract / Synth',
+    sub:`EXTRACT: atom → +Z×${ECON.EXTRACT_MULT} protons · SYNTH: spend Z×${ECON.SYNTH_MULT} protons to build 1 atom`,
     rect:()=>tutElRect('.cxseg',6)||tutElRect('#fxSortSeg',6)||{x:0.10,y:0.18,w:0.80,h:0.08}},
   {key:'ctable', title:'Your Elements', sub:'Everything you have gathered, by proton number',
-    rect:()=>tutElRect('#cxScroll',4)||{x:0.04,y:0.28,w:0.92,h:0.5}},
+    capAbove:true, rect:()=>tutElRect('#cxScroll',4)||{x:0.04,y:0.28,w:0.92,h:0.5}},
 ];
 const BATTLE_TUT_STEPS=[
   {key:'bmon', title:'Element Monster', sub:'Solve its formula to defeat it',
