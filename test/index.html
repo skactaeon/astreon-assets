@@ -1975,7 +1975,7 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.17';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v1.18';   // item 13: shown on the cover; item 12: save is kept unless this changes
 const ECON={
   PICKS_PER_TICK:1,
   TICK_MS:5000,
@@ -2123,11 +2123,21 @@ function assignConstellations(planets,r,constDefs){
   const cons=[];
   const taken=new Set();
   for(let i=0;i<N;i++){if(!planets[i].home&&!planets[i].solarName)planets[i].constellation=-1;}
+  // item 4: distribute ALL assignable planets across the 12 signs, counts ~proportional
+  // to each sign's real star count (ZODIAC `core`). Largest-remainder so they sum exactly
+  // to the planet total → no independent (constellation-less) planets remain.
+  let _assignTot=0;for(let i=0;i<N;i++){if(!planets[i].home&&!planets[i].solarName)_assignTot++;}
+  const _coreSum=defs.reduce((s,d)=>s+(d.core||5),0)||1;
+  const _raw=defs.map(d=>(d.core||5)*_assignTot/_coreSum);
+  const target=_raw.map(v=>Math.floor(v));
+  let _rem=_assignTot-target.reduce((a,b)=>a+b,0);
+  const _frac=_raw.map((v,i)=>[v-Math.floor(v),i]).sort((a,b)=>b[0]-a[0]);
+  for(let i=0;i<_rem&&_frac.length;i++)target[_frac[i%_frac.length][1]]++;
   for(let k=0;k<NC;k++){const mem=groups[k];
     const vs=vec(seeds[k]);
     mem.sort((a,b)=>{const va=vec(a),vb=vec(b);
       return ((va.x-vs.x)**2+(va.y-vs.y)**2+(va.z-vs.z)**2)-((vb.x-vs.x)**2+(vb.y-vs.y)**2+(vb.z-vs.z)**2);});
-    const want=defs[k].core||5;
+    const want=target[k];
     const core=[];
     for(const id of mem){if(core.length>=want)break;if(taken.has(id)||planets[id].home)continue;core.push(id);taken.add(id);}
     cons.push({name:defs[k].name,shape:defs[k].shape,desc:defs[k].desc,want,members:core,seed:seeds[k],awarded:false});
@@ -2140,6 +2150,11 @@ function assignConstellations(planets,r,constDefs){
     cand.sort((a,b)=>a[0]-b[0]);
     for(const [,id] of cand){if(c.members.length>=c.want)break;c.members.push(id);taken.add(id);}
   }
+  // item 4: NO independents — fold any leftover planet into its spatially-nearest sign.
+  for(let i=0;i<N;i++){ if(taken.has(i)||planets[i].home||planets[i].solarName)continue;
+    let best=0,bd=1e9;const vi=vec(i);
+    for(let k=0;k<NC;k++){const vs=vec(cons[k].seed);const d=(vi.x-vs.x)**2+(vi.y-vs.y)**2+(vi.z-vs.z)**2;if(d<bd){bd=d;best=k;}}
+    cons[best].members.push(i);taken.add(i); }
   for(let k=0;k<NC;k++){const c=cons[k];
     c.anchors=c.members.slice(0,Math.min(3,c.members.length));
     for(const id of c.members)planets[id].constellation=k;}
@@ -2295,7 +2310,7 @@ let whSelectedCi=-1, whShowJump=false, whAnim=null, whFade=1, whRAF=0;
 const WH_TILT=15*Math.PI/180;
 function wormholeRegionState(ci){
   const ORB=["PYRION","HELION","NIVORA","VIRELIOS"];
-  const SUB=["Information|Domain","Energy|Domain","Entropy/Static|Domain","Gravity/Physics|Domain"];
+  const SUB=["Information|Region","Energy|Region","Entropy/Static|Region","Gravity/Physics|Region"];
   const isV=(ci===3);
   const ch=!isV?G.chapters[ci]:null;
   const unlocked=isV?G.virelios.unlocked:ch.unlocked;
@@ -3245,9 +3260,9 @@ const I18N={
     place_atoms:"Place the correct atoms to complete the formula",
     distance:"Distance",costs:"Costs",you_have:"You have",not_enough_protons:"Not enough protons",
     not_enough_protons_x:"Not enough protons!",
-    pick_domain:"CHOOSE A DOMAIN TO JUMP",locked_reqs:"LOCKED · UNLOCK REQUIREMENTS",
+    pick_domain:"CHOOSE A REGION TO JUMP",locked_reqs:"LOCKED · UNLOCK REQUIREMENTS",
     decode_all_of:"Decode all constellations of",collect_sigils:"Collect 9 sigils",
-    starting_domain:"Starting domain",
+    starting_domain:"Starting region",
     unlock_const_hint:"Unlock all member planets of a constellation to reveal it",
     extract_hint:"Extract atoms → +Z× ",synth_hint:"Synthesize → −Z× ",protons_each:" protons each",
     rarest_reward:"Rarest-atom reward:",each_planet:"each planet",
@@ -5822,9 +5837,9 @@ function drawMap(){const cv=document.getElementById('mapCanvas');if(!cv)return;c
     // item 3 (r33): mark TAURUS, AQUARIUS and PISCES constellation members on the map.
     if(front && typeof planetConstName==='function'){
       const cn2=planetConstName(p);
-      if(cn2==='Taurus'||cn2==='Aquarius'||cn2==='Pisces'){
+      if(cn2==='Taurus'||cn2==='Aquarius'||cn2==='Pisces'||cn2==='Aries'||cn2==='Leo'){
         const isB=(typeof planetIsBoss==='function')&&planetIsBoss(p);
-        const mcol=cn2==='Taurus'?"#ffb24a":(cn2==='Aquarius'?"#7fd0ff":"#ff7fb0");
+        const mcol=cn2==='Taurus'?"#ffb24a":(cn2==='Aquarius'?"#7fd0ff":(cn2==='Pisces'?"#ff7fb0":(cn2==='Aries'?"#ff5a5a":"#ffd24a")));
         const pb=0.5+0.5*Math.abs(Math.sin(Date.now()/240));
         ring(ctx,pt.x,pt.y,R+7,hexA(mcol,pb));
         ring(ctx,pt.x,pt.y,R+12,hexA(mcol,pb*0.5));
@@ -6743,7 +6758,7 @@ function toggleMute(){setVolume(_muted?3:0);}
       var hint=document.createElement('div');
       hint.id='coverHint';
       hint.textContent='LOADING';
-      hint.style.cssText='position:absolute;left:0;right:0;top:72%;text-align:center;'
+      hint.style.cssText='position:absolute;left:0;right:0;top:62%;text-align:center;'
         +"font-family:'Rajdhani',sans-serif;font-weight:600;font-size:15px;letter-spacing:4px;"
         +'color:#46e0ff;text-shadow:0 0 10px rgba(70,224,255,.85),0 0 4px rgba(0,0,0,.9),0 1px 2px rgba(0,0,0,.9);'
         +'pointer-events:none;z-index:71;animation:tapHintBreath 2s ease-in-out infinite';
@@ -6751,7 +6766,7 @@ function toggleMute(){setVolume(_muted?3:0);}
       // item 13: current version, just above the TAP TO BEGIN prompt
       var ver=document.createElement('div');
       ver.textContent=(typeof GAME_VERSION!=='undefined'?GAME_VERSION:'');
-      ver.style.cssText='position:absolute;left:0;right:0;top:67%;text-align:center;'
+      ver.style.cssText='position:absolute;left:12px;bottom:10px;text-align:left;'
         +"font-family:'Rajdhani',sans-serif;font-weight:600;font-size:12px;letter-spacing:3px;"
         +'color:rgba(150,200,235,.7);text-shadow:0 1px 2px rgba(0,0,0,.9);pointer-events:none;z-index:71';
       intro.appendChild(ver);
@@ -7058,10 +7073,11 @@ function tutorialShow(){
   spot.classList.remove('focusin');
   if(s.noMorph){ void spot.offsetWidth; spot.style.transition=TUT_SPOT_TRANS; }
   else if(_tutStep===0){ void spot.offsetWidth; spot.classList.add('focusin'); }   // focus zoom only on a morphing first step
-  // capDelay: hide the caption while the box morphs, reveal the title once it lands
+  // item: hide the caption while the box MORPHS, then fade it in slowly once the box is
+  // near its final position (≈68% through the 2.2s morph). noMorph steps show at once.
   {const tw=document.getElementById('tutTextWrap');
-   if(tw){ if(s.capDelay){ tw.style.transition='opacity .4s ease'; tw.style.opacity='0'; clearTimeout(window._tutCapTO); window._tutCapTO=setTimeout(function(){const t2=document.getElementById('tutTextWrap');if(t2)t2.style.opacity='1';},760); }
-     else { clearTimeout(window._tutCapTO); tw.style.transition=''; tw.style.opacity=''; } }}
+   if(tw){ if(s.noMorph){ clearTimeout(window._tutCapTO); tw.style.transition=''; tw.style.opacity='1'; }
+     else { tw.style.transition='opacity .8s ease'; tw.style.opacity='0'; clearTimeout(window._tutCapTO); window._tutCapTO=setTimeout(function(){const t2=document.getElementById('tutTextWrap');if(t2)t2.style.opacity='1';},1500); } }}
   if(s.capAbove){
     // caption sits ABOVE the focus box (its bottom 14px above the box top)
     cap.style.bottom=(SH-y+14)+'px';cap.style.top='';
@@ -7129,7 +7145,7 @@ function tutAsk(title,msg,onStart,onSkip){
 // Per-area guides (highlight the live elements in each screen; every rect has a fallback).
 const MAP_TUT_STEPS=[
   {key:'mglobe', title:'Region Map', sub:'Drag to rotate · tap a planet to travel or battle',
-    rect:()=>tutElRect('#mapCanvas',6)||{x:0.08,y:0.18,w:0.84,h:0.5}},
+    noMorph:true, rect:()=>tutElRect('#mapCanvas',6)||{x:0.08,y:0.18,w:0.84,h:0.5}},
   {key:'mregion', title:'Star Region', sub:'Region name &amp; Current conquest progress',
     rect:()=>tutElRect('.maplabel',12)||tutElRect('#orbName',12)||{x:0.26,y:0.13,w:0.48,h:0.07}},
   {key:'mcodex', title:'CODEX', sub:'Your gathered elements &amp; formulas',
@@ -7781,9 +7797,41 @@ function cockpitEnemyFX(){
   const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
   const p=_cockpit?G.planets[_cockpit.planetId]:null;
   const cn=(p&&typeof planetConstName==='function')?planetConstName(p):null;
-  const gold=(cn==='Taurus');
-  const cMain=gold?'#ffb84a':'#46a0ff', cGlow=gold?'#ffe6a0':'#bfeaff';
+  const claw=(cn==='Aries'||cn==='Leo');
+  const gold=(cn==='Taurus'||cn==='Leo');
+  const cMain=claw?(cn==='Aries'?'#ff4040':'#ffb020'):(gold?'#ffb84a':'#46a0ff');
+  const cGlow=claw?(cn==='Aries'?'#ffb0b0':'#ffe6a0'):(gold?'#ffe6a0':'#bfeaff');
   const tx=W*0.5, ty=H*0.33;                  // moved UP (was 0.43)
+  const DUR=700,t0=performance.now();         // == attack-pose duration -> end together
+  if(_projRAF)cancelAnimationFrame(_projRAF);
+  let _impacted=false;
+  // ARIES / LEO: several glowing CLAW SLASHES (red / gold) swipe across the formula.
+  if(claw){
+    const swipes=[];
+    for(let i=0;i<3;i++)swipes.push({
+      cx:tx+(Math.random()*2-1)*W*0.16, cy:ty+(Math.random()*2-1)*H*0.10,
+      ang:-0.7+Math.random()*1.4, len:H*0.20+Math.random()*H*0.12, off:Math.random()*0.28});
+    function frameC(now){
+      const t=now-t0; if(t>=DUR){ ctx.clearRect(0,0,W,H); _projRAF=0; return; }
+      ctx.clearRect(0,0,W,H); ctx.lineCap='round';
+      for(const s of swipes){ const k=Math.max(0,Math.min(1,(t/DUR)-s.off)); if(k<=0)continue;
+        const grow=Math.min(1,k*1.7), a=Math.sin(Math.PI*k)*0.95;
+        const ux=Math.cos(s.ang), uy=Math.sin(s.ang), px=-uy, py=ux;
+        for(let n=0;n<4;n++){ const o=(n-1.5)*9, hl=s.len*0.5*grow;
+          const x0=s.cx+px*o-ux*hl, y0=s.cy+py*o-uy*hl, x1=s.cx+px*o+ux*hl, y1=s.cy+py*o+uy*hl;
+          const mx=(x0+x1)/2+px*7, my=(y0+y1)/2+py*7;
+          ctx.globalAlpha=a; ctx.shadowBlur=14; ctx.shadowColor=cMain; ctx.strokeStyle=cMain; ctx.lineWidth=4-n*0.4;
+          ctx.beginPath(); ctx.moveTo(x0,y0); ctx.quadraticCurveTo(mx,my,x1,y1); ctx.stroke();
+          ctx.globalAlpha=a*0.7; ctx.shadowBlur=6; ctx.strokeStyle=cGlow; ctx.lineWidth=(4-n*0.4)*0.5;
+          ctx.beginPath(); ctx.moveTo(x0,y0); ctx.quadraticCurveTo(mx,my,x1,y1); ctx.stroke(); }
+      }
+      ctx.shadowBlur=0; ctx.globalAlpha=1;
+      if(t>DUR*0.4 && !_impacted){ _impacted=true; if(typeof combatScreenShake==='function')combatScreenShake(); }
+      _projRAF=requestAnimationFrame(frameC);
+    }
+    _projRAF=requestAnimationFrame(frameC);
+    return;
+  }
   const moons=[];
   for(let i=0;i<7;i++)moons.push({
     cx:tx+(Math.random()*2-1)*W*0.18,
@@ -7791,9 +7839,6 @@ function cockpitEnemyFX(){
     max:10+Math.random()*30,
     off:Math.random()*0.3,
     rot:Math.random()*6.28});
-  const DUR=700,t0=performance.now();         // == attack-pose duration -> end together
-  if(_projRAF)cancelAnimationFrame(_projRAF);
-  let _impacted=false;
   function crescent(cx,cy,r,rot){             // lune between an outer + offset inner circle
     const off=r*0.5, ir=r*0.95;
     ctx.beginPath();
