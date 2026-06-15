@@ -34,9 +34,9 @@
   box-shadow:0 0 9px 1px var(--ac);animation:achPulseKf 2.4s ease-in-out infinite}
 .achOrb.locked .od{background:radial-gradient(circle at 40% 35%,#aab,#5a6486 55%,transparent 100%);
   box-shadow:0 0 6px 1px rgba(90,100,134,.6);animation:none;opacity:.6}
-/* item 2: label slanted from bottom-left to top-right */
+/* item: label centred straight under the star (no slant) */
 .achOrb .ol{margin-top:13px;font-family:'Orbitron';font-weight:700;font-size:9px;letter-spacing:.4px;
-  color:var(--ac);white-space:nowrap;text-shadow:0 0 6px var(--ac);transform:rotate(-24deg);transform-origin:left center}
+  color:var(--ac);white-space:nowrap;text-shadow:0 0 6px var(--ac);text-align:center}
 .achOrb.locked .ol{color:rgba(150,160,185,.7);text-shadow:none}
 @keyframes achPulseKf{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -279,19 +279,22 @@ body{position:fixed;inset:0}
 /* item 9: FOLDER-style tabs — active tab is 60% of the width, the inactive 40%, with a
    1px DIAGONAL seam between them (slanted inner edges + 1px gap). No slide animation. */
 .cxtabs{display:flex;gap:1px;width:min(330px,94cqw);margin:0 auto 4px}
-.cxtab{flex:4 1 0;padding:11px 0;cursor:pointer;border:none;
+.cxtab{flex:3 1 0;padding:11px 0;cursor:pointer;border:none;
   font-family:'Rajdhani';font-weight:700;font-size:15px;letter-spacing:1px;
-  color:var(--glow);text-shadow:0 0 8px rgba(70,224,255,.5);background:rgba(70,224,255,.12)}
+  color:var(--glow);text-shadow:0 0 8px rgba(70,224,255,.5);background:rgba(70,224,255,.12);
+  transition:flex-grow .28s cubic-bezier(.4,0,.2,1),background .28s ease,color .28s ease}
 /* item 4: fixed-px slant on both inner edges so the two seams are PARALLEL regardless
    of the (different) tab widths */
 .cxtab:first-child{clip-path:polygon(0 0,100% 0,calc(100% - 11px) 100%,0 100%);border-radius:12px 0 0 0}
 .cxtab:last-child{clip-path:polygon(11px 0,100% 0,100% 100%,0 100%);border-radius:0 12px 0 0}
-.cxtab.on{flex-grow:6;background:linear-gradient(180deg,rgba(70,224,255,.85),rgba(70,160,255,.55));
+.cxtab.on{flex-grow:7;background:linear-gradient(180deg,rgba(70,224,255,.85),rgba(70,160,255,.55));
   color:#04121c;text-shadow:none}
 /* FORMULA catalog: vertical scroll (no horizontal drag), 3 columns */
 /* FORMULA catalog: horizontally FIXED, vertical scroll (wheel + drag), 3 cells/row.
    Fills the available column height and scrolls all entries (flex:1 + min-height:0). */
-.fxscroll{overflow-y:auto;overflow-x:hidden;flex:1 1 auto;min-height:0;width:100%;margin-top:0;cursor:grab;-webkit-overflow-scrolling:touch}
+/* item: same on-screen bounds as the ELEMENTS periodic-table pane (.codexinner .ptscroll):
+   flex:1, full width, 0 top / 8px bottom margin. */
+.fxscroll{overflow-y:auto;overflow-x:hidden;flex:1;min-height:0;width:100%;margin-top:0;margin-bottom:8px;cursor:grab;-webkit-overflow-scrolling:touch}
 .fxscroll::-webkit-scrollbar{width:0}
 .fxscroll{scrollbar-width:none}
 .fxscroll:active{cursor:grabbing}
@@ -1964,7 +1967,7 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.5';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v1.6';   // item 13: shown on the cover; item 12: save is kept unless this changes
 const ECON={
   PICKS_PER_TICK:1,
   TICK_MS:5000,
@@ -3375,7 +3378,7 @@ let _achOrbSig='';
 function renderAchOrbs(){
   const host=document.getElementById('achOrbs'); if(!host||typeof ACHIEVEMENTS==='undefined'||!G)return;
   // item 2: Noctis removed; Archivis lower, Voyaris at Archivis's top-right, Magnis right.
-  const pos={voyaris:[50,47],archivis:[16,66],magnis:[85,46]};
+  const pos={voyaris:[50,47],archivis:[16,66],magnis:[85,36]};
   let sig='', h='';
   for(const a of ACHIEVEMENTS){
     if(a.key==='noctis')continue;
@@ -5805,8 +5808,16 @@ function ring(ctx,x,y,r,col){ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.lineWidth=1.
 
 let codexMode='EXTRACT';
 let codexTab='ELEMENT';   // ELEMENT (periodic table) | FORMULA (compound codex)
-function codexSetTab(t){ if(t===codexTab)return; codexTab=t;   // item 13: no slide
-  renderCodex(); setTimeout(attachCodexClose,10); }
+function codexSetTab(t){ if(t===codexTab)return; codexTab=t;
+  // item: slide the active tab wider (flex-grow transition on .cxtab) FIRST, then swap
+  // the tab content once the slide has played — gives a sliding feel on switch.
+  const tabs=document.querySelectorAll('.cxtab');
+  if(tabs.length===2){
+    tabs[0].classList.toggle('on', t==='ELEMENT');
+    tabs[1].classList.toggle('on', t==='FORMULA');
+    setTimeout(()=>{ renderCodex(); setTimeout(attachCodexClose,10); }, 280);
+  } else { renderCodex(); setTimeout(attachCodexClose,10); }
+}
 // FORMULA codex: every compound in the game, owned ones lit + count, tap to synthesize.
 var _formulaNum=null;
 function formulaCatalogNum(){
@@ -5849,9 +5860,10 @@ function formulaTabHTML(){
      `<button class="cxseg-btn ${formulaSort==='have'?'on':''}" onclick="formulaSetSort('have')">OWNED</button>`+
      `<button class="cxseg-btn ${formulaSort==='abc'?'on':''}" onclick="formulaSetSort('abc')">A-Z</button>`+
      `</div>`;
-  // redeem-message line (fades in on synth) + the one-line help
-  h+=`<p class="cxhint" id="cxRedeemMsg" style="color:#ffd36e;min-height:15px;margin:0 0 4px;font-weight:400;opacity:0;transition:opacity .3s"></p>`;
-  h+=`<p class="fxnote">Tap a formula to synthesize it.</p>`;
+  // item: description sits RIGHT under the slider (same .cxhint #cxDesc slot & margins as
+  // the ELEMENTS tab), then the redeem-message line below it — identical vertical layout.
+  h+=`<p class="cxhint" id="cxDesc" style="color:var(--glow)">Tap a formula to synthesize it.</p>`;
+  h+=`<p class="cxhint" id="cxRedeemMsg" style="color:#ffd36e;min-height:16px;margin:-4px 0 2px;font-weight:400;opacity:0;transition:opacity .3s"></p>`;
   // vertical-scrolling catalog (3/row); held = lit constellation, unheld = dim.
   h+=`<div class="fxscroll" id="cxScroll"><div class="fxgrid">`;
   for(const i of order){
@@ -6003,7 +6015,7 @@ function renderCodex(){
     <button class="cxtab ${codexTab==='FORMULA'?'on':''}" onclick="codexSetTab('FORMULA')">FORMULAS</button></div>`;
   if(codexTab==='FORMULA'){
     h+=formulaTabHTML();
-    h+=`<button class="closebtn" style="margin-top:7px;margin-bottom:6px" onclick="closeCodex()">${T('back')}</button>`;
+    h+=`<button class="closebtn" style="margin-top:14px;margin-bottom:8px" onclick="closeCodex()">${T('back')}</button>`;
     document.getElementById('codexInner').innerHTML=h;
     setTimeout(attachCodexClose,10);
     setTimeout(formula3dStart,40);   // item 7: spin the held-formula 3D thumbnails
@@ -6197,7 +6209,8 @@ function saveGame(){if(!G)return;
         cur:ch.cur, unlocked:ch.unlocked,
         planets:ch.planets.map(p=>({c:p.comp,ci:p.compId,rv:p.revealed?1:0,df:p.defeated?1:0,
           ba:p.barren?1:0,hm:p.home?1:0,cn:(p.constellation!=null?p.constellation:-1),sp:p.special||null,
-          mt:p.monsterType,co:p.color,ch:p.chain?p.chain.map(s=>s.filled?1:0):null})),
+          mt:p.monsterType,co:p.color,cd:(p.codeNum!=null?p.codeNum:null),
+          ch:p.chain?p.chain.map(s=>s.filled?1:0):null})),
         constellations:ch.constellations.map(c=>({aw:c.awarded?1:0,members:c.members})),
       })),
     };
@@ -6225,6 +6238,7 @@ function loadGame(){
       const p=ch.planets[i],s=sd.planets[i];
       p.comp=s.c;p.compId=s.ci;p.revealed=!!s.rv;p.defeated=!!s.df;p.barren=!!s.ba;
       p.home=!!s.hm;p.constellation=(s.cn!=null?s.cn:-1);p.special=s.sp||null;p.monsterType=s.mt;p.color=s.co;
+      if(s.cd!=null)p.codeNum=s.cd;   // item 6/7: keep planet identity (code + image) across reloads
       if(s.ch&&p.compId!=null){p.chain=buildChain(p.compId);for(let k=0;k<p.chain.length&&k<s.ch.length;k++)p.chain[k].filled=!!s.ch[k];}
     }
     for(let k=0;k<ch.constellations.length&&k<sd.constellations.length;k++){
