@@ -421,9 +421,9 @@ body{position:fixed;inset:0}
 .ciratesym{font-weight:800;font-size:16px;width:34px;text-align:center}
 /* item 1: Current/Next NOT bold; the countdown timer enlarged */
 .ciratenow{font-weight:400;font-size:14px;color:#dffaff;min-width:54px;text-align:right}
-.ciratearr{font-size:18px;font-weight:400;color:rgba(70,224,255,.95);letter-spacing:1px}
+.ciratearr{font-size:13px;font-weight:400;color:rgba(70,224,255,.95);letter-spacing:1px}
 .ciratenext{font-weight:400;font-size:14px;color:#46ffb0;min-width:54px;text-align:left}
-.cirateval{font-weight:700}
+.cirateval{font-weight:700;font-size:17px}
 .ciratenote{margin-top:6px;font-family:'Rajdhani';font-size:11px;line-height:1.4;
   color:rgba(180,210,235,.7);text-align:center}
 .elgrid{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
@@ -1972,7 +1972,7 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.2';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v1.3';   // item 13: shown on the cover; item 12: save is kept unless this changes
 const ECON={
   PICKS_PER_TICK:1,
   TICK_MS:5000,
@@ -6537,27 +6537,61 @@ function toggleMute(){setVolume(_muted?3:0);}
     // startGame has now loaded the save (if any). Only offer the tutorial choice when the
     // tutorial has not been completed; otherwise clear the flag so nothing pops up.
     try{ if(!G || G.tutorialDone){ window._tutChoicePending=false; } }catch(e){ window._tutChoicePending=false; }
-    // startGame set intro.display=none; restore it so we can cross-fade over the live scene.
+    // startGame set intro.display=none; restore it so we STAY on the cover while the
+    // main-scene art finishes loading — don't cross-fade into a half-loaded scene.
     intro.style.display='flex';
     intro.style.opacity='1';
+    var _hint=document.getElementById('coverHint'); if(_hint)_hint.textContent='LOADING';
     // Prep the main content (everything except the cover) to fade in from transparent.
     const main=[document.querySelector('.topbar'),document.querySelector('.stage'),document.querySelector('.dock')];
     main.forEach(function(el){ if(el){ el.style.transition='opacity 1.4s ease'; el.style.opacity='0'; } });
-    // Force a reflow so the starting opacity is committed before the transition.
-    void intro.offsetWidth;
-    // Cross-fade: cover out, main in, simultaneously.
-    intro.style.transition='opacity 1.4s ease';
-    requestAnimationFrame(function(){
-      intro.style.opacity='0';
-      main.forEach(function(el){ if(el) el.style.opacity='1'; });
-      // Fade the tutorial choice in at the same moment, so it shares the 1.4s ramp
-      // with the main screen instead of popping in afterwards.
-      if(window._tutChoicePending){ window._tutChoicePending=false; showTutorialChoice(); }
-    });
-    setTimeout(function(){
-      intro.style.display='none';
-      main.forEach(function(el){ if(el){ el.style.transition=''; el.style.opacity=''; } });
-    }, 1500);
+    // True once the current planet's big async images (surface texture + constellation
+    // starfield bg + monster sprite) have all SETTLED (loaded or errored) — so the main
+    // scene won't visibly pop assets in right after the cover fades.
+    function _mainArtReady(){
+      try{
+        var p=(typeof curPlanet==='function')?curPlanet():null; if(!p)return true;
+        var code=(typeof planetImgCode==='function')?planetImgCode(p):null;
+        if(code){ var pe=_planetImgCache[code]; if(!(pe&&(pe.ready||pe.err)))return false; }
+        if(typeof planetConstName==='function' && typeof _monAssetCache!=='undefined'){
+          var cn=planetConstName(p);
+          if(cn){
+            var bb=MON_ASSET.base+MON_ASSET.dir+cn+'_bg'; var be=_monAssetCache[bb];
+            if(!(be&&(be.state==='ok'||be.state==='err')))return false;
+            if(typeof monAssetBase==='function'){
+              var isB=(typeof planetIsBoss==='function')&&planetIsBoss(p);
+              var mb=monAssetBase(cn,isB,'std',1); var me=_monAssetCache[mb];
+              if(!(me&&(me.state==='ok'||me.state==='err')))return false;
+            }
+          }
+        }
+        return true;
+      }catch(_){ return true; }
+    }
+    function proceed(){
+      if(_hint)_hint.textContent='';
+      // Force a reflow so the starting opacity is committed before the transition.
+      void intro.offsetWidth;
+      // Cross-fade: cover out, main in, simultaneously.
+      intro.style.transition='opacity 1.4s ease';
+      requestAnimationFrame(function(){
+        intro.style.opacity='0';
+        main.forEach(function(el){ if(el) el.style.opacity='1'; });
+        // Fade the tutorial choice in at the same moment, so it shares the 1.4s ramp.
+        if(window._tutChoicePending){ window._tutChoicePending=false; showTutorialChoice(); }
+      });
+      setTimeout(function(){
+        intro.style.display='none';
+        main.forEach(function(el){ if(el){ el.style.transition=''; el.style.opacity=''; } });
+      }, 1500);
+    }
+    // Hold on the cover until the art is ready (6s safety so the player is never stuck).
+    var _waitT0=(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now();
+    (function _waitArt(){
+      var nowt=(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now();
+      if(_mainArtReady() || (nowt-_waitT0)>6000){ proceed(); return; }
+      requestAnimationFrame(_waitArt);
+    })();
   }
   // Full-screen overlay shown once the cover has faded into the main scene. Dims the
   // whole screen and asks the player whether to start the new-player tutorial.
