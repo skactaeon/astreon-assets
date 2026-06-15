@@ -244,7 +244,7 @@ body{position:fixed;inset:0}
 .toast.info{border-color:rgba(70,224,255,.5);color:var(--glow)}
 .toast.plain{background:transparent;border:none;padding:0;border-radius:0;color:#46e0ff;text-shadow:0 0 8px rgba(70,224,255,.7);font-weight:800;font-size:15px;transition:opacity .3s,transform .3s}
 
-.modal{position:absolute;inset:-3px;z-index:60;display:none;align-items:center;justify-content:center;
+.modal{position:absolute;inset:-3px;z-index:70;display:none;align-items:center;justify-content:center;
   background:rgba(3,4,10,.45);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);padding:20px}
 .modal.show{display:flex}
 .modal.detailbg{background:rgba(3,5,12,.82);backdrop-filter:none;-webkit-backdrop-filter:none}
@@ -307,7 +307,7 @@ body{position:fixed;inset:0}
    container, fill gradient, and button colour/size. */
 .fxseg{position:relative;display:flex;align-items:stretch;margin:16px auto 8px;flex:none;
   width:min(255px,80cqw);height:44px;border:1px solid rgba(70,224,255,.5);
-  background:rgba(70,224,255,.08);border-radius:999px;overflow:hidden;
+  background:#0c1a2c;border-radius:999px;overflow:hidden;
   box-shadow:0 0 10px rgba(70,224,255,.35),inset 0 0 6px rgba(70,224,255,.12)}
 /* identical to .cxseg-fill (ELEMENTS slider), just 1/3 wide for the 3 segments */
 .fxseg-fill{position:absolute;top:2px;bottom:2px;left:2px;width:calc(33.33% - 1px);border-radius:999px;
@@ -358,7 +358,7 @@ body{position:fixed;inset:0}
 .fxcell.locked .fxnum{color:rgba(170,178,190,.8)}
 .fxcell:active{transform:scale(.96)}
 .cxseg{position:relative;display:flex;align-items:stretch;margin:16px auto 8px;width:min(255px,80cqw);height:44px;
-  border:1px solid rgba(70,224,255,.5);background:rgba(70,224,255,.08);border-radius:999px;overflow:hidden;
+  border:1px solid rgba(70,224,255,.5);background:#0c1a2c;border-radius:999px;overflow:hidden;
   box-shadow:0 0 10px rgba(70,224,255,.35),inset 0 0 6px rgba(70,224,255,.12)}
 .cxseg-fill{position:absolute;top:2px;bottom:2px;left:2px;width:62%;border-radius:999px;
   background:linear-gradient(180deg,#5fe3ff,#3aa8ff);
@@ -1969,7 +1969,7 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.1';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v1.2';   // item 13: shown on the cover; item 12: save is kept unless this changes
 const ECON={
   PICKS_PER_TICK:1,
   TICK_MS:5000,
@@ -3293,21 +3293,21 @@ function fmtPct(r){if(r<1)return (Math.round(r*100)/100)+"%";return (Math.round(
 const COMPRULES=[
   {count:14, bands:[
     [101,118,0.01,0.05,1],
-    [81,100,0.05,1.5,1],
-    [61,80,1.5,4,2],
-    [41,60,4,7,2],
-    [21,40,7,14,3]]},
+    [81,100,0.05,1,1],
+    [61,80,1,3,2],
+    [41,60,3,5,2],
+    [21,40,5,8,3]]},
   {count:14, bands:[
-    [101,118,0.01,0.3,1],
-    [81,100,0.3,3,1],
-    [61,80,3,7,2],
-    [41,60,7,12,2],
-    [21,40,12,22,3]]},
+    [101,118,0.02,0.1,1],
+    [81,100,0.1,2,1],
+    [61,80,2,4,2],
+    [41,60,4,6,2],
+    [21,40,6,9,3]]},
   {count:14, bands:[
-    [101,118,0.5,3,1],
-    [81,100,3,6,1],
-    [61,80,5,8,2],
-    [41,60,6,9,2],
+    [101,118,0.03,0.15,1],
+    [81,100,0.15,3,1],
+    [61,80,3,5,2],
+    [41,60,5,7,2],
     [21,40,7,10,3]]},
 ];
 function rnd1(r,a,b){return Math.round(r.range(a,b)*100)/100;}
@@ -3820,7 +3820,7 @@ function collectorHarvestNow(){
 // hour of cumulative stay on the planet adds +0.01%.
 function planetStayHours(p){ return ((p&&p.stayMs)||0)/3600000; }
 function planetRateBonus(p){ return Math.floor(planetStayHours(p))*0.01; }                 // +0.01% / full hr
-function formulaBaseRate(p){ const ps=(p&&p.compId!=null)?threatLevel(p.compId):0; return ps>0?100/(ps*10):0; }  // percent/tick
+function formulaBaseRate(p){ const ps=(p&&p.compId!=null)?threatLevel(p.compId):0; return ps>0?100/ps:0; }  // percent/tick
 function formulaDropRate(p){ return formulaBaseRate(p)+planetRateBonus(p); }               // effective %
 function harvestTick(){const p=curPlanet();
   if(!p.defeated){renderTop();return;}
@@ -5772,12 +5772,12 @@ function drawMap(){const cv=document.getElementById('mapCanvas');if(!cv)return;c
       ring(ctx,pt.x,pt.y,R+6,hexA("#ffd24a",blink));
       ring(ctx,pt.x,pt.y,R+10,hexA("#ffd24a",blink*0.45));
     }
-    // item 3 (r33): mark TAURUS and AQUARIUS constellation members on the map.
+    // item 3 (r33): mark TAURUS, AQUARIUS and PISCES constellation members on the map.
     if(front && typeof planetConstName==='function'){
       const cn2=planetConstName(p);
-      if(cn2==='Taurus'||cn2==='Aquarius'){
+      if(cn2==='Taurus'||cn2==='Aquarius'||cn2==='Pisces'){
         const isB=(typeof planetIsBoss==='function')&&planetIsBoss(p);
-        const mcol=cn2==='Taurus'?"#ffb24a":"#7fd0ff";
+        const mcol=cn2==='Taurus'?"#ffb24a":(cn2==='Aquarius'?"#7fd0ff":"#ff7fb0");
         const pb=0.5+0.5*Math.abs(Math.sin(Date.now()/240));
         ring(ctx,pt.x,pt.y,R+7,hexA(mcol,pb));
         ring(ctx,pt.x,pt.y,R+12,hexA(mcol,pb*0.5));
