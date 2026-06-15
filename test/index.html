@@ -281,6 +281,9 @@ body{position:fixed;inset:0}
 /* item 9: FOLDER-style tabs — active tab is 60% of the width, the inactive 40%, with a
    1px DIAGONAL seam between them (slanted inner edges + 1px gap). No slide animation. */
 .cxtabs{display:flex;gap:1px;width:min(330px,94cqw);margin:0 auto 4px}
+/* below-tabs content wrapper — fills the remaining column height (so the periodic
+   table / catalog size is unchanged) and is the element codexSetTab cross-fades. */
+.cxbody{flex:1 1 auto;min-height:0;width:100%;display:flex;flex-direction:column;align-items:center}
 .cxtab{flex:3 1 0;padding:11px 0;cursor:pointer;border:none;
   font-family:'Rajdhani';font-weight:700;font-size:15px;letter-spacing:1px;
   color:var(--glow);text-shadow:0 0 8px rgba(70,224,255,.5);background:rgba(70,224,255,.12);
@@ -1701,7 +1704,7 @@ function genUniverse(seed,chap){const r=RNG(seed);const planets=[];
   const tierPool=compoundsByTier(chap.compTier,chap.id);
   const usedComp=new Set();
   const homeId=0;const mother=planets[0];
-  mother.home=true;mother.revealed=true;mother.defeated=true;mother.codeNum=r.int(1,44);   // only P01..P44 images exist -> label matches image
+  mother.home=true;mother.revealed=true;mother.defeated=true;mother.codeNum=r.int(1,99);
   mother.comp=randComp(r,chap.id);mother.compId=null;mother.barren=true;
   if(chap.id===0){const h2o=FORMULAS.indexOf("H2O");
     if(h2o>=0){mother.compId=h2o;mother.motherFormula=true;}
@@ -1969,7 +1972,7 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.8';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v1.9';   // item 13: shown on the cover; item 12: save is kept unless this changes
 const ECON={
   PICKS_PER_TICK:1,
   TICK_MS:5000,
@@ -2398,14 +2401,7 @@ function planetImgCode(p){
   // The mother planet is itself barren, so barren is NOT excluded; only the solar
   // special planets (with a solarName) keep the embedded default texture.
   if(!p || p.solarName) return null;
-  // Only Planet_P01..P44 images exist in the assets repo, but codes can run higher
-  // (mother codeNum up to 99, planet ids up to 99). Wrap the number into 1..44 so NO
-  // planet ever 404s onto the broken-image fallback. e.g. P96 -> P08.
-  try{ const c=planetCode(p).replace('-','');
-    const m=c.match(/^([A-Za-z]+)(\d+)$/);
-    if(m){ const n=((parseInt(m[2],10)-1)%44+44)%44+1; return m[1]+String(n).padStart(2,'0'); }
-    return c;
-  }catch(_){ return null; }
+  try{ return planetCode(p).replace('-',''); }catch(_){ return null; }   // "P-28" -> "P28"
 }
 function loadPlanetImg(code){
   let e=_planetImgCache[code]; if(e) return e;
@@ -2575,7 +2571,13 @@ function drawWormholeSphere(){
     ctx.globalAlpha=1;ctx.textBaseline="alphabetic";return;
   }
   cv.style.position='';cv.style.left='';cv.style.top='';cv.style.zIndex='';cv.style.pointerEvents='';
-  const size=Math.min(window.innerWidth-32,window.innerHeight-280,400);
+  // size from the DESIGN-SPACE stage (.app), NOT window.innerWidth — the canvas lives
+  // inside the scaled stage, so using device px would mis-size/offset the sphere (same
+  // fix as drawMap). Orbit centre + node positions all derive from size, so this also
+  // corrects the sphere position while rotating.
+  const _app=document.querySelector('.app');
+  const _aw=(_app&&_app.clientWidth)||window.innerWidth, _ah=(_app&&_app.clientHeight)||window.innerHeight;
+  const size=Math.min(_aw-32,_ah-280,400);
   cv.style.width=size+"px";cv.style.height=size+"px";cv.width=size*dpr;cv.height=size*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.clearRect(0,0,size,size);
   let _whA=1;
@@ -5822,14 +5824,21 @@ function ring(ctx,x,y,r,col){ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.lineWidth=1.
 let codexMode='EXTRACT';
 let codexTab='ELEMENT';   // ELEMENT (periodic table) | FORMULA (compound codex)
 function codexSetTab(t){ if(t===codexTab)return; codexTab=t;
-  // item: slide the active tab wider (flex-grow transition on .cxtab) FIRST, then swap
-  // the tab content once the slide has played — gives a sliding feel on switch.
+  // item: tabs STAY and recolour/resize gradually (CSS .56s on .cxtab .on); the body
+  // below cross-fades — fade the old content out, swap, fade the new content in.
   const tabs=document.querySelectorAll('.cxtab');
-  if(tabs.length===2){
-    tabs[0].classList.toggle('on', t==='ELEMENT');
-    tabs[1].classList.toggle('on', t==='FORMULA');
-    setTimeout(()=>{ renderCodex(); setTimeout(attachCodexClose,10); }, 560);
-  } else { renderCodex(); setTimeout(attachCodexClose,10); }
+  const body=document.getElementById('cxBody');
+  if(tabs.length===2){ tabs[0].classList.toggle('on', t==='ELEMENT'); tabs[1].classList.toggle('on', t==='FORMULA'); }
+  if(!body){ renderCodex(); setTimeout(attachCodexClose,10); return; }
+  if(typeof formula3dStop==='function')formula3dStop();
+  body.style.transition='opacity .26s ease'; body.style.opacity='0';
+  setTimeout(()=>{
+    body.innerHTML=codexBodyHTML(); presetCodexCell();
+    body.style.opacity='0'; void body.offsetWidth;
+    body.style.transition='opacity .26s ease'; body.style.opacity='1';
+    if(codexTab==='FORMULA')setTimeout(formula3dStart,40);
+    setTimeout(attachCodexClose,10);
+  }, 260);
 }
 // FORMULA codex: every compound in the game, owned ones lit + count, tap to synthesize.
 var _formulaNum=null;
@@ -6026,18 +6035,23 @@ function renderCodex(){
   h+=`<div class="cxtabs">
     <button class="cxtab ${codexTab==='ELEMENT'?'on':''}" onclick="codexSetTab('ELEMENT')">ELEMENTS</button>
     <button class="cxtab ${codexTab==='FORMULA'?'on':''}" onclick="codexSetTab('FORMULA')">FORMULAS</button></div>`;
+  // body lives in its own #cxBody so codexSetTab can cross-fade ONLY the content while
+  // the tabs above stay put and animate their colour/width gradually (item: smooth switch).
+  h+=`<div id="cxBody" class="cxbody">${codexBodyHTML()}</div>`;
+  presetCodexCell();
+  document.getElementById('codexInner').innerHTML=h;
+  setTimeout(attachCodexClose,10);
+  if(codexTab==='FORMULA')setTimeout(formula3dStart,40);   // item 7: spin the held-formula 3D thumbnails
+}
+// Everything BELOW the ELEMENTS/FORMULAS tabs, for the current tab.
+function codexBodyHTML(){
   if(codexTab==='FORMULA'){
-    h+=formulaTabHTML();
-    h+=`<button class="closebtn" style="margin-top:14px;margin-bottom:8px" onclick="closeCodex()">${T('back')}</button>`;
-    document.getElementById('codexInner').innerHTML=h;
-    setTimeout(attachCodexClose,10);
-    setTimeout(formula3dStart,40);   // item 7: spin the held-formula 3D thumbnails
-    return;
+    return formulaTabHTML()+`<button class="closebtn" style="margin-top:14px;margin-bottom:8px" onclick="closeCodex()">${T('back')}</button>`;
   }
   const qLabel=codexQty===0?'MAX':('×'+codexQty);
   const isEx=codexMode==='EXTRACT';
   // segmented slider: [EXTRACT | ×qty | SYNTH] in one BACK-style pill; active side highlighted
-  h+=`<div class="cxseg">
+  let h=`<div class="cxseg">
     <div class="cxseg-fill ${isEx?'left':'right'}"></div>
     <button class="cxseg-btn ${isEx?'on':''}" onclick="codexSetMode('EXTRACT')">${T('extract')}</button>
     <button class="cxseg-qty" id="cxQtyBtn" onclick="codexCycleQty()">${qLabel}</button>
@@ -6071,8 +6085,7 @@ function renderCodex(){
       <span class="zz">${z}</span><span class="sy">${EL[z].sym}</span><span class="cxv" style="color:#fff">${v>0?'×'+v:''}</span></div>`;}}
   h+=`</div></div></div>`;
   h+=`<button class="closebtn" style="margin-top:14px;margin-bottom:8px" onclick="closeCodex()">${T('back')}</button>`;
-  presetCodexCell();
-  document.getElementById('codexInner').innerHTML=h;}
+  return h;}
 // Cell size from the DESIGN-SPACE stage height (415x900 #viewport), NOT the real
 // window: innerHeight is un-transformed, which shrank the table on desktop.
 function _codexAvailH(){
