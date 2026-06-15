@@ -618,7 +618,7 @@ body{position:fixed;inset:0}
   font-size:1.3cqh;color:#dff;text-shadow:0 0 3px #000,0 1px 2px #000;letter-spacing:.5px;font-weight:700}
 /* solved-element cells: flush to the window's lower edge, bottom row first,
    overflow stacks above (bottom <=5, top <=6) */
-.ckSolved{position:relative;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:1.4%;pointer-events:none}
+.ckSolved{position:relative;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:1.4%;pointer-events:none;opacity:0.8}
 .ckSolvedRow{display:flex;gap:2.4%;justify-content:center;align-items:center}
 .ckSolvedDot{width:4.4cqh;height:4.4cqh;flex:none;aspect-ratio:1;border-radius:50%;border:1px solid rgba(120,230,255,.5);
   display:flex;align-items:center;justify-content:center;font-size:2.2cqh;color:#001;
@@ -1975,7 +1975,7 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.18';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v1.19';   // item 13: shown on the cover; item 12: save is kept unless this changes
 const ECON={
   PICKS_PER_TICK:1,
   TICK_MS:5000,
@@ -5834,19 +5834,21 @@ function drawMap(){const cv=document.getElementById('mapCanvas');if(!cv)return;c
       ring(ctx,pt.x,pt.y,R+6,hexA("#ffd24a",blink));
       ring(ctx,pt.x,pt.y,R+10,hexA("#ffd24a",blink*0.45));
     }
-    // item 3 (r33): mark TAURUS, AQUARIUS and PISCES constellation members on the map.
+    // mark constellations that HAVE monster art — only ONE planet each (the boss) so the
+    // map stays readable and gives one test target per art-constellation.
+    const ART_CONST={Taurus:"#ffb24a",Aquarius:"#7fd0ff",Pisces:"#ff7fb0",Aries:"#ff5a5a",Leo:"#ffd24a",Libra:"#5fe08a"};
     if(front && typeof planetConstName==='function'){
       const cn2=planetConstName(p);
-      if(cn2==='Taurus'||cn2==='Aquarius'||cn2==='Pisces'||cn2==='Aries'||cn2==='Leo'){
-        const isB=(typeof planetIsBoss==='function')&&planetIsBoss(p);
-        const mcol=cn2==='Taurus'?"#ffb24a":(cn2==='Aquarius'?"#7fd0ff":(cn2==='Pisces'?"#ff7fb0":(cn2==='Aries'?"#ff5a5a":"#ffd24a")));
+      const mcol=ART_CONST[cn2];
+      const isB=(typeof planetIsBoss==='function')&&planetIsBoss(p);
+      if(mcol && isB){
         const pb=0.5+0.5*Math.abs(Math.sin(Date.now()/240));
         ring(ctx,pt.x,pt.y,R+7,hexA(mcol,pb));
         ring(ctx,pt.x,pt.y,R+12,hexA(mcol,pb*0.5));
         ctx.fillStyle=hexA(mcol,0.97);
         ctx.font=`800 ${Math.max(9,R*0.6)}px 'Rajdhani'`;ctx.textAlign="center";ctx.textBaseline="bottom";
         ctx.shadowBlur=8;ctx.shadowColor=mcol;
-        ctx.fillText("★ "+cn2.toUpperCase()+(isB?" BOSS":""),pt.x,pt.y-R-13);ctx.shadowBlur=0;
+        ctx.fillText("★ "+cn2.toUpperCase(),pt.x,pt.y-R-13);ctx.shadowBlur=0;
       }
     }
     if(front){const label=p.home?"MOTHER":(p.defeated?planetLabel(p):planetCode(p));
@@ -6758,7 +6760,7 @@ function toggleMute(){setVolume(_muted?3:0);}
       var hint=document.createElement('div');
       hint.id='coverHint';
       hint.textContent='LOADING';
-      hint.style.cssText='position:absolute;left:0;right:0;top:62%;text-align:center;'
+      hint.style.cssText='position:absolute;left:0;right:0;top:74%;text-align:center;'
         +"font-family:'Rajdhani',sans-serif;font-weight:600;font-size:15px;letter-spacing:4px;"
         +'color:#46e0ff;text-shadow:0 0 10px rgba(70,224,255,.85),0 0 4px rgba(0,0,0,.9),0 1px 2px rgba(0,0,0,.9);'
         +'pointer-events:none;z-index:71;animation:tapHintBreath 2s ease-in-out infinite';
@@ -6894,6 +6896,13 @@ function tutorialShow(){
   document.getElementById('tutText').textContent=s.title||s.text||'';
   const subEl=document.getElementById('tutSub');if(subEl)subEl.innerHTML=s.sub||'';   // innerHTML so a step can use a <br> second line
   document.getElementById('tutStep').textContent='STEP '+(_tutStep+1)+' / '+_L.length;
+  // items 2/7: the WHOLE caption (title, sub, STEP counter, NEXT/BACK) appears together,
+  // and only once the focus box is near its position — so on a morphing step hide it and
+  // fade it in after ≈1.5s; noMorph (instant) steps show it at once.
+  {const _capEl=document.getElementById('tutCaption');
+   if(_capEl){ clearTimeout(window._tutCapTO);
+     if(s.noMorph){ _capEl.style.opacity='1'; }
+     else { _capEl.style.opacity='0'; window._tutCapTO=setTimeout(function(){const c2=document.getElementById('tutCaption');if(c2)c2.style.opacity='1';},1500); } }}
   {const bk=document.getElementById('tutBack');if(bk)bk.style.display=(_tutStep>0)?'inline-block':'none';}
   // pause (freeze scene) only during the falling-element step
   _tutPaused=(s.key==='falling');
@@ -7063,6 +7072,25 @@ function tutorialShow(){
     _tutPrevKey=s.key;
     return;
   }
+  if(s.rects){
+    // TWO (or more) rounded-rect spotlights at once (e.g. EXTRACT + SYNTH on each side)
+    spot.style.display='none'; circ.style.display='none';
+    arc.style.display='block'; arc.style.opacity='1'; arc.style.background='none';
+    {const ee=document.getElementById('tutEllipse'); if(ee)ee.style.display='none';}
+    const boxes=s.rects().filter(Boolean).map(rr=>({x:ox+rr.x*vw,y:oy+rr.y*vh,w:rr.w*vw,h:rr.h*vh}));
+    function rrp(b,rad){const x=b.x,y=b.y,w=b.w,h=b.h,q=Math.min(rad,w/2,h/2);
+      return `M ${(x+q).toFixed(1)} ${y.toFixed(1)} h ${(w-2*q).toFixed(1)} a ${q} ${q} 0 0 1 ${q} ${q} v ${(h-2*q).toFixed(1)} a ${q} ${q} 0 0 1 ${-q} ${q} h ${(-(w-2*q)).toFixed(1)} a ${q} ${q} 0 0 1 ${-q} ${-q} v ${(-(h-2*q)).toFixed(1)} a ${q} ${q} 0 0 1 ${q} ${-q} Z`;}
+    const d=boxes.map(b=>rrp(b,12)).join(' ');
+    const hole=document.getElementById('tutMaskHole');
+    hole.setAttribute('d',d); hole.setAttribute('fill','black'); hole.setAttribute('stroke','none');
+    const dim=document.getElementById('tutDimRect'); dim.style.display='block';
+    const pathEl=document.getElementById('tutArcPath');
+    pathEl.setAttribute('d',d); pathEl.style.fill='none'; pathEl.style.stroke='rgba(95,208,255,.9)'; pathEl.style.strokeWidth='1.5'; pathEl.style.strokeLinejoin='round'; pathEl.style.opacity='1';
+    let minT=1e9; for(const b of boxes)minT=Math.min(minT,b.y);
+    cap.style.bottom=(SH-minT+14)+'px'; cap.style.top='';   // caption above the boxes
+    _tutPrevKey=s.key;
+    return;
+  }
   spot.style.display='block';
   spot.style.borderRadius=(18*k)+'px';
   const r=s.rect();
@@ -7073,11 +7101,6 @@ function tutorialShow(){
   spot.classList.remove('focusin');
   if(s.noMorph){ void spot.offsetWidth; spot.style.transition=TUT_SPOT_TRANS; }
   else if(_tutStep===0){ void spot.offsetWidth; spot.classList.add('focusin'); }   // focus zoom only on a morphing first step
-  // item: hide the caption while the box MORPHS, then fade it in slowly once the box is
-  // near its final position (≈68% through the 2.2s morph). noMorph steps show at once.
-  {const tw=document.getElementById('tutTextWrap');
-   if(tw){ if(s.noMorph){ clearTimeout(window._tutCapTO); tw.style.transition=''; tw.style.opacity='1'; }
-     else { tw.style.transition='opacity .8s ease'; tw.style.opacity='0'; clearTimeout(window._tutCapTO); window._tutCapTO=setTimeout(function(){const t2=document.getElementById('tutTextWrap');if(t2)t2.style.opacity='1';},1500); } }}
   if(s.capAbove){
     // caption sits ABOVE the focus box (its bottom 14px above the box top)
     cap.style.bottom=(SH-y+14)+'px';cap.style.top='';
@@ -7167,12 +7190,27 @@ const CODEX_TUT_STEPS=[
     capAbove:true, capDelay:true, rect:()=>tutElRect('#cxScroll',4)||{x:0.04,y:0.28,w:0.92,h:0.5}},
 ];
 const BATTLE_TUT_STEPS=[
-  {key:'bmon', title:'Element Monster', sub:'Solve its formula to defeat it',
-    rect:()=>tutElRect('#cockpitScreen .ckMonster',6)||{x:0.18,y:0.10,w:0.64,h:0.34}},
-  {key:'bhp', title:'Monster Health', sub:'Each correct element chips it down',
-    rect:()=>tutElRect('#cockpitScreen .ckHp',6)||{x:0.18,y:0.06,w:0.64,h:0.06}},
-  {key:'bfire', title:'Pick & Fire', sub:'Choose a family, tap an element to fire',
-    rect:()=>tutElRect('#cockpitScreen .ckKeypad',6)||tutElRect('#cockpitScreen .ckDash',6)||{x:0.05,y:0.66,w:0.90,h:0.30}},
+  {key:'b1', title:'Element Monster', sub:'Solve the correct elements to defeat it',
+    rect:()=>tutElRect('#cockpitScreen .ckMonster',6)||{x:0.20,y:0.10,w:0.60,h:0.30}},
+  {key:'b2', title:'Formula', sub:'The chemical formula tied to this element monster',
+    rect:()=>tutElRect('#ckMolWin',6)||{x:0.28,y:0.30,w:0.44,h:0.18}},
+  {key:'b3', title:'Damage',
+    sub:'Damage matches the element’s proton number<br>Right family = bonus hit · exact element = huge damage',
+    rect:()=>tutElRect('#ckMolWin',6)||{x:0.28,y:0.30,w:0.44,h:0.18}},
+  {key:'b4', title:'Required Elements', sub:'How many of each element you still need',
+    capAbove:true, rect:()=>tutElRect('#cockpitScreen .ckSolved',6)||{x:0.22,y:0.52,w:0.56,h:0.10}},
+  {key:'b5', title:'Held Protons', sub:'The monster’s counterattack costs you held protons',
+    rect:()=>tutElRect('#ckProtons',8)||tutElRect('#cockpitScreen .ckZone1',6)||{x:0.30,y:0.60,w:0.40,h:0.06}},
+  {key:'b6', title:'Main Dashboard', sub:'Shows the information you need to fight',
+    rect:()=>tutElRect('#ckCenter',6)||{x:0.30,y:0.66,w:0.40,h:0.12}},
+  {key:'b7', title:'Planet Info', sub:'The current planet code and its threat level',
+    rect:()=>tutElRect('#cockpitScreen .ckZ2L',6)||{x:0.06,y:0.66,w:0.24,h:0.12}},
+  {key:'b8', title:'Leave Planet', sub:'Leave this planet and return to the map',
+    rect:()=>tutElRect('#ckBack',6)||{x:0.70,y:0.66,w:0.24,h:0.12}},
+  {key:'b9', title:'Element Families', sub:'Each family of elements<br>Tap an element to damage the monster',
+    rect:()=>tutElRect('#cockpitScreen .ckKeys',6)||{x:0.20,y:0.80,w:0.60,h:0.16}},
+  {key:'b10', title:'EXTRACT / SYNTH', sub:'Extract or synth the elements you need directly<br>Costs more resources than the CODEX',
+    rects:()=>[ tutElRect('#ckExtract',5)||{x:0.02,y:0.80,w:0.18,h:0.16}, tutElRect('#ckSynth',5)||{x:0.80,y:0.80,w:0.18,h:0.16} ]},
 ];
 // Show the first-visit guide prompt for an area (once), then run its steps on START.
 function tutMaybeArea(area,title,steps){
@@ -7785,10 +7823,10 @@ function showProtonHit(dmg){
     pe._hitTO=setTimeout(()=>{ const x=pe.querySelector('.ckProtDelta'); if(x)x.remove(); }, 1300);
   }
 }
-// Enemy attack FX: several glowing CRESCENT MOONS bloom over the player's formula.
-// Colour by constellation — Pisces = blue, Taurus = gold. The FX runs for exactly the
-// monster's attack-pose duration (~700ms) so the two end together. Drawn on the
-// top-most layer (.ckFXCanvas z-index:12).
+// Enemy attack FX — type + colour per constellation. Runs for exactly the monster's
+// attack-pose duration (~700ms) so the two end together. Drawn on the top-most layer.
+//   Aries/Leo = red CLAWS (Aries: more, shorter, faster) · Taurus = gold CRESCENTS ·
+//   Aquarius = green CIRCLES · Pisces = blue CIRCLES · Libra = green SOUND WAVES.
 function cockpitEnemyFX(){
   const cv=document.getElementById('ckFXCanvas'); if(!cv)return;
   const W=Math.max(2,cv.offsetWidth), H=Math.max(2,cv.offsetHeight);
@@ -7797,70 +7835,72 @@ function cockpitEnemyFX(){
   const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
   const p=_cockpit?G.planets[_cockpit.planetId]:null;
   const cn=(p&&typeof planetConstName==='function')?planetConstName(p):null;
-  const claw=(cn==='Aries'||cn==='Leo');
-  const gold=(cn==='Taurus'||cn==='Leo');
-  const cMain=claw?(cn==='Aries'?'#ff4040':'#ffb020'):(gold?'#ffb84a':'#46a0ff');
-  const cGlow=claw?(cn==='Aries'?'#ffb0b0':'#ffe6a0'):(gold?'#ffe6a0':'#bfeaff');
-  const tx=W*0.5, ty=H*0.33;                  // moved UP (was 0.43)
-  const DUR=700,t0=performance.now();         // == attack-pose duration -> end together
+  let type='circle', cMain='#46a0ff', cGlow='#bfeaff';
+  if(cn==='Aries'||cn==='Leo'){ type='claw'; cMain='#ff4040'; cGlow='#ffb0b0'; }
+  else if(cn==='Taurus'){ type='crescent'; cMain='#ffb84a'; cGlow='#ffe6a0'; }
+  else if(cn==='Aquarius'){ type='circle'; cMain='#46e08a'; cGlow='#c2ffdb'; }
+  else if(cn==='Pisces'){ type='circle'; cMain='#46a0ff'; cGlow='#bfeaff'; }
+  else if(cn==='Libra'){ type='wave'; cMain='#46e08a'; cGlow='#c2ffdb'; }
+  const tx=W*0.5, ty=H*0.33;
+  const DUR=700,t0=performance.now();
   if(_projRAF)cancelAnimationFrame(_projRAF);
   let _impacted=false;
-  // ARIES / LEO: several glowing CLAW SLASHES (red / gold) swipe across the formula.
-  if(claw){
+  function impact(t){ if(t>DUR*0.4 && !_impacted){ _impacted=true; if(typeof combatScreenShake==='function')combatScreenShake(); } }
+  if(type==='claw'){
+    const aries=(cn==='Aries');
+    const N=aries?6:3, lenF=aries?0.55:1, speed=aries?2.5:1.7, offMax=aries?0.16:0.28;
     const swipes=[];
-    for(let i=0;i<3;i++)swipes.push({
-      cx:tx+(Math.random()*2-1)*W*0.16, cy:ty+(Math.random()*2-1)*H*0.10,
-      ang:-0.7+Math.random()*1.4, len:H*0.20+Math.random()*H*0.12, off:Math.random()*0.28});
-    function frameC(now){
-      const t=now-t0; if(t>=DUR){ ctx.clearRect(0,0,W,H); _projRAF=0; return; }
+    for(let i=0;i<N;i++)swipes.push({cx:tx+(Math.random()*2-1)*W*0.18, cy:ty+(Math.random()*2-1)*H*0.12,
+      ang:-0.8+Math.random()*1.6, len:(H*0.20+Math.random()*H*0.12)*lenF, off:Math.random()*offMax});
+    function frC(now){ const t=now-t0; if(t>=DUR){ctx.clearRect(0,0,W,H);_projRAF=0;return;}
       ctx.clearRect(0,0,W,H); ctx.lineCap='round';
       for(const s of swipes){ const k=Math.max(0,Math.min(1,(t/DUR)-s.off)); if(k<=0)continue;
-        const grow=Math.min(1,k*1.7), a=Math.sin(Math.PI*k)*0.95;
+        const grow=Math.min(1,k*speed), a=Math.sin(Math.PI*k)*0.95;
         const ux=Math.cos(s.ang), uy=Math.sin(s.ang), px=-uy, py=ux;
-        for(let n=0;n<4;n++){ const o=(n-1.5)*9, hl=s.len*0.5*grow;
+        for(let n=0;n<4;n++){ const o=(n-1.5)*8, hl=s.len*0.5*grow;
           const x0=s.cx+px*o-ux*hl, y0=s.cy+py*o-uy*hl, x1=s.cx+px*o+ux*hl, y1=s.cy+py*o+uy*hl;
-          const mx=(x0+x1)/2+px*7, my=(y0+y1)/2+py*7;
-          ctx.globalAlpha=a; ctx.shadowBlur=14; ctx.shadowColor=cMain; ctx.strokeStyle=cMain; ctx.lineWidth=4-n*0.4;
+          const mx=(x0+x1)/2+px*6, my=(y0+y1)/2+py*6;
+          ctx.globalAlpha=a; ctx.shadowBlur=13; ctx.shadowColor=cMain; ctx.strokeStyle=cMain; ctx.lineWidth=3.6-n*0.4;
           ctx.beginPath(); ctx.moveTo(x0,y0); ctx.quadraticCurveTo(mx,my,x1,y1); ctx.stroke();
-          ctx.globalAlpha=a*0.7; ctx.shadowBlur=6; ctx.strokeStyle=cGlow; ctx.lineWidth=(4-n*0.4)*0.5;
-          ctx.beginPath(); ctx.moveTo(x0,y0); ctx.quadraticCurveTo(mx,my,x1,y1); ctx.stroke(); }
-      }
-      ctx.shadowBlur=0; ctx.globalAlpha=1;
-      if(t>DUR*0.4 && !_impacted){ _impacted=true; if(typeof combatScreenShake==='function')combatScreenShake(); }
-      _projRAF=requestAnimationFrame(frameC);
-    }
-    _projRAF=requestAnimationFrame(frameC);
-    return;
+          ctx.globalAlpha=a*0.7; ctx.shadowBlur=6; ctx.strokeStyle=cGlow; ctx.lineWidth=(3.6-n*0.4)*0.5;
+          ctx.beginPath(); ctx.moveTo(x0,y0); ctx.quadraticCurveTo(mx,my,x1,y1); ctx.stroke(); } }
+      ctx.shadowBlur=0; ctx.globalAlpha=1; impact(t); _projRAF=requestAnimationFrame(frC); }
+    _projRAF=requestAnimationFrame(frC); return;
   }
-  const moons=[];
-  for(let i=0;i<7;i++)moons.push({
-    cx:tx+(Math.random()*2-1)*W*0.18,
-    cy:ty+(Math.random()*2-1)*H*0.07,
-    max:10+Math.random()*30,
-    off:Math.random()*0.3,
-    rot:Math.random()*6.28});
-  function crescent(cx,cy,r,rot){             // lune between an outer + offset inner circle
-    const off=r*0.5, ir=r*0.95;
-    ctx.beginPath();
-    ctx.arc(cx,cy,r, rot+Math.PI*0.5, rot+Math.PI*1.5, false);
-    ctx.arc(cx+Math.cos(rot)*off, cy+Math.sin(rot)*off, ir, rot+Math.PI*1.5, rot+Math.PI*0.5, true);
-    ctx.closePath();
+  if(type==='crescent'){
+    const moons=[];
+    for(let i=0;i<7;i++)moons.push({cx:tx+(Math.random()*2-1)*W*0.18,cy:ty+(Math.random()*2-1)*H*0.07,max:10+Math.random()*30,off:Math.random()*0.3,rot:Math.random()*6.28});
+    function cres(cx,cy,r,rot){const off=r*0.5,ir=r*0.95;ctx.beginPath();ctx.arc(cx,cy,r,rot+Math.PI*0.5,rot+Math.PI*1.5,false);ctx.arc(cx+Math.cos(rot)*off,cy+Math.sin(rot)*off,ir,rot+Math.PI*1.5,rot+Math.PI*0.5,true);ctx.closePath();}
+    function frM(now){const t=now-t0;if(t>=DUR){ctx.clearRect(0,0,W,H);_projRAF=0;return;}ctx.clearRect(0,0,W,H);
+      for(const m of moons){const k=Math.max(0,Math.min(1,(t/DUR)-m.off));if(k<=0)continue;const rad=m.max*(0.4+0.6*k),a=Math.sin(Math.PI*k)*0.95;
+        ctx.globalAlpha=a;ctx.shadowBlur=16;ctx.shadowColor=cMain;ctx.fillStyle=cMain;cres(m.cx,m.cy,rad,m.rot);ctx.fill();
+        ctx.globalAlpha=a*0.7;ctx.shadowBlur=8;ctx.fillStyle=cGlow;cres(m.cx,m.cy,rad*0.7,m.rot);ctx.fill();}
+      ctx.shadowBlur=0;ctx.globalAlpha=1;impact(t);_projRAF=requestAnimationFrame(frM);}
+    _projRAF=requestAnimationFrame(frM); return;
   }
-  function frame(now){
-    const t=now-t0; if(t>=DUR){ ctx.clearRect(0,0,W,H); _projRAF=0; return; }
-    ctx.clearRect(0,0,W,H);
-    for(const m of moons){ const k=Math.max(0,Math.min(1,(t/DUR)-m.off)); if(k<=0)continue;
-      const rad=m.max*(0.4+0.6*k), a=Math.sin(Math.PI*k)*0.95;
-      ctx.globalAlpha=a; ctx.shadowBlur=16; ctx.shadowColor=cMain; ctx.fillStyle=cMain;
-      crescent(m.cx,m.cy,rad,m.rot); ctx.fill();
-      ctx.globalAlpha=a*0.7; ctx.shadowBlur=8; ctx.fillStyle=cGlow;
-      crescent(m.cx,m.cy,rad*0.7,m.rot); ctx.fill();
-    }
-    ctx.shadowBlur=0; ctx.globalAlpha=1;
-    if(t>DUR*0.4 && !_impacted){ _impacted=true; if(typeof combatScreenShake==='function')combatScreenShake(); }
-    _projRAF=requestAnimationFrame(frame);
+  if(type==='wave'){
+    const cxw=tx, cyw=ty, RINGS=4, maxR=Math.min(W,H)*0.42;
+    function frW(now){const t=now-t0;if(t>=DUR){ctx.clearRect(0,0,W,H);_projRAF=0;return;}ctx.clearRect(0,0,W,H);
+      for(let i=0;i<RINGS;i++){const off=i/RINGS*0.5;const k=Math.max(0,Math.min(1,(t/DUR)-off));if(k<=0)continue;
+        const rad=maxR*k,a=Math.sin(Math.PI*k)*0.9;
+        ctx.globalAlpha=a;ctx.lineWidth=3.5;ctx.shadowBlur=16;ctx.shadowColor=cMain;ctx.strokeStyle=cMain;
+        ctx.beginPath();ctx.arc(cxw,cyw,rad,0,6.28);ctx.stroke();
+        ctx.globalAlpha=a*0.55;ctx.lineWidth=1.5;ctx.shadowBlur=6;ctx.strokeStyle=cGlow;
+        ctx.beginPath();ctx.arc(cxw,cyw,rad*0.7,0,6.28);ctx.stroke();}
+      ctx.shadowBlur=0;ctx.globalAlpha=1;impact(t);_projRAF=requestAnimationFrame(frW);}
+    _projRAF=requestAnimationFrame(frW); return;
   }
-  _projRAF=requestAnimationFrame(frame);
+  // circle (Aquarius green / Pisces blue / default): blooming rings
+  const rings=[];
+  for(let i=0;i<7;i++)rings.push({cx:tx+(Math.random()*2-1)*W*0.18,cy:ty+(Math.random()*2-1)*H*0.08,max:12+Math.random()*40,off:Math.random()*0.35,w:2+Math.random()*3});
+  function frR(now){const t=now-t0;if(t>=DUR){ctx.clearRect(0,0,W,H);_projRAF=0;return;}ctx.clearRect(0,0,W,H);
+    for(const rg of rings){const k=Math.max(0,Math.min(1,(t/DUR)-rg.off));if(k<=0)continue;const rad=rg.max*k,a=Math.sin(Math.PI*k)*0.9;
+      ctx.globalAlpha=a;ctx.strokeStyle=cMain;ctx.lineWidth=rg.w;ctx.shadowBlur=14;ctx.shadowColor=cMain;
+      ctx.beginPath();ctx.arc(rg.cx,rg.cy,rad,0,6.28);ctx.stroke();
+      ctx.globalAlpha=a*0.55;ctx.strokeStyle=cGlow;ctx.lineWidth=rg.w*0.5;
+      ctx.beginPath();ctx.arc(rg.cx,rg.cy,rad*0.66,0,6.28);ctx.stroke();}
+    ctx.shadowBlur=0;ctx.globalAlpha=1;impact(t);_projRAF=requestAnimationFrame(frR);}
+  _projRAF=requestAnimationFrame(frR);
 }
 // Hit feedback: the whole cockpit pulses (scale in-out) and the window frame
 // flashes a red glow — replaces the old left-right shake.
