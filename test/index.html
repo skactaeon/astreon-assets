@@ -28,13 +28,14 @@
 /* item 11: DOM achievement orbs over the upper starfield */
 #achOrbs{position:absolute;left:0;top:0;right:0;height:30%;pointer-events:none;z-index:6}
 .achOrb{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;cursor:pointer;text-align:center}
-.achOrb .od{width:15px;height:15px;border-radius:50%;margin:0 auto;
-  background:radial-gradient(circle at 40% 35%,#fff,var(--ac) 55%,transparent 100%);
-  box-shadow:0 0 11px 2px var(--ac);animation:achPulseKf 2.4s ease-in-out infinite}
+/* item: same size/format as #notifStar's dot (11px, 0 0 9px 1px glow) */
+.achOrb .od{width:11px;height:11px;border-radius:50%;margin:0 auto;
+  background:radial-gradient(circle at 38% 34%,#fff,var(--ac) 45%,transparent 100%);
+  box-shadow:0 0 9px 1px var(--ac);animation:achPulseKf 2.4s ease-in-out infinite}
 .achOrb.locked .od{background:radial-gradient(circle at 40% 35%,#aab,#5a6486 55%,transparent 100%);
   box-shadow:0 0 6px 1px rgba(90,100,134,.6);animation:none;opacity:.6}
 /* item 2: label slanted from bottom-left to top-right */
-.achOrb .ol{margin-top:7px;font-family:'Orbitron';font-weight:700;font-size:9px;letter-spacing:.4px;
+.achOrb .ol{margin-top:13px;font-family:'Orbitron';font-weight:700;font-size:9px;letter-spacing:.4px;
   color:var(--ac);white-space:nowrap;text-shadow:0 0 6px var(--ac);transform:rotate(-24deg);transform-origin:left center}
 .achOrb.locked .ol{color:rgba(150,160,185,.7);text-shadow:none}
 @keyframes achPulseKf{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
@@ -305,23 +306,12 @@ body{position:fixed;inset:0}
 /* item 5: 3-segment sliding sort toggle (like the ELEMENT EXTRACT/SYNTH pill) */
 /* item 6: FORMULA sort slider matches the ELEMENTS (cxseg) control exactly — same
    container, fill gradient, and button colour/size. */
-.fxseg{position:relative;display:flex;align-items:stretch;margin:16px auto 8px;flex:none;
-  width:min(255px,80cqw);height:44px;border:1px solid rgba(70,224,255,.5);
-  background:#0c1a2c;border-radius:999px;overflow:hidden;
-  box-shadow:0 0 10px rgba(70,224,255,.35),inset 0 0 6px rgba(70,224,255,.12)}
-/* identical to .cxseg-fill (ELEMENTS slider); width = inner area /3 so the 3 stops
-   tile the track with NO sub-pixel seam (the old calc(33.33% - 1px) drifted 1px/step
-   and showed a thin line mid-transition). */
-.fxseg-fill{position:absolute;top:2px;bottom:2px;left:2px;width:calc((100% - 4px)/3);border-radius:999px;
-  background:linear-gradient(180deg,#5fe3ff,#3aa8ff);z-index:0;
-  transition:transform .28s cubic-bezier(.4,0,.2,1)}
-.fxseg-fill.p0{transform:translateX(0)}
-.fxseg-fill.p1{transform:translateX(100%)}
-.fxseg-fill.p2{transform:translateX(200%)}
-.fxseg-btn{position:relative;z-index:1;flex:1 1 0;border:none;background:transparent;cursor:pointer;
-  font-family:'Rajdhani';font-weight:700;font-size:15px;letter-spacing:1px;color:var(--glow);
-  text-shadow:0 0 8px rgba(70,224,255,.5);padding:0}
-.fxseg-btn.on{color:#04121c;text-shadow:none}
+/* FORMULA sort slider now REUSES the ELEMENTS slider verbatim (.cxseg / .cxseg-fill /
+   .cxseg-btn); .s3 just makes the fill 1/3-wide with 3 stops instead of 62% / 2 stops. */
+.cxseg-fill.s3{width:calc((100% - 4px)/3)}
+.cxseg-fill.s3.p0{transform:translateX(0)}
+.cxseg-fill.s3.p1{transform:translateX(100%)}
+.cxseg-fill.s3.p2{transform:translateX(200%)}
 /* item 9/12: FORMULA help text matches EXTRACT desc (cxhint: 15px, --glow), ONE line */
 .fxnote{margin:0 0 8px;flex:none;text-align:center;font-family:'Rajdhani';font-size:15px;
   line-height:1.4;color:var(--glow);padding:0 14px;white-space:nowrap}
@@ -1972,7 +1962,7 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.3';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v1.4';   // item 13: shown on the cover; item 12: save is kept unless this changes
 const ECON={
   PICKS_PER_TICK:1,
   TICK_MS:5000,
@@ -3383,7 +3373,7 @@ let _achOrbSig='';
 function renderAchOrbs(){
   const host=document.getElementById('achOrbs'); if(!host||typeof ACHIEVEMENTS==='undefined'||!G)return;
   // item 2: Noctis removed; Archivis lower, Voyaris at Archivis's top-right, Magnis right.
-  const pos={voyaris:[35,47],archivis:[16,66],magnis:[85,46]};
+  const pos={voyaris:[50,47],archivis:[16,66],magnis:[85,46]};
   let sig='', h='';
   for(const a of ACHIEVEMENTS){
     if(a.key==='noctis')continue;
@@ -3673,9 +3663,9 @@ function sampleExcl(p,ex){let tot=0;for(const c of p.comp)if(c.z!==ex)tot+=c.r;i
   let r=G.rng.int(1,tot),acc=0;for(const c of p.comp){if(c.z===ex)continue;acc+=c.r;if(r<=acc)return c.z;}return ex;}
 // ---- Collector system: travel income from chosen mother-star elements ----
 const COLLECTORS={
-  D:{id:'D',slots:1,eff:1.3,  color:'#5fd0ff',label:'1 element · 130%'},
-  N:{id:'N',slots:2,eff:0.55, color:'#5fe0a0',label:'2 elements · 55% each'},
-  W:{id:'W',slots:3,eff:0.3,  color:'#ffd26e',label:'3 elements · 30% each'},
+  D:{id:'D',slots:1,eff:1.0,  color:'#5fd0ff',label:'1 element · 100%'},
+  N:{id:'N',slots:2,eff:0.4,  color:'#5fe0a0',label:'2 elements · 40% each'},
+  W:{id:'W',slots:3,eff:0.2,  color:'#ffd26e',label:'3 elements · 20% each'},
 };
 function motherPlanet(){const ch=G.chapters[0];return ch&&ch.planets?ch.planets[0]:null;}
 function motherRate(z){const m=motherPlanet();if(!m||!m.comp)return 0;for(const c of m.comp)if(c.z===z)return c.r;return 0;}
@@ -3716,7 +3706,7 @@ function renderCollectorPicker(){
   const m=motherPlanet();if(!m||!m.comp){return;}
   const UC=COLLECTORS.D.color;
   const VERB=(_collMode==='change')?'Change':'Choose';
-  const YIELD={D:'130%',N:'55% each',W:'30% each'};   // item 7: match COLLECTORS.eff (1.3/0.55/0.3)
+  const YIELD={D:'100%',N:'40% each',W:'20% each'};   // item 7: match COLLECTORS.eff (1.0/0.4/0.2)
   let h='';
   if(!_collPick.type){
     // Type-choosing screen: whole block vertically centered in the modal, no BACK.
@@ -5830,10 +5820,11 @@ function formulaCatalogNum(){
 var formulaSort='num';   // 'num' (by #) | 'have' (by holdings) | 'abc' (alphabetical)
 function formulaSetSort(s){ if(s===formulaSort)return; formulaSort=s;
   // item 5: slide the fill on the EXISTING slider (transition), then re-sort the catalog.
-  const fill=document.querySelector('.fxseg-fill');
-  if(fill)fill.className='fxseg-fill '+(s==='num'?'p0':(s==='have'?'p1':'p2'));
+  const seg=document.getElementById('fxSortSeg');
+  const fill=seg?seg.querySelector('.cxseg-fill'):null;
+  if(fill)fill.className='cxseg-fill s3 '+(s==='num'?'p0':(s==='have'?'p1':'p2'));
   const idx={num:0,have:1,abc:2}[s];
-  document.querySelectorAll('.fxseg-btn').forEach((b,i)=>b.classList.toggle('on',i===idx));
+  if(seg)seg.querySelectorAll('.cxseg-btn').forEach((b,i)=>b.classList.toggle('on',i===idx));
   setTimeout(()=>{ renderCodex(); setTimeout(attachCodexClose,10); }, 280);
 }
 function formulaTabHTML(){
@@ -5850,11 +5841,11 @@ function formulaTabHTML(){
   // item 5: the sort slider goes FIRST (same position/height as the ELEMENTS EXTRACT/SYNTH
   // pill, which sits right under the tabs). 3-segment sliding toggle.
   const _seg=formulaSort==='num'?'p0':(formulaSort==='have'?'p1':'p2');
-  let h=`<div class="fxseg">`+
-     `<div class="fxseg-fill ${_seg}"></div>`+
-     `<button class="fxseg-btn ${formulaSort==='num'?'on':''}" onclick="formulaSetSort('num')">#</button>`+
-     `<button class="fxseg-btn ${formulaSort==='have'?'on':''}" onclick="formulaSetSort('have')">OWNED</button>`+
-     `<button class="fxseg-btn ${formulaSort==='abc'?'on':''}" onclick="formulaSetSort('abc')">A-Z</button>`+
+  let h=`<div class="cxseg" id="fxSortSeg">`+
+     `<div class="cxseg-fill s3 ${_seg}"></div>`+
+     `<button class="cxseg-btn ${formulaSort==='num'?'on':''}" onclick="formulaSetSort('num')">#</button>`+
+     `<button class="cxseg-btn ${formulaSort==='have'?'on':''}" onclick="formulaSetSort('have')">OWNED</button>`+
+     `<button class="cxseg-btn ${formulaSort==='abc'?'on':''}" onclick="formulaSetSort('abc')">A-Z</button>`+
      `</div>`;
   // redeem-message line (fades in on synth) + the one-line help
   h+=`<p class="cxhint" id="cxRedeemMsg" style="color:#ffd36e;min-height:15px;margin:0 0 4px;font-weight:400;opacity:0;transition:opacity .3s"></p>`;
@@ -7987,21 +7978,22 @@ function cockpitElTap(z){
   _cockpit.selZ=z;_cockpit.fireZ=z;
   cockpitFireYes();
 }
-// EXTRACT (battle bay): 1/3 of the CODEX rate — costs 3 atoms to yield z protons.
-// e.g. H(z=1): 3 atoms -> 1 proton.  CODEX gives 1 atom -> 1 proton.
+// EXTRACT (battle bay): the "3x" mode — 1 held atom converts to floor(z / 3) protons
+// (the element's proton count divided by 3). Too-light elements (z < 3) can't be
+// extracted: 1 He (z=2) -> floor(2/3)=0 -> blocked; 1 N (z=7) -> floor(7/3)=2 protons.
 const CK_TRADE_MULT=3;
 function cockpitExtract(z){
   const have=get(z);
-  if(have<CK_TRADE_MULT){_cockpit.selZ=z; toast((EL[z]?EL[z].sym:'?')+' needs '+CK_TRADE_MULT,'plain'); cockpitRender(); return;}
-  const gain=z*(ECON.EXTRACT_MULT||1);
-  G.ship.hold[z]=have-CK_TRADE_MULT; if(G.ship.hold[z]<=0)delete G.ship.hold[z];
+  const gain=Math.floor(z/CK_TRADE_MULT);            // proton value / 3, floored
+  if(gain<1){_cockpit.selZ=z; toast((EL[z]?EL[z].sym:'?')+' too light (<'+CK_TRADE_MULT+'p)','plain'); cockpitRender(); return;}
+  if(have<1){_cockpit.selZ=z; toast((EL[z]?EL[z].sym:'?')+' empty','plain'); cockpitRender(); return;}
+  G.ship.hold[z]=have-1; if(G.ship.hold[z]<=0)delete G.ship.hold[z];   // costs 1 atom
   G.points+=gain; G.maxPoints=Math.max(G.maxPoints||0,G.points);
   _cockpit.selZ=z;   // light the selected element
   _cockpit.lastTrade={mode:'extract',delta:gain};
   toast('Extracted '+(EL[z]?EL[z].sym:'?')+' (+'+gain+'p)','plain');
   cockpitFireFX(cockpitFamColor(_cockpit.selFam||'NM'));
-  cockpitPlayMon('hit');
-  saveGame&&saveGame();
+  saveGame&&saveGame();   // item: EXTRACT no longer makes the monster react
   cockpitRender();
 }
 // SYNTH (battle bay): 3x the CODEX cost — z * SYNTH_MULT * 3 protons per atom.
@@ -8017,8 +8009,7 @@ function cockpitSynth(z){
   _cockpit.lastTrade={mode:'synth',delta:cost};
   toast('Synthesized '+(EL[z]?EL[z].sym:'?')+' (-'+cost+'p)','plain');
   cockpitFireFX(cockpitFamColor(_cockpit.selFam||'NM'));
-  cockpitPlayMon('hit');
-  saveGame&&saveGame();
+  saveGame&&saveGame();   // item: SYNTH no longer makes the monster react
   if(typeof checkWin==='function')checkWin();
   cockpitRender();
 }
