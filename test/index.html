@@ -309,15 +309,17 @@ body{position:fixed;inset:0}
   width:min(255px,80cqw);height:44px;border:1px solid rgba(70,224,255,.5);
   background:#0c1a2c;border-radius:999px;overflow:hidden;
   box-shadow:0 0 10px rgba(70,224,255,.35),inset 0 0 6px rgba(70,224,255,.12)}
-/* identical to .cxseg-fill (ELEMENTS slider), just 1/3 wide for the 3 segments */
-.fxseg-fill{position:absolute;top:2px;bottom:2px;left:2px;width:calc(33.33% - 1px);border-radius:999px;
+/* identical to .cxseg-fill (ELEMENTS slider); width = inner area /3 so the 3 stops
+   tile the track with NO sub-pixel seam (the old calc(33.33% - 1px) drifted 1px/step
+   and showed a thin line mid-transition). */
+.fxseg-fill{position:absolute;top:2px;bottom:2px;left:2px;width:calc((100% - 4px)/3);border-radius:999px;
   background:linear-gradient(180deg,#5fe3ff,#3aa8ff);z-index:0;
   transition:transform .28s cubic-bezier(.4,0,.2,1)}
 .fxseg-fill.p0{transform:translateX(0)}
 .fxseg-fill.p1{transform:translateX(100%)}
 .fxseg-fill.p2{transform:translateX(200%)}
 .fxseg-btn{position:relative;z-index:1;flex:1 1 0;border:none;background:transparent;cursor:pointer;
-  font-family:'Rajdhani';font-weight:700;font-size:15px;letter-spacing:.5px;color:var(--glow);
+  font-family:'Rajdhani';font-weight:700;font-size:15px;letter-spacing:1px;color:var(--glow);
   text-shadow:0 0 8px rgba(70,224,255,.5);padding:0}
 .fxseg-btn.on{color:#04121c;text-shadow:none}
 /* item 9/12: FORMULA help text matches EXTRACT desc (cxhint: 15px, --glow), ONE line */
@@ -419,8 +421,9 @@ body{position:fixed;inset:0}
 .ciratesym{font-weight:800;font-size:16px;width:34px;text-align:center}
 /* item 1: Current/Next NOT bold; the countdown timer enlarged */
 .ciratenow{font-weight:400;font-size:14px;color:#dffaff;min-width:54px;text-align:right}
-.ciratearr{font-size:18px;font-weight:700;color:rgba(70,224,255,.95);letter-spacing:1px}
+.ciratearr{font-size:18px;font-weight:400;color:rgba(70,224,255,.95);letter-spacing:1px}
 .ciratenext{font-weight:400;font-size:14px;color:#46ffb0;min-width:54px;text-align:left}
+.cirateval{font-weight:700}
 .ciratenote{margin-top:6px;font-family:'Rajdhani';font-size:11px;line-height:1.4;
   color:rgba(180,210,235,.7);text-align:center}
 .elgrid{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
@@ -3820,7 +3823,7 @@ function collectorHarvestNow(){
 // hour of cumulative stay on the planet adds +0.01%.
 function planetStayHours(p){ return ((p&&p.stayMs)||0)/3600000; }
 function planetRateBonus(p){ return Math.floor(planetStayHours(p))*0.01; }                 // +0.01% / full hr
-function formulaBaseRate(p){ const ps=(p&&p.compId!=null)?threatLevel(p.compId):0; return ps>0?100/ps:0; }  // percent/tick
+function formulaBaseRate(p){ const ps=(p&&p.compId!=null)?threatLevel(p.compId):0; return ps>0?100/(ps*100):0; }  // percent/tick = prob 1/(ps*100) ×100 = 1/ps %
 function formulaDropRate(p){ return formulaBaseRate(p)+planetRateBonus(p); }               // effective %
 function harvestTick(){const p=curPlanet();
   if(!p.defeated){renderTop();return;}
@@ -3829,12 +3832,12 @@ function harvestTick(){const p=curPlanet();
   for(const z of picks){deposit(z,1);G.localGain[z]=Math.min(effectiveCap(),(G.localGain[z]||0)+1);
     if(typeof notifEl==='function')notifEl(z,1);}   // item 9: accumulate into the notification star
   spawnHarvestPopups(picks);
-  // Stay-to-collect: each harvest tick has a 1/(protonSum*10) chance to obtain this
-  // planet's compound formula (synced with the element drops). H2O -> 1/((1*2+8)*10)=1/100.
+  // Stay-to-collect: each harvest tick has a 1/(protonSum*100) chance to obtain this
+  // planet's compound formula (synced with the element drops). H2O -> 1/((1*2+8)*100)=1/1000.
   if(p.compId!=null && COMPOUNDS[p.compId]){
     const ps=threatLevel(p.compId);
-    // base 1/(ps*10) chance, plus the cumulative-stay bonus (+0.01%/hr) — item 6/11
-    const chance=(ps>0)?(1/(ps*10))+planetRateBonus(p)/100:0;
+    // base 1/(ps*100) chance, plus the cumulative-stay bonus (+0.01%/hr) — item 6/11
+    const chance=(ps>0)?(1/(ps*100))+planetRateBonus(p)/100:0;
     if(chance>0 && G.rng.int(1,1000000)<=Math.round(chance*1000000)){
       const f=COMPOUNDS[p.compId].text;
       G.formulas=G.formulas||{}; G.formulas[f]=(G.formulas[f]||0)+1;
@@ -4735,9 +4738,9 @@ function showCompoundInfo(compId){const f=COMPOUNDS[compId].text;const ci=CINFO[
     const mmss=('0'+mm).slice(-2)+':'+('0'+ss).slice(-2);
     h+=`<div class="cirate"><div class="ciratehd">FORMULA DROP RATE</div>`;
     // item 9 line 2: current rate · countdown · next rate (no icons)
-    h+=`<div class="ciraterow"><span class="ciratenow">Current ${eff.toFixed(2)}%</span>`+
+    h+=`<div class="ciraterow"><span class="ciratenow">Current <b class="cirateval">${eff.toFixed(2)}%</b></span>`+
        `<span class="ciratearr"><span id="cirateTimer">${mmss}</span></span>`+
-       `<span class="ciratenext">Next ${next.toFixed(2)}%</span></div>`;
+       `<span class="ciratenext">Next <b class="cirateval">${next.toFixed(2)}%</b></span></div>`;
     // item 4 line 3: collected / holding counts (same style as the rate row)
     h+=`<div class="ciraterow"><span class="ciratenow">collected ×${owned}</span>`+
        `<span class="ciratearr">·</span>`+
