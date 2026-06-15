@@ -312,6 +312,8 @@ body{position:fixed;inset:0}
 .cxseg-fill.s3.p0{transform:translateX(0)}
 .cxseg-fill.s3.p1{transform:translateX(100%)}
 .cxseg-fill.s3.p2{transform:translateX(200%)}
+/* the FORMULA slider sits in a flex column; keep its 44px (don't let it shrink) */
+#fxSortSeg{flex:none}
 /* item 9/12: FORMULA help text matches EXTRACT desc (cxhint: 15px, --glow), ONE line */
 .fxnote{margin:0 0 8px;flex:none;text-align:center;font-family:'Rajdhani';font-size:15px;
   line-height:1.4;color:var(--glow);padding:0 14px;white-space:nowrap}
@@ -1962,7 +1964,7 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.4';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v1.5';   // item 13: shown on the cover; item 12: save is kept unless this changes
 const ECON={
   PICKS_PER_TICK:1,
   TICK_MS:5000,
@@ -6184,6 +6186,8 @@ function saveGame(){if(!G)return;
     const data={
       v:1, ver:GAME_VERSION, chapter:G.chapter, points:G.points, hold:G.ship.hold,
       bossUnlocked:G.bossUnlocked, specials:G.specials, virelios:G.virelios, lastSeen:Date.now(),
+      oc:(_cockpit?1:0),   // was the battle/cockpit screen open? -> resume into it
+
       maxPoints:G.maxPoints||0, solvedTotal:G.solvedTotal||0, solvedNoSkip:G.solvedNoSkip||0,
       everBasic:G.everBasic||{}, peakBasic:G.peakBasic||{}, mileage:G.mileage||0,
       formulas:G.formulas||{},   // collected compound formulas: { "H2O":count, ... }
@@ -6230,6 +6234,7 @@ function loadGame(){
   bindChapter(data.chapter||0);
   syncAchievementStats();
   applyOffline(data.lastSeen||Date.now());
+  G._resumeCockpit=!!data.oc;   // restore the battle screen on resume (item 3)
   return true;}
 function applyOffline(lastSeen){
   const elapsedMs=Date.now()-lastSeen;if(elapsedMs<60000)return;
@@ -6330,6 +6335,15 @@ function startGame(){
   requestAnimationFrame(renderScene);
   startMusic();
   setTimeout(updateNotifStar,400);   // item 10: offline content now lives in the notification star
+  // item 3: if the player left while on the battle/cockpit screen, resume INTO it
+  // (not the planet+starfield main scene).
+  if(G._resumeCockpit){
+    G._resumeCockpit=false;
+    const cp=curPlanet();
+    if(cp && !cp.home && !cp.defeated && !cp.barren && cp.compId!=null && typeof cockpitOpenWhenReady==='function'){
+      setTimeout(()=>{ if(!_cockpit){ try{ cockpitOpenWhenReady(); }catch(e){} } },60);
+    }
+  }
   // When the cover sequence is driving start, defer the tutorial decision to the
   // post-cover skip overlay (see opening sequence). _tutChoicePending suppresses the
   // automatic start here so the overlay can offer START / SKIP tutorial.
@@ -7675,10 +7689,12 @@ function cockpitOpen(){
   _cockpit={planetId:p.id, mode:'formula', selFam:null};
   _combat=combatInit(p);   // monster strikes back per-turn after each FIRE
   cockpitRender();
+  saveGame&&saveGame();    // item 3: persist that the battle screen is open
 }
 function cockpitClose(){
   _cockpit=null;
   _combat=null;
+  saveGame&&saveGame();    // item 3: persist that the battle screen is now closed
   combatStopMonsterTimer();
   if(_projRAF){cancelAnimationFrame(_projRAF);_projRAF=0;}
   cockpitStopMon();
@@ -7874,12 +7890,18 @@ function cockpitCenterHTML(p){
   }
   if(_cockpit.mode==='extract'){
     const lt=_cockpit.lastTrade;
-    const v=(lt&&lt.mode==='extract')?`<div class="ckMsgLine" style="color:#5fe07a;text-shadow:0 0 10px rgba(95,224,122,.7)">+${fmtNum(lt.delta)}</div>`:'';
+    let v='';
+    if(lt&&lt.mode==='extract')v=lt.err
+      ?`<div class="ckMsgLine" style="color:#ff7a6e;text-shadow:0 0 10px rgba(255,122,110,.7)">${lt.err}</div>`
+      :`<div class="ckMsgLine" style="color:#5fe07a;text-shadow:0 0 10px rgba(95,224,122,.7)">+${fmtNum(lt.delta)}</div>`;
     return `<div class="ckMsg"><div class="ckMsgLine ckBold">EXTRACT MODE</div>${v}</div>`;
   }
   if(_cockpit.mode==='synth'){
     const lt=_cockpit.lastTrade;
-    const v=(lt&&lt.mode==='synth')?`<div class="ckMsgLine" style="color:#ff8a5a;text-shadow:0 0 10px rgba(255,138,90,.7)">&minus;${fmtNum(lt.delta)}</div>`:'';
+    let v='';
+    if(lt&&lt.mode==='synth')v=lt.err
+      ?`<div class="ckMsgLine" style="color:#ff7a6e;text-shadow:0 0 10px rgba(255,122,110,.7)">${lt.err}</div>`
+      :`<div class="ckMsgLine" style="color:#ff8a5a;text-shadow:0 0 10px rgba(255,138,90,.7)">&minus;${fmtNum(lt.delta)}</div>`;
     return `<div class="ckMsg"><div class="ckMsgLine ckBold">SYNTH MODE</div>${v}</div>`;
   }
   return '';
@@ -7985,13 +8007,13 @@ const CK_TRADE_MULT=3;
 function cockpitExtract(z){
   const have=get(z);
   const gain=Math.floor(z/CK_TRADE_MULT);            // proton value / 3, floored
-  if(gain<1){_cockpit.selZ=z; toast((EL[z]?EL[z].sym:'?')+' too light (<'+CK_TRADE_MULT+'p)','plain'); cockpitRender(); return;}
-  if(have<1){_cockpit.selZ=z; toast((EL[z]?EL[z].sym:'?')+' empty','plain'); cockpitRender(); return;}
+  // item: result/errors go to the MAIN DASHBOARD (lastTrade), no toast over the window.
+  if(gain<1){_cockpit.selZ=z; _cockpit.lastTrade={mode:'extract',err:(EL[z]?EL[z].sym:'?')+' too light'}; cockpitRender(); return;}
+  if(have<1){_cockpit.selZ=z; _cockpit.lastTrade={mode:'extract',err:(EL[z]?EL[z].sym:'?')+' empty'}; cockpitRender(); return;}
   G.ship.hold[z]=have-1; if(G.ship.hold[z]<=0)delete G.ship.hold[z];   // costs 1 atom
   G.points+=gain; G.maxPoints=Math.max(G.maxPoints||0,G.points);
   _cockpit.selZ=z;   // light the selected element
   _cockpit.lastTrade={mode:'extract',delta:gain};
-  toast('Extracted '+(EL[z]?EL[z].sym:'?')+' (+'+gain+'p)','plain');
   cockpitFireFX(cockpitFamColor(_cockpit.selFam||'NM'));
   saveGame&&saveGame();   // item: EXTRACT no longer makes the monster react
   cockpitRender();
@@ -8002,12 +8024,12 @@ function cockpitSynth(z){
   const cost=z*(ECON.SYNTH_MULT||8)*CK_TRADE_MULT;
   const cap=(typeof effectiveCap==='function')?effectiveCap():Infinity;
   const have=get(z);
-  if(have>=cap){_cockpit.selZ=z; toast((EL[z]?EL[z].sym:'?')+' at max','plain'); cockpitRender(); return;}
-  if(G.points<cost){_cockpit.selZ=z; toast('Need '+cost+'p','plain'); cockpitRender(); return;}
+  // item: result/errors go to the MAIN DASHBOARD (lastTrade), no toast over the window.
+  if(have>=cap){_cockpit.selZ=z; _cockpit.lastTrade={mode:'synth',err:(EL[z]?EL[z].sym:'?')+' at max'}; cockpitRender(); return;}
+  if(G.points<cost){_cockpit.selZ=z; _cockpit.lastTrade={mode:'synth',err:'need '+cost+'p'}; cockpitRender(); return;}
   G.points-=cost; G.ship.hold[z]=have+1;
   _cockpit.selZ=z;   // light the selected element
   _cockpit.lastTrade={mode:'synth',delta:cost};
-  toast('Synthesized '+(EL[z]?EL[z].sym:'?')+' (-'+cost+'p)','plain');
   cockpitFireFX(cockpitFamColor(_cockpit.selFam||'NM'));
   saveGame&&saveGame();   // item: SYNTH no longer makes the monster react
   if(typeof checkWin==='function')checkWin();
