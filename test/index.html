@@ -1975,7 +1975,7 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.12';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v1.13';   // item 13: shown on the cover; item 12: save is kept unless this changes
 const ECON={
   PICKS_PER_TICK:1,
   TICK_MS:5000,
@@ -3851,7 +3851,7 @@ function formulaBaseRate(p){ const ps=(p&&p.compId!=null)?threatLevel(p.compId):
 function formulaDropRate(p){ return formulaBaseRate(p)+planetRateBonus(p); }               // effective %
 function harvestTick(){const p=curPlanet();
   if(!p.defeated){renderTop();return;}
-  p.stayMs=(p.stayMs||0)+effectiveTickMs();   // accumulate stay time for the rate bonus
+  p.stayMs=(p.stayMs||0)+effectiveTickMs()*(speedActive()?2:1);   // stay time for the rate bonus; boost accrues it 2x (countdown also runs 2x)
   let picks=[];for(let i=0;i<ECON.PICKS_PER_TICK;i++)picks.push(sampleOne(p));
   for(const z of picks){deposit(z,1);G.localGain[z]=Math.min(effectiveCap(),(G.localGain[z]||0)+1);
     if(typeof notifEl==='function')notifEl(z,1);}   // item 9: accumulate into the notification star
@@ -4764,11 +4764,12 @@ function showCompoundInfo(compId){const f=COMPOUNDS[compId].text;const ci=CINFO[
     // item 9: COUNTDOWN to the next +0.01% (60:00 minus the time into the current hour)
     const remSec=3600-((hrs*3600)%3600), mm=Math.floor(remSec/60), ss=Math.floor(remSec%60);
     const mmss=('0'+mm).slice(-2)+':'+('0'+ss).slice(-2);
-    const _spd=(typeof speedActive==='function'&&speedActive());   // paid speed boost halves the harvest tick -> 2x formula drops too
-    h+=`<div class="cirate"><div class="ciratehd">FORMULA DROP RATE${_spd?` <span style="color:#ffd24a;text-shadow:0 0 6px rgba(255,210,74,.7)">⚡×2</span>`:''}</div>`;
-    // item 9 line 2: current rate · countdown · next rate (no icons)
+    const _spd=(typeof speedActive==='function'&&speedActive());   // paid speed boost halves the harvest tick -> 2x formula drops AND 2x stay-bonus countdown
+    const _zap=_spd?'<span style="color:#ffd24a;text-shadow:0 0 5px rgba(255,210,74,.7)">⚡</span>':'';
+    h+=`<div class="cirate"><div class="ciratehd">FORMULA DROP RATE</div>`;
+    // item 9 line 2: current rate · countdown (⚡ flanks the timer when boosted) · next rate
     h+=`<div class="ciraterow"><span class="ciratenow">Current <b class="cirateval">${eff.toFixed(2)}%</b></span>`+
-       `<span class="ciratearr"><span id="cirateTimer">${mmss}</span></span>`+
+       `<span class="ciratearr">${_zap}<span id="cirateTimer">${mmss}</span>${_zap}</span>`+
        `<span class="ciratenext">Next <b class="cirateval">${next.toFixed(2)}%</b></span></div>`;
     // item 4 line 3: collected / holding counts (same style as the rate row)
     h+=`<div class="ciraterow"><span class="ciratenow">collected ×${owned}</span>`+
@@ -4790,7 +4791,8 @@ function showCompoundInfo(compId){const f=COMPOUNDS[compId].text;const ci=CINFO[
     window._cirateTimerIV=setInterval(()=>{
       const el=document.getElementById('cirateTimer');
       if(!el){ clearInterval(window._cirateTimerIV); window._cirateTimerIV=0; return; }
-      const sec=_snap+(performance.now()-_t0)/1000, rem=3600-(sec%3600);
+      const _mul=(typeof speedActive==='function'&&speedActive())?2:1;   // boost ticks the countdown 2x
+      const sec=_snap+((performance.now()-_t0)/1000)*_mul, rem=3600-(sec%3600);
       const m=Math.floor(rem/60), s=Math.floor(rem%60);
       el.textContent=('0'+m).slice(-2)+':'+('0'+s).slice(-2);
     },1000);
