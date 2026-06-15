@@ -1975,7 +1975,7 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.19';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v1.20';   // item 13: shown on the cover; item 12: save is kept unless this changes
 const ECON={
   PICKS_PER_TICK:1,
   TICK_MS:5000,
@@ -5836,7 +5836,7 @@ function drawMap(){const cv=document.getElementById('mapCanvas');if(!cv)return;c
     }
     // mark constellations that HAVE monster art — only ONE planet each (the boss) so the
     // map stays readable and gives one test target per art-constellation.
-    const ART_CONST={Taurus:"#ffb24a",Aquarius:"#7fd0ff",Pisces:"#ff7fb0",Aries:"#ff5a5a",Leo:"#ffd24a",Libra:"#5fe08a"};
+    const ART_CONST={Taurus:"#ffb24a",Aquarius:"#7fd0ff",Pisces:"#ff7fb0",Aries:"#ff5a5a",Leo:"#ffd24a",Libra:"#5fe08a",Sagittarius:"#c08aff"};
     if(front && typeof planetConstName==='function'){
       const cn2=planetConstName(p);
       const mcol=ART_CONST[cn2];
@@ -6760,7 +6760,7 @@ function toggleMute(){setVolume(_muted?3:0);}
       var hint=document.createElement('div');
       hint.id='coverHint';
       hint.textContent='LOADING';
-      hint.style.cssText='position:absolute;left:0;right:0;top:74%;text-align:center;'
+      hint.style.cssText='position:absolute;left:0;right:0;top:70%;text-align:center;'
         +"font-family:'Rajdhani',sans-serif;font-weight:600;font-size:15px;letter-spacing:4px;"
         +'color:#46e0ff;text-shadow:0 0 10px rgba(70,224,255,.85),0 0 4px rgba(0,0,0,.9),0 1px 2px rgba(0,0,0,.9);'
         +'pointer-events:none;z-index:71;animation:tapHintBreath 2s ease-in-out infinite';
@@ -6901,8 +6901,11 @@ function tutorialShow(){
   // fade it in after ≈1.5s; noMorph (instant) steps show it at once.
   {const _capEl=document.getElementById('tutCaption');
    if(_capEl){ clearTimeout(window._tutCapTO);
-     if(s.noMorph){ _capEl.style.opacity='1'; }
-     else { _capEl.style.opacity='0'; window._tutCapTO=setTimeout(function(){const c2=document.getElementById('tutCaption');if(c2)c2.style.opacity='1';},1500); } }}
+     // INSTANT hide (no transition) so the new text never flashes at the old position,
+     // then fade the whole caption in — at once for noMorph, after the morph otherwise.
+     _capEl.style.transition='none'; _capEl.style.opacity='0'; void _capEl.offsetWidth;
+     if(s.noMorph){ _capEl.style.transition='opacity .4s ease'; _capEl.style.opacity='1'; }
+     else { window._tutCapTO=setTimeout(function(){const c2=document.getElementById('tutCaption');if(c2){c2.style.transition='opacity .6s ease';c2.style.opacity='1';}},1500); } }}
   {const bk=document.getElementById('tutBack');if(bk)bk.style.display=(_tutStep>0)?'inline-block':'none';}
   // pause (freeze scene) only during the falling-element step
   _tutPaused=(s.key==='falling');
@@ -7191,16 +7194,16 @@ const CODEX_TUT_STEPS=[
 ];
 const BATTLE_TUT_STEPS=[
   {key:'b1', title:'Element Monster', sub:'Solve the correct elements to defeat it',
-    rect:()=>tutElRect('#cockpitScreen .ckMonster',6)||{x:0.20,y:0.10,w:0.60,h:0.30}},
+    noMorph:true, rect:()=>tutElRect('#cockpitScreen .ckMonster',-14)||{x:0.28,y:0.13,w:0.44,h:0.22}},
   {key:'b2', title:'Formula', sub:'The chemical formula tied to this element monster',
     rect:()=>tutElRect('#ckMolWin',6)||{x:0.28,y:0.30,w:0.44,h:0.18}},
-  {key:'b3', title:'Damage',
-    sub:'Damage matches the element’s proton number<br>Right family = bonus hit · exact element = huge damage',
-    rect:()=>tutElRect('#ckMolWin',6)||{x:0.28,y:0.30,w:0.44,h:0.18}},
+  {key:'b3', title:'Monster Health Bar',
+    sub:'Damage matches the element’s proton number<br>Right family = critical damage<br>Exact element = huge damage',
+    rect:()=>tutElRect('#cockpitScreen .ckHp',6)||{x:0.18,y:0.06,w:0.64,h:0.06}},
   {key:'b4', title:'Required Elements', sub:'How many of each element you still need',
     capAbove:true, rect:()=>tutElRect('#cockpitScreen .ckSolved',6)||{x:0.22,y:0.52,w:0.56,h:0.10}},
   {key:'b5', title:'Held Protons', sub:'The monster’s counterattack costs you held protons',
-    rect:()=>tutElRect('#ckProtons',8)||tutElRect('#cockpitScreen .ckZone1',6)||{x:0.30,y:0.60,w:0.40,h:0.06}},
+    rect:()=>tutElRect('#cockpitScreen .ckZone1',4)||tutElRect('#ckProtons',8)||{x:0.10,y:0.60,w:0.80,h:0.06}},
   {key:'b6', title:'Main Dashboard', sub:'Shows the information you need to fight',
     rect:()=>tutElRect('#ckCenter',6)||{x:0.30,y:0.66,w:0.40,h:0.12}},
   {key:'b7', title:'Planet Info', sub:'The current planet code and its threat level',
@@ -7208,9 +7211,10 @@ const BATTLE_TUT_STEPS=[
   {key:'b8', title:'Leave Planet', sub:'Leave this planet and return to the map',
     rect:()=>tutElRect('#ckBack',6)||{x:0.70,y:0.66,w:0.24,h:0.12}},
   {key:'b9', title:'Element Families', sub:'Each family of elements<br>Tap an element to damage the monster',
-    rect:()=>tutElRect('#cockpitScreen .ckKeys',6)||{x:0.20,y:0.80,w:0.60,h:0.16}},
+    rect:()=>{const r=tutElRect('#cockpitScreen .ckKeys',6); if(r)r.h*=0.62; return r||{x:0.20,y:0.80,w:0.60,h:0.10};}},
   {key:'b10', title:'EXTRACT / SYNTH', sub:'Extract or synth the elements you need directly<br>Costs more resources than the CODEX',
-    rects:()=>[ tutElRect('#ckExtract',5)||{x:0.02,y:0.80,w:0.18,h:0.16}, tutElRect('#ckSynth',5)||{x:0.80,y:0.80,w:0.18,h:0.16} ]},
+    rects:()=>{const sh=r=>{if(r)r.h*=0.62;return r;};
+      return [ sh(tutElRect('#ckExtract',5))||{x:0.02,y:0.80,w:0.18,h:0.10}, sh(tutElRect('#ckSynth',5))||{x:0.80,y:0.80,w:0.18,h:0.10} ];}},
 ];
 // Show the first-visit guide prompt for an area (once), then run its steps on START.
 function tutMaybeArea(area,title,steps){
@@ -7439,8 +7443,10 @@ function cockpitMonFlicker(durMs){
   _monShaking=true;
   const mon=document.querySelector('#cockpitScreen .ckMonster'); if(mon)mon.classList.add('ckMonHurt');
   _monFlickerIV=setTimeout(()=>{
-    _monFlickerIV=0;_monPose=null;_monShaking=false;
-    if(_cockpit)cockpitSetMonImgPose('std',1);
+    _monFlickerIV=0;_monShaking=false;
+    // item 7: keep the HIT image until the counterattack's ATT image takes over — only
+    // fall back to std if no attack pose has replaced it (e.g. on kill / no strike).
+    if(_monPose && _monPose.pose==='hit'){ _monPose=null; if(_cockpit)cockpitSetMonImgPose('std',1); }
     const m=document.querySelector('#cockpitScreen .ckMonster'); if(m)m.classList.remove('ckMonHurt');
   },durMs);
 }
@@ -7848,10 +7854,11 @@ function cockpitEnemyFX(){
   function impact(t){ if(t>DUR*0.4 && !_impacted){ _impacted=true; if(typeof combatScreenShake==='function')combatScreenShake(); } }
   if(type==='claw'){
     const aries=(cn==='Aries');
-    const N=aries?6:3, lenF=aries?0.55:1, speed=aries?2.5:1.7, offMax=aries?0.16:0.28;
+    const N=aries?6:3, lenF=aries?0.30:1, speed=aries?3.0:1.7;   // Aries: half-short, fast
     const swipes=[];
     for(let i=0;i<N;i++)swipes.push({cx:tx+(Math.random()*2-1)*W*0.18, cy:ty+(Math.random()*2-1)*H*0.12,
-      ang:-0.8+Math.random()*1.6, len:(H*0.20+Math.random()*H*0.12)*lenF, off:Math.random()*offMax});
+      ang:-0.8+Math.random()*1.6, len:(H*0.20+Math.random()*H*0.12)*lenF,
+      off:aries?(i/N)*0.7:Math.random()*0.28});   // Aries: appear one after another (sequential)
     function frC(now){ const t=now-t0; if(t>=DUR){ctx.clearRect(0,0,W,H);_projRAF=0;return;}
       ctx.clearRect(0,0,W,H); ctx.lineCap='round';
       for(const s of swipes){ const k=Math.max(0,Math.min(1,(t/DUR)-s.off)); if(k<=0)continue;
@@ -8375,7 +8382,7 @@ function cockpitFireYes(){
     const r=combatAttack(_combat, z);
     // Monster reacts: hit if it took damage, severelyInjured if low, death on kill.
     if(r.killed){ killed=true; }
-    else { cockpitMonFlicker(1000); }   // item 1: hurt pose + shake through the 1s volley
+    else { cockpitMonFlicker(1300); }   // hold the hit pose past the 1.15s counterattack so ATT replaces it (no std gap)
     // Dashboard readout: "<sym> DEALT DAMAGE" + the single TOTAL damage number;
     // kind drives the CRITICAL / exact-hit styling.
     _cockpit.lastDmg={total:r.total, kind:r.kind, guessed:r.guessed, sym, z};
