@@ -265,6 +265,9 @@ body{position:fixed;inset:0}
 .codexmodal{position:absolute;inset:0;z-index:65;display:none;align-items:center;justify-content:center;
   background:rgba(3,4,10,.5);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
 .codexmodal.show{display:flex}
+/* wormhole: centre the content vertically so the sphere sits at the viewport centre,
+   exactly where the map globe is (item: match map sphere position) */
+#chaptersInner{justify-content:center}
 .codexinner{width:100%;max-width:100%;height:100%;max-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
   background:transparent;
   border:none;border-radius:0;padding:18px 14px calc(18px + env(safe-area-inset-bottom));box-sizing:border-box;box-shadow:none;animation:none;overflow:hidden}
@@ -1972,7 +1975,7 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.9';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v2.0';   // item 13: shown on the cover; item 12: save is kept unless this changes
 const ECON={
   PICKS_PER_TICK:1,
   TICK_MS:5000,
@@ -2577,7 +2580,10 @@ function drawWormholeSphere(){
   // corrects the sphere position while rotating.
   const _app=document.querySelector('.app');
   const _aw=(_app&&_app.clientWidth)||window.innerWidth, _ah=(_app&&_app.clientHeight)||window.innerHeight;
-  const size=Math.min(_aw-32,_ah-280,400);
+  // match the MAP globe's size formula so the wormhole sphere is the same size; the
+  // chapters modal is vertically centred (#chaptersInner) so it also sits at the same
+  // on-screen position as the map globe (viewport centre).
+  const size=Math.min(_aw-24,_ah-200,460);
   cv.style.width=size+"px";cv.style.height=size+"px";cv.width=size*dpr;cv.height=size*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.clearRect(0,0,size,size);
   let _whA=1;
@@ -2587,7 +2593,7 @@ function drawWormholeSphere(){
     _whA=Math.max(0,Math.min(1,whOpen));
   }
   ctx.globalAlpha=_whA*whFade;
-  const Cx=size/2,Cy=size*0.5,Rg=size*0.40;
+  const Cx=size/2,Cy=size*0.5,Rg=size*0.43;   // match the map globe's radius ratio
   whHits=[];
   ctx.lineWidth=1.2;ctx.strokeStyle="rgba(120,200,255,.22)";ctx.shadowBlur=0;
   // Compute how far the front-facing orbital sphere (max z among the 4) sits from
