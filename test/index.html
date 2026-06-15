@@ -1975,7 +1975,7 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.16';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v1.17';   // item 13: shown on the cover; item 12: save is kept unless this changes
 const ECON={
   PICKS_PER_TICK:1,
   TICK_MS:5000,
@@ -3810,6 +3810,8 @@ function collectorConfirm(){const def=COLLECTORS[_collPick.type];if(!def||_collP
     closeModalFade(450);
     if(G&&G.sheetMode==='map')startMapIntro();
     else setTimeout(()=>{ if(typeof openMap==='function')openMap(true); },220);
+    // item: the MAP guide appears right after the collector is chosen and the map opens
+    setTimeout(()=>{ if(typeof tutMaybeArea==='function')tutMaybeArea('map','Region Map — the worlds you can travel to.',MAP_TUT_STEPS); }, 1000);
   }}
 function renderCollectorDock(){const d=document.getElementById('collectorDock');if(!d)return;
   if(!collectorActive()){d.style.display='none';return;}
@@ -5151,11 +5153,22 @@ function renderScene(ts){
       ctx.beginPath();ctx.arc(cx,cy,Rr,a0s,a1s);
       ctx.strokeStyle=EL[z].color;ctx.shadowColor=EL[z].color;ctx.stroke();}
     }
-    // item 2: the LARGEST element's halo (the widest segment) gets pushed upward on
-    // desktop and can land off the arc apex, reading as un-lit. Add a symmetric,
-    // no-offset glow pass for it so the dominant element always glows.
-    // item 5: the dedicated multi-layer glow on the largest element was an anomaly —
-    // removed. Every segment now glows uniformly via the HALO loop above.
+    // The DOMINANT (widest) element spreads its near-zero mobile stroke over a long arc,
+    // so its glow reads faint / un-lit. Give just that one segment a dedicated thicker
+    // symmetric glow so the largest element always shows its colour. Mobile only
+    // (desktop's wide breathing halo already lights every segment).
+    if(_isMobile && segs.length){
+      let big=segs[0],bw=segs[0][1]-segs[0][0];
+      for(const sg of segs){const w2=sg[1]-sg[0];if(w2>bw){bw=w2;big=sg;}}
+      const bz=big[2];ctx.shadowOffsetY=0;
+      for(let p=2;p>=0;p--){
+        ctx.lineWidth=2+3*p;
+        ctx.globalAlpha=0.16+0.16*arcBreath;
+        ctx.shadowBlur=(16+12*p)*haloBlur;
+        ctx.strokeStyle=EL[bz].color;ctx.shadowColor=EL[bz].color;
+        ctx.beginPath();ctx.arc(cx,cy,Rr,big[0],big[1]);ctx.stroke();
+      }
+    }
     ctx.restore();ctx.shadowBlur=0;ctx.shadowOffsetY=0;ctx.globalAlpha=1;
     // Converge motes/atoms to the planet sphere's geometric center (cx,cy) — the
     // center of the huge curved surface, which sits below the screen, so the dots
@@ -5548,8 +5561,7 @@ function openMap(intro){if(!G)return;G.sheetMode='map';
   } else {
     _mapIntro=1;_mapIntroSpin=0;_mapIntroTilt=0;
     setTimeout(()=>{drawMap();attachMapDrag();startMapBlink();},30);
-  }
-  if(!intro && typeof tutMaybeArea==='function')tutMaybeArea('map','Galaxy Map — the worlds you can travel to.',MAP_TUT_STEPS);}
+  }}
 function startMapIntro(){
   if(_mapIntroRAF)cancelAnimationFrame(_mapIntroRAF);
   _mapIntro=0;const t0=Date.now(),dur=TRANS_DUR;
@@ -6782,7 +6794,7 @@ const TUT_STEPS=[
     }},
   {key:'ring', title:'Planet Ring', sub:'Its glowing elemental signature',
     rect:()=>({x:0.04,y:0.27,w:0.92,h:0.42})},
-  {key:'notif', title:'Notification Star', sub:'Tap it for offline gains & new finds',
+  {key:'notif', title:'Notification Star', sub:'Tap it for offline gains &amp; new finds',
     circle:true, rect:()=>tutElRect('#notifStar',12)||{x:0.10,y:0.04,w:0.15,h:0.06}},
   {key:'ach', title:'Achievement Stars', sub:'Tap a star to see your milestones',
     rect:()=>tutElRect('#achOrbs',2)||{x:0.05,y:0.02,w:0.90,h:0.22}},
@@ -6794,6 +6806,7 @@ const TUT_STEPS=[
 // screen pixels. getBoundingClientRect() returns SCREEN px (post-transform), so
 // convert it back into design space by removing the viewport offset & scale.
 const TUT_DW=415, TUT_DH=900;
+const TUT_SPOT_TRANS='left 2.2s cubic-bezier(.4,0,.2,1),top 2.2s cubic-bezier(.4,0,.2,1),width 2.2s cubic-bezier(.4,0,.2,1),height 2.2s cubic-bezier(.4,0,.2,1),border-radius 2.2s cubic-bezier(.4,0,.2,1)';
 function tutVpGeom(){
   const vp=document.getElementById('viewport');
   if(!vp)return{ox:0,oy:0,k:1};
@@ -6864,7 +6877,7 @@ function tutorialShow(){
   const circ=document.getElementById('tutCircle');
   const cap=document.getElementById('tutCaption');
   document.getElementById('tutText').textContent=s.title||s.text||'';
-  const subEl=document.getElementById('tutSub');if(subEl)subEl.textContent=s.sub||'';
+  const subEl=document.getElementById('tutSub');if(subEl)subEl.innerHTML=s.sub||'';   // innerHTML so a step can use a <br> second line
   document.getElementById('tutStep').textContent='STEP '+(_tutStep+1)+' / '+_L.length;
   {const bk=document.getElementById('tutBack');if(bk)bk.style.display=(_tutStep>0)?'inline-block':'none';}
   // pause (freeze scene) only during the falling-element step
@@ -7039,10 +7052,16 @@ function tutorialShow(){
   spot.style.borderRadius=(18*k)+'px';
   const r=s.rect();
   const x=ox+r.x*vw, y=oy+r.y*vh, w=r.w*vw, h=r.h*vh;
+  // noMorph: appear instantly at the new spot (no slide/zoom from the previous frame)
+  if(s.noMorph)spot.style.transition='none';
   spot.style.left=x+'px';spot.style.top=y+'px';spot.style.width=w+'px';spot.style.height=h+'px';
-  // focus transition only on the very first step
   spot.classList.remove('focusin');
-  if(_tutStep===0){ void spot.offsetWidth; spot.classList.add('focusin'); }
+  if(s.noMorph){ void spot.offsetWidth; spot.style.transition=TUT_SPOT_TRANS; }
+  else if(_tutStep===0){ void spot.offsetWidth; spot.classList.add('focusin'); }   // focus zoom only on a morphing first step
+  // capDelay: hide the caption while the box morphs, reveal the title once it lands
+  {const tw=document.getElementById('tutTextWrap');
+   if(tw){ if(s.capDelay){ tw.style.transition='opacity .4s ease'; tw.style.opacity='0'; clearTimeout(window._tutCapTO); window._tutCapTO=setTimeout(function(){const t2=document.getElementById('tutTextWrap');if(t2)t2.style.opacity='1';},760); }
+     else { clearTimeout(window._tutCapTO); tw.style.transition=''; tw.style.opacity=''; } }}
   if(s.capAbove){
     // caption sits ABOVE the focus box (its bottom 14px above the box top)
     cap.style.bottom=(SH-y+14)+'px';cap.style.top='';
@@ -7109,27 +7128,27 @@ function tutAsk(title,msg,onStart,onSkip){
 }
 // Per-area guides (highlight the live elements in each screen; every rect has a fallback).
 const MAP_TUT_STEPS=[
-  {key:'mglobe', title:'Galaxy Map', sub:'Drag to rotate · tap a planet to travel or battle',
+  {key:'mglobe', title:'Region Map', sub:'Drag to rotate · tap a planet to travel or battle',
     rect:()=>tutElRect('#mapCanvas',6)||{x:0.08,y:0.18,w:0.84,h:0.5}},
-  {key:'mregion', title:'Star Region', sub:'PYRION — every world in your current domain',
-    circle:true, rect:()=>tutElRect('#orbName',10)||{x:0.30,y:0.15,w:0.40,h:0.05}},
-  {key:'mcodex', title:'CODEX', sub:'Your gathered elements & formula catalog',
-    circle:true, rect:()=>tutElRect('.maptopbar .navitem button',8)||tutElRect('#constBtn',8)||{x:0.04,y:0.0,w:0.24,h:0.07}},
+  {key:'mregion', title:'Star Region', sub:'Region name &amp; Current conquest progress',
+    rect:()=>tutElRect('.maplabel',12)||tutElRect('#orbName',12)||{x:0.26,y:0.13,w:0.48,h:0.07}},
+  {key:'mcodex', title:'CODEX', sub:'Your gathered elements &amp; formulas',
+    rect:()=>tutElRect('.maptopbar .navitem button',8)||tutElRect('#constBtn',8)||{x:0.03,y:0.0,w:0.26,h:0.07}},
   {key:'mstars', title:'STARS', sub:'Browse the zodiac constellations you have found',
-    circle:true, rect:()=>tutElRect('#constBtn',8)||{x:0.37,y:0.0,w:0.26,h:0.07}},
-  {key:'mcoll', title:'Collector', sub:'Auto-gathers mother-planet elements while you travel',
-    circle:true, rect:()=>tutElRect('#collectorDock',8)||{x:0.02,y:0.85,w:0.22,h:0.12}},
+    rect:()=>tutElRect('#constBtn',8)||{x:0.37,y:0.0,w:0.26,h:0.07}},
+  {key:'mcoll', title:'Collector', sub:'Auto-gathers mother-planet elements while traveling',
+    capAbove:true, rect:()=>tutElRect('#collectorDock',8)||{x:0.02,y:0.84,w:0.22,h:0.12}},
   {key:'mworm', title:'Wormhole', sub:'Jump to another star region',
-    circle:true, rect:()=>tutElRect('#wormholeWrap',8)||{x:0.76,y:0.85,w:0.22,h:0.12}},
+    capAbove:true, rect:()=>tutElRect('#wormholeWrap',8)||{x:0.76,y:0.84,w:0.22,h:0.12}},
 ];
 const CODEX_TUT_STEPS=[
-  {key:'ctabs', title:'Codex Tabs', sub:'ELEMENTS table · FORMULAS catalog',
-    rect:()=>tutElRect('.cxtabs',6)||{x:0.06,y:0.10,w:0.88,h:0.07}},
+  {key:'ctabs', title:'Codex Tabs', sub:'Switch between Elements &amp; Formulas',
+    noMorph:true, rect:()=>tutElRect('.cxtabs',8)||{x:0.05,y:0.10,w:0.90,h:0.08}},
   {key:'cseg', title:'Extract / Synth',
-    sub:`EXTRACT: atom → +Z×${ECON.EXTRACT_MULT} protons · SYNTH: spend Z×${ECON.SYNTH_MULT} protons to build 1 atom`,
-    rect:()=>tutElRect('.cxseg',6)||tutElRect('#fxSortSeg',6)||{x:0.10,y:0.18,w:0.80,h:0.08}},
-  {key:'ctable', title:'Your Elements', sub:'Everything you have gathered, by proton number',
-    capAbove:true, rect:()=>tutElRect('#cxScroll',4)||{x:0.04,y:0.28,w:0.92,h:0.5}},
+    sub:'Switch between Extract &amp; Synth<br>Tap number to switch multiplier',
+    rect:()=>tutElRect('.cxseg',8)||tutElRect('#fxSortSeg',8)||{x:0.08,y:0.18,w:0.84,h:0.09}},
+  {key:'ctable', title:'Periodic Table', sub:'Elements you have gathered, by protons',
+    capAbove:true, capDelay:true, rect:()=>tutElRect('#cxScroll',4)||{x:0.04,y:0.28,w:0.92,h:0.5}},
 ];
 const BATTLE_TUT_STEPS=[
   {key:'bmon', title:'Element Monster', sub:'Solve its formula to defeat it',
