@@ -1975,7 +1975,7 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.11';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v1.12';   // item 13: shown on the cover; item 12: save is kept unless this changes
 const ECON={
   PICKS_PER_TICK:1,
   TICK_MS:5000,
@@ -4764,7 +4764,8 @@ function showCompoundInfo(compId){const f=COMPOUNDS[compId].text;const ci=CINFO[
     // item 9: COUNTDOWN to the next +0.01% (60:00 minus the time into the current hour)
     const remSec=3600-((hrs*3600)%3600), mm=Math.floor(remSec/60), ss=Math.floor(remSec%60);
     const mmss=('0'+mm).slice(-2)+':'+('0'+ss).slice(-2);
-    h+=`<div class="cirate"><div class="ciratehd">FORMULA DROP RATE</div>`;
+    const _spd=(typeof speedActive==='function'&&speedActive());   // paid speed boost halves the harvest tick -> 2x formula drops too
+    h+=`<div class="cirate"><div class="ciratehd">FORMULA DROP RATE${_spd?` <span style="color:#ffd24a;text-shadow:0 0 6px rgba(255,210,74,.7)">⚡×2</span>`:''}</div>`;
     // item 9 line 2: current rate · countdown · next rate (no icons)
     h+=`<div class="ciraterow"><span class="ciratenow">Current <b class="cirateval">${eff.toFixed(2)}%</b></span>`+
        `<span class="ciratearr"><span id="cirateTimer">${mmss}</span></span>`+
