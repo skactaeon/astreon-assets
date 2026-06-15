@@ -1975,7 +1975,7 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.14';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v1.15';   // item 13: shown on the cover; item 12: save is kept unless this changes
 const ECON={
   PICKS_PER_TICK:1,
   TICK_MS:5000,
@@ -3519,7 +3519,7 @@ function newGame(){
      maxPoints:0, solvedTotal:0, solvedNoSkip:0,
      everBasic:{}, peakBasic:{}, mileage:0, formulas:{},
      wallet:0, store:{capBonus:0, speedUntil:0, offlineUntil:0, owned:{}},
-     collector:null, tutorialDone:false, introDone:false};
+     collector:null, tutorialDone:false, introDone:false, tutSeen:{}};
   bindChapter(0);
   syncAchievementStats();
   spawnFoes();
@@ -5548,7 +5548,8 @@ function openMap(intro){if(!G)return;G.sheetMode='map';
   } else {
     _mapIntro=1;_mapIntroSpin=0;_mapIntroTilt=0;
     setTimeout(()=>{drawMap();attachMapDrag();startMapBlink();},30);
-  }}
+  }
+  if(!intro && typeof tutMaybeArea==='function')tutMaybeArea('map','Galaxy Map — the worlds you can travel to.',MAP_TUT_STEPS);}
 function startMapIntro(){
   if(_mapIntroRAF)cancelAnimationFrame(_mapIntroRAF);
   _mapIntro=0;const t0=Date.now(),dur=TRANS_DUR;
@@ -5985,7 +5986,8 @@ function formulaCellTap(compId){
 let codexQty=1;   // trade multiplier cycled by the round button: 1/5/10/MAX(=0)
 function openCodex(){G.sheetMode='codex';renderCodex();setPlanetBg();
   document.getElementById('codexModal').classList.add('show');
-  setTimeout(attachCodexClose,30);}
+  setTimeout(attachCodexClose,30);
+  if(typeof tutMaybeArea==='function')tutMaybeArea('codex','Codex — your elements and formula catalog.',CODEX_TUT_STEPS);}
 function closeCodex(){document.getElementById('codexModal').classList.remove('show');G.sheetMode=null;
   if(typeof formula3dStop==='function')formula3dStop();
   const m=document.getElementById('modal');
@@ -6251,7 +6253,7 @@ function saveGame(){if(!G)return;
       everBasic:G.everBasic||{}, peakBasic:G.peakBasic||{}, mileage:G.mileage||0,
       formulas:G.formulas||{},   // collected compound formulas: { "H2O":count, ... }
       wallet:G.wallet||0, store:G.store||{capBonus:0,speedUntil:0,offlineUntil:0,owned:{}},
-      collector:G.collector||null, tutorialDone:!!G.tutorialDone, introDone:!!G.introDone,
+      collector:G.collector||null, tutorialDone:!!G.tutorialDone, introDone:!!G.introDone, tutSeen:G.tutSeen||{},
       chapters:G.chapters.map(ch=>({
         cur:ch.cur, unlocked:ch.unlocked,
         planets:ch.planets.map(p=>({c:p.comp,ci:p.compId,rv:p.revealed?1:0,df:p.defeated?1:0,
@@ -6276,7 +6278,7 @@ function loadGame(){
   G.formulas=data.formulas||{};
   G.wallet=data.wallet||0;
   G.store=data.store||{capBonus:0,speedUntil:0,offlineUntil:0,owned:{}};
-  G.collector=data.collector||null;G.tutorialDone=!!data.tutorialDone;G.introDone=!!data.introDone;
+  G.collector=data.collector||null;G.tutorialDone=!!data.tutorialDone;G.introDone=!!data.introDone;G.tutSeen=data.tutSeen||{};
   if(!G.store.owned)G.store.owned={};
   for(let ci=0;ci<G.chapters.length&&ci<data.chapters.length;ci++){
     const ch=G.chapters[ci],sd=data.chapters[ci];
@@ -6761,6 +6763,7 @@ function toggleMute(){setVolume(_muted?3:0);}
 
 // ---- 6-step onboarding tutorial (first play only) ----
 let _tutStep=0, _tutPaused=false, _tutFreezeTs=null, _tutPrevKey=null;
+let _tutList=null, _tutOnDone=null;   // active step list + completion callback (generalised for map/codex/battle guides)
 const TUT_STEPS=[
   {key:'name', title:'Planet Name & Code', sub:'Where you are',
     rect:()=>({x:0.10,y:0.375,w:0.80,h:0.085})},
@@ -6781,6 +6784,10 @@ const TUT_STEPS=[
     rect:()=>({x:0.04,y:0.27,w:0.92,h:0.42})},
   {key:'stars', title:'Star Field', sub:'Distant planets you can travel to',
     rect:()=>({x:0.05,y:0.03,w:0.90,h:0.23})},
+  {key:'notif', title:'Notification Star', sub:'Tap it for offline gains & new finds',
+    rect:()=>tutElRect('#notifStar',12)||{x:0.10,y:0.04,w:0.15,h:0.06}},
+  {key:'ach', title:'Achievement Stars', sub:'Tap a star to see your milestones',
+    rect:()=>tutElRect('#achOrbs',2)||{x:0.05,y:0.02,w:0.90,h:0.22}},
 ];
 // Tutorial overlay lives INSIDE #viewport, whose coordinate space is the fixed
 // 415x900 design canvas. So all highlight math must be in design pixels, NOT
@@ -6798,6 +6805,17 @@ function tutVpGeom(){
 function tutToDesign(r){
   const g=tutVpGeom();
   return{x:(r.left-g.ox)/g.k, y:(r.top-g.oy)/g.k, w:r.width/g.k, h:r.height/g.k};
+}
+// Highlight rect (design-space fractions) for a live DOM element, with optional px pad.
+// Returns null if the element is missing/zero-sized so callers can fall back.
+function tutElRect(sel,pad){
+  pad=pad||0;
+  const el=(typeof sel==='string')?document.querySelector(sel):sel;
+  if(!el)return null;
+  const br=el.getBoundingClientRect();
+  if(!br.width||!br.height)return null;
+  const r=tutToDesign(br);
+  return {x:(r.x-pad)/TUT_DW, y:(r.y-pad)/TUT_DH, w:(r.w+2*pad)/TUT_DW, h:(r.h+2*pad)/TUT_DH};
 }
 function tutDockFullRect(){const d=document.querySelector('.dock');
   if(!d)return{x:0.04,y:0.70,w:0.92,h:0.26};
@@ -6817,6 +6835,8 @@ function maybeStartTutorial(){
   _tutStep=0;
   _tutPaused=false;
   _tutPrevKey=null;
+  _tutList=TUT_STEPS;
+  _tutOnDone=function(){ if(G)G.tutorialDone=true; };
   const ov=document.getElementById('tutorialOverlay');if(!ov)return;
   // Mount the overlay on #stagewrap (position:fixed, inset:0, NO transform) so the dim
   // covers edge-to-edge with no sub-pixel seam from the fractionally-scaled #viewport.
@@ -6829,7 +6849,8 @@ function maybeStartTutorial(){
   tutorialShow();
 }
 function tutorialShow(){
-  const s=TUT_STEPS[_tutStep];if(!s){tutorialEnd();return;}
+  const _L=_tutList||TUT_STEPS;
+  const s=_L[_tutStep];if(!s){tutorialEnd();return;}
   // Overlay now lives on #stagewrap (full-screen, NO transform), so geometry is in
   // SCREEN pixels. Map the 415x900 design-canvas fractions onto the viewport's
   // on-screen box: screen = offset + fraction * (designSize * k).
@@ -6844,7 +6865,7 @@ function tutorialShow(){
   const cap=document.getElementById('tutCaption');
   document.getElementById('tutText').textContent=s.title||s.text||'';
   const subEl=document.getElementById('tutSub');if(subEl)subEl.textContent=s.sub||'';
-  document.getElementById('tutStep').textContent='STEP '+(_tutStep+1)+' / '+TUT_STEPS.length;
+  document.getElementById('tutStep').textContent='STEP '+(_tutStep+1)+' / '+_L.length;
   {const bk=document.getElementById('tutBack');if(bk)bk.style.display=(_tutStep>0)?'inline-block':'none';}
   // pause (freeze scene) only during the falling-element step
   _tutPaused=(s.key==='falling');
@@ -6994,7 +7015,7 @@ function tutorialShow(){
   else{cap.style.top=(y+h+18)+'px';cap.style.bottom='';}
   _tutPrevKey=s.key;
 }
-function tutorialNext(){_tutStep++;if(_tutStep>=TUT_STEPS.length)tutorialEnd();else tutorialShow();}
+function tutorialNext(){_tutStep++;if(_tutStep>=(_tutList||TUT_STEPS).length)tutorialEnd();else tutorialShow();}
 function tutorialPrev(){if(_tutStep>0){_tutStep--;tutorialShow();}}
 function tutorialEnd(){
   _tutPaused=false;_tutFreezeTs=null;
@@ -7010,7 +7031,79 @@ function tutorialEnd(){
       ov.style.transition='';
     },1150);
   }
-  if(G){G.tutorialDone=true;saveGame();}
+  if(_tutOnDone){try{_tutOnDone();}catch(e){}}
+  _tutList=null;_tutOnDone=null;
+  if(G)saveGame();
+}
+// Generic guide runner: drive any step list, then call onDone. Mounts the same overlay
+// as the main tutorial (on #stagewrap, above all modals at z-index 118).
+function tutorialRun(list,onDone){
+  if(!G||!list||!list.length)return;
+  _tutList=list;_tutOnDone=onDone||null;
+  _tutStep=0;_tutPaused=false;_tutPrevKey=null;
+  const ov=document.getElementById('tutorialOverlay');if(!ov)return;
+  const wrap=document.getElementById('stagewrap');
+  if(wrap && ov.parentNode!==wrap){ wrap.appendChild(ov); }
+  ov.style.zIndex='118';ov.style.transition='';ov.style.opacity='';ov.style.display='block';
+  tutorialShow();
+}
+// First-time "want a quick guide?" card. START -> onStart, SKIP -> onSkip.
+function tutAsk(title,msg,onStart,onSkip){
+  if(document.getElementById('tutChoiceOverlay'))return;
+  var ov=document.createElement('div');ov.id='tutChoiceOverlay';
+  ov.style.cssText='position:absolute;inset:0;left:0;top:0;width:100%;height:100%;z-index:122;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(2,6,18,0.82);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);opacity:0;transition:opacity .45s ease';
+  var card=document.createElement('div');
+  card.style.cssText='max-width:240px;width:64%;text-align:center;padding:20px 17px;border-radius:16px;background:rgba(4,10,26,0.45);border:1.5px solid rgba(70,224,255,0.85);box-shadow:0 0 32px rgba(70,224,255,0.55),0 0 12px rgba(70,224,255,0.7),inset 0 0 22px rgba(70,224,255,0.12)';
+  var t=document.createElement('div');t.innerHTML=title;
+  t.style.cssText="font-family:'Orbitron',sans-serif;font-weight:800;font-size:14px;letter-spacing:1px;color:#46e0ff;line-height:1.35;text-shadow:0 0 12px rgba(70,224,255,.8),0 0 4px rgba(0,0,0,.9);margin-bottom:10px";
+  var m=document.createElement('div');m.innerHTML=msg;
+  m.style.cssText="font-family:'Rajdhani',sans-serif;font-weight:600;font-size:13px;color:rgba(210,240,255,0.95);line-height:1.5;margin-bottom:16px";
+  function mk(label,primary){var b=document.createElement('button');b.textContent=label;
+    b.style.cssText='display:block;width:100%;margin:7px 0;padding:9px 0;cursor:pointer;border-radius:12px;font-family:Rajdhani,sans-serif;font-weight:700;font-size:13px;letter-spacing:1px;'+(primary?'border:none;background:linear-gradient(135deg,#46e0ff,#1f8fff);color:#021018;box-shadow:0 0 18px rgba(70,224,255,.65)':'background:rgba(70,224,255,0.08);color:#46e0ff;border:1px solid rgba(70,224,255,0.55)');return b;}
+  var sb=mk('START GUIDE',true), kb=mk('SKIP',false);
+  function close(then){ov.style.opacity='0';setTimeout(function(){if(ov.parentNode)ov.parentNode.removeChild(ov);if(then){try{then();}catch(e){}}},200);}
+  sb.addEventListener('click',function(){close(onStart);});
+  kb.addEventListener('click',function(){close(onSkip);});
+  card.appendChild(t);card.appendChild(m);card.appendChild(sb);card.appendChild(kb);ov.appendChild(card);
+  (document.getElementById('stagewrap')||document.body).appendChild(ov);
+  void ov.offsetWidth;ov.style.opacity='1';
+}
+// Per-area guides (highlight the live elements in each screen; every rect has a fallback).
+const MAP_TUT_STEPS=[
+  {key:'mglobe', title:'Galaxy Map', sub:'Drag to rotate · tap a planet',
+    rect:()=>tutElRect('#mapCanvas',6)||{x:0.08,y:0.16,w:0.84,h:0.52}},
+  {key:'mconst', title:'Constellations', sub:'Defeat every member to complete one',
+    rect:()=>{const r=tutElRect('#mapCanvas'); return r?{x:r.x,y:r.y,w:r.w,h:r.h*0.5}:{x:0.08,y:0.16,w:0.84,h:0.26};}},
+  {key:'mnav', title:'Travel & Back', sub:'Spend protons to move; tap a world to enter',
+    rect:()=>tutElRect('.maptopbar',4)||{x:0.04,y:0.0,w:0.92,h:0.08}},
+];
+const CODEX_TUT_STEPS=[
+  {key:'ctabs', title:'Codex Tabs', sub:'ELEMENTS table · FORMULAS catalog',
+    rect:()=>tutElRect('.cxtabs',6)||{x:0.06,y:0.10,w:0.88,h:0.07}},
+  {key:'cseg', title:'Extract / Synth', sub:'EXTRACT atoms → protons · SYNTH the reverse',
+    rect:()=>tutElRect('.cxseg',6)||tutElRect('#fxSortSeg',6)||{x:0.10,y:0.18,w:0.80,h:0.08}},
+  {key:'ctable', title:'Your Elements', sub:'Everything you have gathered, by proton number',
+    rect:()=>tutElRect('#cxScroll',4)||{x:0.04,y:0.28,w:0.92,h:0.5}},
+];
+const BATTLE_TUT_STEPS=[
+  {key:'bmon', title:'Element Monster', sub:'Solve its formula to defeat it',
+    rect:()=>tutElRect('#cockpitScreen .ckMonster',6)||{x:0.18,y:0.10,w:0.64,h:0.34}},
+  {key:'bhp', title:'Monster Health', sub:'Each correct element chips it down',
+    rect:()=>tutElRect('#cockpitScreen .ckHp',6)||{x:0.18,y:0.06,w:0.64,h:0.06}},
+  {key:'bfire', title:'Pick & Fire', sub:'Choose a family, tap an element to fire',
+    rect:()=>tutElRect('#cockpitScreen .ckKeypad',6)||tutElRect('#cockpitScreen .ckDash',6)||{x:0.05,y:0.66,w:0.90,h:0.30}},
+];
+// Show the first-visit guide prompt for an area (once), then run its steps on START.
+function tutMaybeArea(area,title,steps){
+  if(!G)return;
+  G.tutSeen=G.tutSeen||{};
+  if(G.tutSeen[area])return;
+  G.tutSeen[area]=1; saveGame&&saveGame();
+  setTimeout(function(){
+    tutAsk('FIRST TIME HERE', title,
+      function(){ setTimeout(function(){ tutorialRun(steps); },180); },
+      null);
+  }, 520);
 }
 
 /* ================= COCKPIT BATTLE BAY (new standalone screen) ================= */
@@ -7768,6 +7861,7 @@ function cockpitOpen(){
   _combat=combatInit(p);   // monster strikes back per-turn after each FIRE
   cockpitRender();
   saveGame&&saveGame();    // item 3: persist that the battle screen is open
+  if(typeof tutMaybeArea==='function')tutMaybeArea('battle','Battle — solve the monster formula to win.',BATTLE_TUT_STEPS);
 }
 function cockpitClose(){
   _cockpit=null;
