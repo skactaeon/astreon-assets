@@ -1975,10 +1975,10 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.20';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v1.21';   // item 13: shown on the cover; item 12: save is kept unless this changes
 const ECON={
   PICKS_PER_TICK:1,
-  TICK_MS:5000,
+  TICK_MS:3000,
   GOAL:100,
   MOVE_MULT:1000,
   SKIP_PER_SLOT:100,
@@ -7847,6 +7847,7 @@ function cockpitEnemyFX(){
   else if(cn==='Aquarius'){ type='circle'; cMain='#46e08a'; cGlow='#c2ffdb'; }
   else if(cn==='Pisces'){ type='circle'; cMain='#46a0ff'; cGlow='#bfeaff'; }
   else if(cn==='Libra'){ type='wave'; cMain='#46e08a'; cGlow='#c2ffdb'; }
+  else if(cn==='Sagittarius'){ type='beam'; cMain='#ff4040'; cGlow='#ffb0b0'; }
   const tx=W*0.5, ty=H*0.33;
   const DUR=700,t0=performance.now();
   if(_projRAF)cancelAnimationFrame(_projRAF);
@@ -7896,6 +7897,25 @@ function cockpitEnemyFX(){
         ctx.beginPath();ctx.arc(cxw,cyw,rad*0.7,0,6.28);ctx.stroke();}
       ctx.shadowBlur=0;ctx.globalAlpha=1;impact(t);_projRAF=requestAnimationFrame(frW);}
     _projRAF=requestAnimationFrame(frW); return;
+  }
+  if(type==='beam'){
+    // SAGITTARIUS: red light lines radiate from the monster centre toward the window
+    // centre, fanning out and appearing one after another (sequential).
+    const sx=W*0.5, sy=H*0.08, cx=tx, cy=ty+H*0.06;
+    const baseAng=Math.atan2(cy-sy, cx-sx);
+    const N=6, spread=0.95, maxLen=Math.hypot(cx-sx,cy-sy)*1.7;
+    const beams=[];
+    for(let i=0;i<N;i++)beams.push({ang:baseAng+(i/(N-1)-0.5)*spread, off:(i/N)*0.62, len:maxLen*(0.8+Math.random()*0.4)});
+    function frB(now){const t=now-t0;if(t>=DUR){ctx.clearRect(0,0,W,H);_projRAF=0;return;}ctx.clearRect(0,0,W,H);ctx.lineCap='round';
+      for(const b of beams){const k=Math.max(0,Math.min(1,(t/DUR)-b.off));if(k<=0)continue;
+        const grow=Math.min(1,k*2.4), a=Math.sin(Math.PI*k)*0.95;
+        const x1=sx+Math.cos(b.ang)*b.len*grow, y1=sy+Math.sin(b.ang)*b.len*grow;
+        ctx.globalAlpha=a;ctx.shadowBlur=14;ctx.shadowColor=cMain;ctx.strokeStyle=cMain;ctx.lineWidth=3.5;
+        ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(x1,y1);ctx.stroke();
+        ctx.globalAlpha=a*0.7;ctx.shadowBlur=6;ctx.strokeStyle=cGlow;ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(x1,y1);ctx.stroke();}
+      ctx.shadowBlur=0;ctx.globalAlpha=1;impact(t);_projRAF=requestAnimationFrame(frB);}
+    _projRAF=requestAnimationFrame(frB); return;
   }
   // circle (Aquarius green / Pisces blue / default): blooming rings
   const rings=[];
