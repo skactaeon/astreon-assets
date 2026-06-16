@@ -1975,10 +1975,22 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.21';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v1.22';   // item 13: shown on the cover; item 12: save is kept unless this changes
+// Concise changelog shown in the Notification star's VERSION tab (newest first). English only (CJK must stay 0).
+const CHANGELOG=[
+  {v:'v1.22', items:['Harvest speed: 6s per element','Notification: Collection / Version tabs','Collection list sorted by amount']},
+  {v:'v1.21', items:['Sagittarius monster + red beam attack']},
+  {v:'v1.20', items:['Battle guide expanded to 10 steps','Aries claws shorter, appear in sequence','Hit pose holds until the monster strikes back']},
+  {v:'v1.19', items:['Aries / Leo / Libra monsters added','Per-sign attack FX: claws, circles, waves']},
+  {v:'v1.18', items:['Planets spread across all 12 zodiac signs','Cover & wormhole text tweaks']},
+  {v:'v1.17', items:['Map / Codex / Battle first-visit guides','Notification & Achievement star guides']},
+  {v:'v1.16', items:['Codex tab switch animation','STARS button always visible']},
+  {v:'v1.14', items:['Formula countdown speeds up with the boost']},
+  {v:'v1.13', items:['Paid boost also speeds formula collection']},
+];
 const ECON={
   PICKS_PER_TICK:1,
-  TICK_MS:3000,
+  TICK_MS:6000,
   GOAL:100,
   MOVE_MULT:1000,
   SKIP_PER_SLOT:100,
@@ -6356,58 +6368,79 @@ function notifHasContent(){ const N=notifInit();
   return N.off||Object.keys(N.el).length||Object.keys(N.fx).length; }
 function updateNotifStar(){ const s=document.getElementById('notifStar'); if(!s)return;
   const N=notifInit(); s.classList.toggle('alert', !!(N.unseen && notifHasContent())); }
+let notifTab='coll';
 function showNotification(){
   const N=notifInit();
+  // snapshot the collection so switching tabs (which re-renders) keeps the data even
+  // after the live accumulator is reset below.
+  window._notifSnap={el:Object.assign({},N.el||{}),fx:Object.assign({},N.fx||{}),off:N.off||null};
   let h=`<h4 style="justify-content:center;text-align:center">NOTIFICATION</h4>`;
-  if(!notifHasContent()){
-    h+=`<div class="sub" style="text-align:center;margin:16px 0">Nothing new yet.</div>`;
-  } else {
-    // item 7: gathered elements use the SAME 7-per-row .dchip layout as the bottom dock;
-    // slots with nothing gathered render as an empty (hidden) placeholder.
-    const elGrid=(map, order)=>{
-      const zs=order||Object.keys(map).map(Number).sort((a,b)=>(map[b]||0)-(map[a]||0));
-      let g=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;width:calc(100% + 16px);margin:8px -8px 0">`;
-      for(const z of zs){ const n=map[z]||0;
-        if(n<=0){ g+=`<div class="dchip" style="visibility:hidden"></div>`; continue; }
-        g+=`<div class="dchip" style="color:${EL[z].color};background:${hexA(EL[z].color,0.3)}">`+
-           `<span class="zz">${z}</span><span class="sy">${EL[z].sym}</span><span class="dv">×${n}</span></div>`;
-      }
-      return g+`</div>`;
-    };
-    // session order follows the current planet's dock order, plus any extra elements
-    // gathered elsewhere appended.
-    const _cp=(typeof curPlanet==='function')?curPlanet():null;
-    let dockSeq=(_cp&&_cp.comp&&_cp.comp.length)?_cp.comp.slice().sort((a,b)=>(b.r-a.r)||(a.z-b.z)).map(c=>c.z):[];
-    for(const k of Object.keys(N.el)){ const z=+k; if(dockSeq.indexOf(z)<0)dockSeq.push(z); }
-    if(N.off && N.off.total>0){
-      h+=`<div class="sub" style="text-align:center;margin-top:8px">While away (${N.off.hours}h) your harvester collected <b style="color:var(--glow)">${N.off.total}</b> atoms:</div>`;
-      h+=elGrid(N.off.gained);
-    }
-    if(Object.keys(N.el).length){
-      h+=`<div class="sub" style="text-align:center;margin-top:12px">Elements gathered this session:</div>`;
-      h+=elGrid(N.el, dockSeq);
-    }
-    const fk=Object.keys(N.fx);
-    if(fk.length){
-      // item 8: collected formulas — CODEX-catalog cells (3D), horizontally centred.
-      const num=(typeof formulaCatalogNum==='function')?formulaCatalogNum():{};
-      h+=`<div class="sub" style="text-align:center;margin-top:12px">Formulas collected this session:</div>`;
-      h+=`<div class="fxscroll" style="max-height:30cqh;cursor:default"><div class="fxgrid fxgridcenter">`;
-      for(const f of fk){
-        const ci=COMPOUNDS.findIndex(c=>c.text===f); if(ci<0)continue;
-        const nt=`#${String(num[ci]||0).padStart(3,'0')}`;
-        h+=`<div class="fxcell have"><span class="fxnum">${nt}</span>`+
-           `<canvas class="fxmol fxmol3d" data-cid="${ci}"></canvas>`+
-           `<div class="fxfoot"><span class="fxname">${f}</span><span class="fxcnt">×${N.fx[f]}</span></div></div>`;
-      }
-      h+=`</div></div>`;
-    }
-  }
-  h+=`<div style="text-align:center;margin-top:16px"><button class="closebtn" onclick="closeModal()">${T('back')}</button></div>`;
+  h+=`<div class="cxtabs"><button class="cxtab ${notifTab==='coll'?'on':''}" onclick="notifSetTab('coll')">COLLECTION</button>`+
+     `<button class="cxtab ${notifTab==='ver'?'on':''}" onclick="notifSetTab('ver')">VERSION</button></div>`;
+  h+=`<div id="notifBody" class="cxbody">${notifBodyHTML()}</div>`;
+  h+=`<div style="text-align:center;margin-top:10px"><button class="closebtn" onclick="closeModal()">${T('back')}</button></div>`;
   openModal(h,false,true);
-  if(typeof formula3dStart==='function')setTimeout(formula3dStart,40);   // spin formula thumbs
+  if(notifTab==='coll' && typeof formula3dStart==='function')setTimeout(formula3dStart,40);   // spin formula thumbs
   // mark seen + reset the accumulator
   G.notif={el:{},fx:{},off:null,unseen:false}; updateNotifStar();
+}
+function notifBodyHTML(){ return notifTab==='ver'?notifVerHTML():notifCollHTML(window._notifSnap||{el:{},fx:{},off:null}); }
+function notifSetTab(t){ if(t===notifTab)return; notifTab=t;
+  const tabs=document.querySelectorAll('#modalBox .cxtab');
+  const body=document.getElementById('notifBody');
+  if(tabs.length>=2){ tabs[0].classList.toggle('on',t==='coll'); tabs[1].classList.toggle('on',t==='ver'); }
+  if(!body)return;
+  body.style.transition='opacity .24s ease'; body.style.opacity='0';
+  setTimeout(()=>{ body.innerHTML=notifBodyHTML(); body.style.opacity='0'; void body.offsetWidth;
+    body.style.transition='opacity .24s ease'; body.style.opacity='1';
+    if(notifTab==='coll' && typeof formula3dStart==='function')setTimeout(formula3dStart,40); }, 240);
+}
+function notifCollHTML(N){
+  const has=N&&((N.el&&Object.keys(N.el).length)||(N.fx&&Object.keys(N.fx).length)||(N.off&&N.off.total>0));
+  if(!has)return `<div class="sub" style="text-align:center;margin:16px 0">Nothing new yet.</div>`;
+  const elGrid=(map, order)=>{
+    const zs=order||Object.keys(map).map(Number).sort((a,b)=>(map[b]||0)-(map[a]||0));
+    let g=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;width:calc(100% + 16px);margin:8px -8px 0">`;
+    for(const z of zs){ const n=map[z]||0; if(n<=0)continue;
+      g+=`<div class="dchip" style="color:${EL[z].color};background:${hexA(EL[z].color,0.3)}">`+
+         `<span class="zz">${z}</span><span class="sy">${EL[z].sym}</span><span class="dv">×${n}</span></div>`; }
+    return g+`</div>`;
+  };
+  // order by quantity (most -> least); ties broken by proton number (high -> low)
+  const byQty=(map)=>Object.keys(map).map(Number).sort((a,b)=>(map[b]-map[a])||(b-a));
+  let h='';
+  if(N.off && N.off.total>0){
+    h+=`<div class="sub" style="text-align:center;margin-top:6px">While away (${N.off.hours}h) your harvester collected <b style="color:var(--glow)">${N.off.total}</b> atoms:</div>`;
+    h+=elGrid(N.off.gained, byQty(N.off.gained));
+  }
+  if(N.el && Object.keys(N.el).length){
+    h+=`<div class="sub" style="text-align:center;margin-top:10px">Elements gathered this session:</div>`;
+    h+=elGrid(N.el, byQty(N.el));
+  }
+  const fk=N.fx?Object.keys(N.fx):[];
+  if(fk.length){
+    const num=(typeof formulaCatalogNum==='function')?formulaCatalogNum():{};
+    h+=`<div class="sub" style="text-align:center;margin-top:10px">Formulas collected this session:</div>`;
+    h+=`<div class="fxscroll" style="max-height:30cqh;cursor:default"><div class="fxgrid fxgridcenter">`;
+    for(const f of fk){ const ci=COMPOUNDS.findIndex(c=>c.text===f); if(ci<0)continue;
+      const nt=`#${String(num[ci]||0).padStart(3,'0')}`;
+      h+=`<div class="fxcell have"><span class="fxnum">${nt}</span>`+
+         `<canvas class="fxmol fxmol3d" data-cid="${ci}"></canvas>`+
+         `<div class="fxfoot"><span class="fxname">${f}</span><span class="fxcnt">×${N.fx[f]}</span></div></div>`; }
+    h+=`</div></div>`;
+  }
+  return h;
+}
+function notifVerHTML(){
+  let h=`<div class="fxscroll" style="max-height:54cqh;cursor:default;padding:0 6px">`;
+  for(const c of CHANGELOG){
+    h+=`<div style="text-align:left;max-width:330px;margin:0 auto;padding:7px 2px;border-bottom:1px solid rgba(70,224,255,.14)">`+
+       `<div style="font-family:'Orbitron';font-weight:800;font-size:13px;color:var(--glow);text-shadow:0 0 6px rgba(70,224,255,.5);margin-bottom:3px">${c.v}</div>`;
+    for(const it of c.items)
+      h+=`<div style="font-family:'Rajdhani';font-weight:600;font-size:13px;color:rgba(210,235,255,.92);line-height:1.4;padding-left:8px">· ${it}</div>`;
+    h+=`</div>`;
+  }
+  return h+`</div>`;
 }
 function startGame(){
   const hasSaveBeforeStart=hasSave();
@@ -6811,7 +6844,7 @@ const TUT_STEPS=[
     }},
   {key:'ring', title:'Planet Ring', sub:'Its glowing elemental signature',
     rect:()=>({x:0.04,y:0.27,w:0.92,h:0.42})},
-  {key:'notif', title:'Notification Star', sub:'Tap it for offline gains &amp; new finds',
+  {key:'notif', title:'Notification Star', sub:'Tap it: Collection news &amp; the Version changelog',
     circle:true, rect:()=>tutElRect('#notifStar',12)||{x:0.10,y:0.04,w:0.15,h:0.06}},
   {key:'ach', title:'Achievement Stars', sub:'Tap a star to see your milestones',
     rect:()=>tutElRect('#achOrbs',2)||{x:0.05,y:0.02,w:0.90,h:0.22}},
