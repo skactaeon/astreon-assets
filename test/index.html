@@ -1708,9 +1708,10 @@ function genUniverse(seed,chap){const r=RNG(seed);const planets=[];
   const usedComp=new Set();
   const homeId=0;const mother=planets[0];
   mother.home=true;mother.revealed=true;mother.defeated=true;mother.codeNum=r.int(1,99);
-  // mother: H, O, C are the FIXED top elements at 15% each (the basic supply); the rest
-  // of the composition is random, scaled to the remaining 55%.
-  {const _rest=randComp(r,chap.id).filter(c=>c.z!==1&&c.z!==8&&c.z!==6);
+  // mother: H, O, C are the FIXED top elements at 15% each (the basic supply); 11 more
+  // random elements share the remaining 55%, for a fixed total of 14 elements.
+  {const _rest=randComp(r,chap.id).filter(c=>c.z!==1&&c.z!==8&&c.z!==6)
+     .sort((a,b)=>b.r-a.r).slice(0,11);
    let _rt=_rest.reduce((s,c)=>s+c.r,0)||1;
    for(const c of _rest)c.r=Math.round(c.r/_rt*55*10)/10;
    mother.comp=[{z:1,r:15},{z:8,r:15},{z:6,r:15}].concat(_rest);}
@@ -1991,9 +1992,10 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.28';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v1.29';   // item 13: shown on the cover; item 12: save is kept unless this changes
 // Concise changelog shown in the Notification star's VERSION tab (newest first). English only (CJK must stay 0).
 const CHANGELOG=[
+  {v:'v1.29', items:['Mother shows 14 elements, supply highlighted clearly','Drop-rate added back to the guide','Guide reward goes to the Notification star','Gemini / Cancer / Scorpius monsters + attacks']},
   {v:'v1.28', items:['Mother always supplies H/O/C (15% each)','Nearby 5 planets use only H/O/C formulas','+100 protons for each guide (skip too)','Virgo / Capricornus monsters + gold attacks','Planet codes scattered','Drop-rate bar back, highlights your picks']},
   {v:'v1.27', items:['Bottom drop-rate strip removed; collector sits there now','Picker: clearer picked/unpicked elements','Faster tutorial captions']},
   {v:'v1.26', items:['Pick your first collector right after the tutorial','Mother collector never slows down offline (bonus)']},
@@ -6318,9 +6320,9 @@ function renderHolds(){
     const rate=tot>0?fmtPct((co.r/tot)*100):'';
     const hi=hiSet.has(z);
     const cell=document.createElement('div'); cell.className='dchip'; cell.style.color=EL[z].color;
-    cell.style.background=hexA(EL[z].color, hi?0.40:0.13);
-    if(hi){ cell.style.boxShadow='0 0 8px '+hexA(EL[z].color,0.55); }
-    else { cell.style.opacity='0.38'; cell.style.filter='grayscale(.4)'; }
+    cell.style.background=hexA(EL[z].color, hi?0.42:0.16);
+    if(hi){ cell.style.boxShadow='0 0 14px '+EL[z].color+',inset 0 0 10px '+EL[z].color+'88'; cell.style.borderWidth='2.5px'; }
+    else { cell.style.opacity='0.5'; }
     cell.innerHTML=`<span class="zz">${z}</span><span class="sy">${EL[z].sym}</span><span class="dv">${rate}</span>`;
     el.appendChild(cell);
   }
@@ -6409,12 +6411,13 @@ function applyOffline(lastSeen){
 // items 9/10: NOTIFICATION accumulator. Elements/formulas gathered during play, and the
 // offline-income report, all funnel here (the standalone WELCOME-BACK screen is gone).
 // The top-left star blinks while there is unseen content; tapping opens the panel.
-function notifInit(){ if(!G.notif)G.notif={el:{},fx:{},off:null,unseen:false}; return G.notif; }
+function notifInit(){ if(!G.notif)G.notif={el:{},fx:{},off:null,pts:0,unseen:false}; if(G.notif.pts==null)G.notif.pts=0; return G.notif; }
 function notifEl(z,n){ const N=notifInit(); N.el[z]=(N.el[z]||0)+(n||1); N.unseen=true; updateNotifStar(); }
 function notifFx(f,n){ const N=notifInit(); N.fx[f]=(N.fx[f]||0)+(n||1); N.unseen=true; updateNotifStar(); }
+function notifPts(n){ const N=notifInit(); N.pts=(N.pts||0)+(n||0); N.unseen=true; updateNotifStar(); }
 function notifSetOffline(r){ const N=notifInit(); N.off=r; N.unseen=true; updateNotifStar(); }
 function notifHasContent(){ const N=notifInit();
-  return N.off||Object.keys(N.el).length||Object.keys(N.fx).length; }
+  return N.off||Object.keys(N.el).length||Object.keys(N.fx).length||N.pts>0; }
 function updateNotifStar(){ const s=document.getElementById('notifStar'); if(!s)return;
   const N=notifInit(); s.classList.toggle('alert', !!(N.unseen && notifHasContent())); }
 let notifTab='coll';
@@ -6422,7 +6425,7 @@ function showNotification(){
   const N=notifInit();
   // snapshot the collection so switching tabs (which re-renders) keeps the data even
   // after the live accumulator is reset below.
-  window._notifSnap={el:Object.assign({},N.el||{}),fx:Object.assign({},N.fx||{}),off:N.off||null};
+  window._notifSnap={el:Object.assign({},N.el||{}),fx:Object.assign({},N.fx||{}),off:N.off||null,pts:N.pts||0};
   let h=`<h4 style="justify-content:center;text-align:center">NOTIFICATION</h4>`;
   h+=`<div class="cxtabs"><button class="cxtab ${notifTab==='coll'?'on':''}" onclick="notifSetTab('coll')">COLLECTION</button>`+
      `<button class="cxtab ${notifTab==='ver'?'on':''}" onclick="notifSetTab('ver')">VERSION</button></div>`;
@@ -6431,7 +6434,7 @@ function showNotification(){
   openModal(h,false,true);
   if(notifTab==='coll' && typeof formula3dStart==='function')setTimeout(formula3dStart,40);   // spin formula thumbs
   // mark seen + reset the accumulator
-  G.notif={el:{},fx:{},off:null,unseen:false}; updateNotifStar();
+  G.notif={el:{},fx:{},off:null,pts:0,unseen:false}; updateNotifStar();
 }
 function notifBodyHTML(){ return notifTab==='ver'?notifVerHTML():notifCollHTML(window._notifSnap||{el:{},fx:{},off:null}); }
 function notifSetTab(t){ if(t===notifTab)return; notifTab=t;
@@ -6445,7 +6448,7 @@ function notifSetTab(t){ if(t===notifTab)return; notifTab=t;
     if(notifTab==='coll' && typeof formula3dStart==='function')setTimeout(formula3dStart,40); }, 240);
 }
 function notifCollHTML(N){
-  const has=N&&((N.el&&Object.keys(N.el).length)||(N.fx&&Object.keys(N.fx).length)||(N.off&&N.off.total>0));
+  const has=N&&((N.el&&Object.keys(N.el).length)||(N.fx&&Object.keys(N.fx).length)||(N.off&&N.off.total>0)||(N.pts>0));
   if(!has)return `<div class="sub" style="text-align:center;margin:16px 0">Nothing new yet.</div>`;
   const elGrid=(map, order)=>{
     const zs=order||Object.keys(map).map(Number).sort((a,b)=>(map[b]||0)-(map[a]||0));
@@ -6458,6 +6461,9 @@ function notifCollHTML(N){
   // order by quantity (most -> least); ties broken by proton number (high -> low)
   const byQty=(map)=>Object.keys(map).map(Number).sort((a,b)=>(map[b]-map[a])||(b-a));
   let h='';
+  if(N.pts>0){
+    h+=`<div class="sub" style="text-align:center;margin-top:6px">Guide reward: <b style="color:var(--glow)">+${N.pts}</b> protons</div>`;
+  }
   if(N.off && N.off.total>0){
     h+=`<div class="sub" style="text-align:center;margin-top:6px">While away (${N.off.hours}h) your harvester collected <b style="color:var(--glow)">${N.off.total}</b> atoms:</div>`;
     h+=elGrid(N.off.gained, byQty(N.off.gained));
@@ -6884,6 +6890,8 @@ const TUT_STEPS=[
     rect:()=>({x:0.08,y:0.30,w:0.84,h:0.52})},
   {key:'ring', title:'Planet Ring', sub:'Its glowing elemental signature',
     rect:()=>({x:0.04,y:0.27,w:0.92,h:0.42})},
+  {key:'drop', title:'Drop Rate', sub:'Chance to gather each element here &mdash; your supply is highlighted',
+    rect:()=>tutDockRect()},
   {key:'notif', title:'Notification Star', sub:'Tap it: Collection news &amp; the Version changelog',
     circle:true, rect:()=>tutElRect('#notifStar',12)||{x:0.10,y:0.04,w:0.15,h:0.06}},
   {key:'ach', title:'Achievement Stars', sub:'Tap a star to see your milestones',
@@ -7191,7 +7199,7 @@ function tutorialShow(){
 function tutorialNext(){_tutStep++;if(_tutStep>=(_tutList||TUT_STEPS).length)tutorialEnd();else tutorialShow();}
 function tutorialPrev(){if(_tutStep>0){_tutStep--;tutorialShow();}}
 // +100 protons reward for finishing OR skipping any guide (helps the early game).
-function tutReward(){ if(!G)return; G.points=(G.points||0)+100; G.maxPoints=Math.max(G.maxPoints||0,G.points); saveGame&&saveGame(); renderTop&&renderTop(); if(typeof toast==='function')toast('+100 protons','ok'); }
+function tutReward(){ if(!G)return; G.points=(G.points||0)+100; G.maxPoints=Math.max(G.maxPoints||0,G.points); saveGame&&saveGame(); renderTop&&renderTop(); if(typeof notifPts==='function')notifPts(100); }
 function tutorialEnd(){
   _tutPaused=false;_tutFreezeTs=null;
   tutReward();
@@ -7933,6 +7941,9 @@ function cockpitEnemyFX(){
   else if(cn==='Sagittarius'){ type='beam'; cMain='#ff4040'; cGlow='#ffb0b0'; }
   else if(cn==='Virgo'){ type='wave'; cMain='#ffd24a'; cGlow='#ffe9a8'; }
   else if(cn==='Capricornus'){ type='vee'; cMain='#ffd24a'; cGlow='#ffe9a8'; }
+  else if(cn==='Gemini'){ type='converge'; cMain='#46e08a'; cGlow='#c2ffdb'; }
+  else if(cn==='Cancer'){ type='crescent'; cMain='#46a0ff'; cGlow='#bfeaff'; }
+  else if(cn==='Scorpius'){ type='xclaw'; cMain='#46a0ff'; cGlow='#bfeaff'; }
   const tx=W*0.5, ty=H*0.33;
   const DUR=700,t0=performance.now();
   if(_projRAF)cancelAnimationFrame(_projRAF);
@@ -8015,6 +8026,45 @@ function cockpitEnemyFX(){
         ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(ax,ay);ctx.lineTo(rx,ry);ctx.stroke();}
       ctx.shadowBlur=0;ctx.globalAlpha=1;impact(t);_projRAF=requestAnimationFrame(frV);}
     _projRAF=requestAnimationFrame(frV); return;
+  }
+  if(type==='converge'){
+    // GEMINI: several green beams fire from points AROUND the monster inward to the
+    // window centre (twin volleys converging), appearing one after another.
+    const cx=W*0.5, cy=H*0.5;
+    const N=6, beams=[];
+    for(let i=0;i<N;i++){const ang=(i/N)*6.283+0.4;const rad=Math.min(W,H)*0.30;
+      beams.push({sx:tx+Math.cos(ang)*rad, sy:ty+Math.sin(ang)*rad, off:(i/N)*0.55});}
+    function frG(now){const t=now-t0;if(t>=DUR){ctx.clearRect(0,0,W,H);_projRAF=0;return;}ctx.clearRect(0,0,W,H);ctx.lineCap='round';
+      for(const b of beams){const k=Math.max(0,Math.min(1,(t/DUR)-b.off));if(k<=0)continue;
+        const grow=Math.min(1,k*2.4), a=Math.sin(Math.PI*k)*0.95;
+        const x1=b.sx+(cx-b.sx)*grow, y1=b.sy+(cy-b.sy)*grow;
+        ctx.globalAlpha=a;ctx.shadowBlur=14;ctx.shadowColor=cMain;ctx.strokeStyle=cMain;ctx.lineWidth=3.5;
+        ctx.beginPath();ctx.moveTo(b.sx,b.sy);ctx.lineTo(x1,y1);ctx.stroke();
+        ctx.globalAlpha=a*0.7;ctx.shadowBlur=6;ctx.strokeStyle=cGlow;ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.moveTo(b.sx,b.sy);ctx.lineTo(x1,y1);ctx.stroke();}
+      ctx.shadowBlur=0;ctx.globalAlpha=1;impact(t);_projRAF=requestAnimationFrame(frG);}
+    _projRAF=requestAnimationFrame(frG); return;
+  }
+  if(type==='xclaw'){
+    // SCORPIUS: blue X-shaped scratch marks (two crossing diagonal slashes each),
+    // flashing one after another.
+    const marks=[];
+    for(let i=0;i<4;i++)marks.push({cx:tx+(Math.random()*2-1)*W*0.20, cy:ty+(Math.random()*2-1)*H*0.12, sz:H*0.13+Math.random()*H*0.07, off:(i/4)*0.55, rot:(Math.random()*0.6-0.3)});
+    function frX(now){const t=now-t0;if(t>=DUR){ctx.clearRect(0,0,W,H);_projRAF=0;return;}ctx.clearRect(0,0,W,H);ctx.lineCap='round';
+      for(const m of marks){const k=Math.max(0,Math.min(1,(t/DUR)-m.off));if(k<=0)continue;
+        const grow=Math.min(1,k*2.6), a=Math.sin(Math.PI*k)*0.95, s=m.sz*grow;
+        const co=Math.cos(m.rot), si=Math.sin(m.rot);
+        // two diagonal strokes crossing at the centre -> X
+        const arms=[[-0.7,-0.7, 0.7, 0.7],[ -0.7,0.7, 0.7,-0.7]];
+        for(const A of arms){
+          const x0=m.cx+(A[0]*s)*co-(A[1]*s)*si, y0=m.cy+(A[0]*s)*si+(A[1]*s)*co;
+          const x1=m.cx+(A[2]*s)*co-(A[3]*s)*si, y1=m.cy+(A[2]*s)*si+(A[3]*s)*co;
+          ctx.globalAlpha=a;ctx.shadowBlur=13;ctx.shadowColor=cMain;ctx.strokeStyle=cMain;ctx.lineWidth=4;
+          ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.stroke();
+          ctx.globalAlpha=a*0.7;ctx.shadowBlur=6;ctx.strokeStyle=cGlow;ctx.lineWidth=1.6;
+          ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.stroke();}}
+      ctx.shadowBlur=0;ctx.globalAlpha=1;impact(t);_projRAF=requestAnimationFrame(frX);}
+    _projRAF=requestAnimationFrame(frX); return;
   }
   // circle (Aquarius green / Pisces blue / default): blooming rings
   const rings=[];
