@@ -770,6 +770,7 @@ button:not(.ckKey):not(.ckEl):not(.cxseg-btn):not(.cxseg-qty):not(.cxtab),.mapbt
     <div class="docktitle">Element drop rate and current quantity</div>
     <div class="holds" id="holds"></div>
   </div>
+  <div id="collectorDockMain" onclick="collectorHarvestNow()" style="position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:6;display:none;cursor:pointer;perspective:300px"></div>
   <div id="tutorialOverlay" style="position:absolute;inset:0;z-index:75;display:none">
     <div id="tutSpot" style="position:absolute;border:1.5px solid rgba(95,208,255,.9);border-radius:18px;box-shadow:0 0 0 9999px rgba(2,6,18,0.82),0 0 18px rgba(95,208,255,.55),inset 0 0 14px rgba(95,208,255,.25);transition:left 2.2s cubic-bezier(.4,0,.2,1),top 2.2s cubic-bezier(.4,0,.2,1),width 2.2s cubic-bezier(.4,0,.2,1),height 2.2s cubic-bezier(.4,0,.2,1),border-radius 2.2s cubic-bezier(.4,0,.2,1);pointer-events:none;animation:tutBreath 2.4s ease-in-out infinite"></div>
     <svg id="tutArc" width="100%" height="100%" style="position:absolute;inset:0;display:none;pointer-events:none">
@@ -1975,9 +1976,10 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.26';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v1.27';   // item 13: shown on the cover; item 12: save is kept unless this changes
 // Concise changelog shown in the Notification star's VERSION tab (newest first). English only (CJK must stay 0).
 const CHANGELOG=[
+  {v:'v1.27', items:['Bottom drop-rate strip removed; collector sits there now','Picker: clearer picked/unpicked elements','Faster tutorial captions']},
   {v:'v1.26', items:['Pick your first collector right after the tutorial','Mother collector never slows down offline (bonus)']},
   {v:'v1.25', items:['Deploy collectors from a cleared planet’s panel','Map marks planets that have a collector']},
   {v:'v1.24', items:['Collectors reworked: buy multiple, place on cleared planets','Each gathers its planet (anywhere); offline at half speed','D 2x220% / N 4x100% / W 6x60%']},
@@ -3832,11 +3834,11 @@ function renderCollectorPicker(){
     const els=m.comp.slice().sort((a,b)=>(b.r-a.r)||(a.z-b.z));
     // Element cells use the SAME .dchip format as the main-scene bottom dock
     // (atomic number top-left, symbol centered, rate at the bottom), 7 per row.
-    h+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;justify-content:stretch;width:calc(100% + 32px);margin:0 -16px">`;
+    h+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;justify-content:stretch;width:100%;margin:0;box-sizing:border-box">`;
     for(const c of els){const z=c.z;const on=_collPick.picks.includes(z);
       const eff=(c.r/_tot*100)*def.eff;
       const pct=_tot>0?fmtPct(eff):'';
-      h+=`<div onclick="collectorToggleEl(${z})" class="dchip" style="cursor:pointer;color:${EL[z].color};background:${hexA(EL[z].color,0.3)};${on?'box-shadow:0 0 12px '+EL[z].color+',inset 0 0 8px '+EL[z].color+'66;border-width:2.5px':'opacity:.8'}">
+      h+=`<div onclick="collectorToggleEl(${z})" class="dchip" style="cursor:pointer;color:${EL[z].color};background:${hexA(EL[z].color,on?0.42:0.16)};${on?'opacity:1;box-shadow:0 0 14px '+EL[z].color+',inset 0 0 10px '+EL[z].color+'88;border-width:2.5px':'opacity:.32;filter:grayscale(.35)'}">
         <span class="zz">${z}</span><span class="sy">${EL[z].sym}</span><span class="dv">${pct}</span></div>`;}
     h+=`</div>`;
     const ready=_collPick.picks.length===def.slots;
@@ -3874,11 +3876,16 @@ function collectorConfirm(){const def=COLLECTORS[_collPick.type];if(!def||_collP
     // item: the MAP guide appears right after the collector is chosen and the map opens
     setTimeout(()=>{ if(typeof tutMaybeArea==='function')tutMaybeArea('map','Region Map — the worlds you can travel to.',MAP_TUT_STEPS); }, 1000);
   }}
-function renderCollectorDock(){const d=document.getElementById('collectorDock');if(!d)return;
-  if(!collectorActive()){d.style.display='none';return;}
-  d.style.display='flex';d.style.flexDirection='column';d.style.alignItems='center';
-  const t=(G.collectors[0]&&G.collectors[0].type)||'D'; const n=G.collectors.length;
-  d.innerHTML=collectorSVG(t,67)+`<div style="font-family:'Rajdhani';font-size:10px;font-weight:400;letter-spacing:2px;color:var(--glow);text-shadow:0 0 6px rgba(95,208,255,.6)">COLLECTORS ×${n}</div>`;}
+function renderCollectorDock(){
+  const draw=(d,sz)=>{ if(!d)return;
+    if(!collectorActive()){d.style.display='none';return;}
+    d.style.display='flex';d.style.flexDirection='column';d.style.alignItems='center';
+    const t=(G.collectors[0]&&G.collectors[0].type)||'D'; const n=(G.collectors||[]).length;
+    d.innerHTML=collectorSVG(t,sz)+`<div style="font-family:'Rajdhani';font-size:10px;font-weight:400;letter-spacing:2px;color:var(--glow);text-shadow:0 0 6px rgba(95,208,255,.6)">COLLECTORS ×${n}</div>`;
+  };
+  draw(document.getElementById('collectorDock'),67);          // map (bottom-left, kept)
+  draw(document.getElementById('collectorDockMain'),58);      // main-scene bottom (new)
+}
 function collectorHarvestNow(){
   if(!collectorActive())return;
   const res=collectorCollectAll(false);   // ONLINE harvest of every collector (full rate)
@@ -6274,7 +6281,13 @@ function renderInfoPanel(){const el=document.getElementById('infoPanel');if(!el)
 var dockMode=0;
 const DOCK_MODES=['ELEMENT DROP RATE','CURRENT HOLDING QUANTITY'];   // item 8: gathered removed
 function cycleDockMode(){ dockMode=(dockMode+1)%DOCK_MODES.length; renderHolds(); }
-function renderHolds(){const el=document.getElementById('holds');el.innerHTML="";
+function renderHolds(){
+  // item: the bottom DROP RATE / HOLDING element strip is removed (not all elements are
+  // harvested now); the collector dock lives at the main-scene bottom instead.
+  const _d=document.querySelector('.dock'); if(_d)_d.style.display='none';
+  if(typeof renderCollectorDock==='function')renderCollectorDock();
+  return;
+  const el=document.getElementById('holds');el.innerHTML="";
   const p=curPlanet();
   const dock=document.querySelector('.dock');
   const undefeated=(!p.home&&!p.defeated);
@@ -6875,15 +6888,6 @@ const TUT_STEPS=[
     rect:()=>({x:0.14,y:0.47,w:0.72,h:0.17})},
   {key:'falling', title:'Element Gathered', sub:'From the current planet',
     rect:()=>({x:0.08,y:0.30,w:0.84,h:0.52})},
-  {key:'dock', title:'Element Dock', sub:'Touch to check Drop Rate / Holding',
-    rect:()=>{
-      const dt=document.querySelector('.docktitle');const dock=document.querySelector('.dock');
-      if(!dt||!dock)return tutDockFullRect();
-      const sw=TUT_DW,sh=TUT_DH;
-      const tr=tutToDesign(dt.getBoundingClientRect()),dr=tutToDesign(dock.getBoundingClientRect());
-      const top=Math.max(0,tr.y-6);
-      return{x:dr.x/sw,y:top/sh,w:dr.w/sw,h:Math.min(1,((dr.y+dr.h)-top)/sh)};
-    }},
   {key:'ring', title:'Planet Ring', sub:'Its glowing elemental signature',
     rect:()=>({x:0.04,y:0.27,w:0.92,h:0.42})},
   {key:'notif', title:'Notification Star', sub:'Tap it: Collection news &amp; the Version changelog',
@@ -6979,8 +6983,8 @@ function tutorialShow(){
      // INSTANT hide (no transition) so the new text never flashes at the old position,
      // then fade the whole caption in — at once for noMorph, after the morph otherwise.
      _capEl.style.transition='none'; _capEl.style.opacity='0'; void _capEl.offsetWidth;
-     if(s.noMorph){ _capEl.style.transition='opacity .4s ease'; _capEl.style.opacity='1'; }
-     else { window._tutCapTO=setTimeout(function(){const c2=document.getElementById('tutCaption');if(c2){c2.style.transition='opacity .6s ease';c2.style.opacity='1';}},1500); } }}
+     if(s.noMorph){ _capEl.style.transition='opacity .3s ease'; _capEl.style.opacity='1'; }
+     else { window._tutCapTO=setTimeout(function(){const c2=document.getElementById('tutCaption');if(c2){c2.style.transition='opacity .35s ease';c2.style.opacity='1';}},750); } }}
   {const bk=document.getElementById('tutBack');if(bk)bk.style.display=(_tutStep>0)?'inline-block':'none';}
   // pause (freeze scene) only during the falling-element step
   _tutPaused=(s.key==='falling');
