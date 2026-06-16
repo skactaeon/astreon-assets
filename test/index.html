@@ -1975,9 +1975,10 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.22';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v1.23';   // item 13: shown on the cover; item 12: save is kept unless this changes
 // Concise changelog shown in the Notification star's VERSION tab (newest first). English only (CJK must stay 0).
 const CHANGELOG=[
+  {v:'v1.23', items:['Collector only accrues while away from the mother planet']},
   {v:'v1.22', items:['Harvest speed: 6s per element','Notification: Collection / Version tabs','Collection list sorted by amount']},
   {v:'v1.21', items:['Sagittarius monster + red beam attack']},
   {v:'v1.20', items:['Battle guide expanded to 10 steps','Aries claws shorter, appear in sequence','Hit pose holds until the monster strikes back']},
@@ -3732,7 +3733,23 @@ const COLLECTORS={
 function motherPlanet(){const ch=G.chapters[0];return ch&&ch.planets?ch.planets[0]:null;}
 function motherRate(z){const m=motherPlanet();if(!m||!m.comp)return 0;for(const c of m.comp)if(c.z===z)return c.r;return 0;}
 function collectorActive(){return G.collector&&G.collector.type&&Array.isArray(G.collector.picks)&&G.collector.picks.length>0;}
-function setCollector(type,picks){G.collector={type,picks:picks.slice(),since:Date.now()};saveGame();}
+function setCollector(type,picks){G.collector={type,picks:picks.slice(),since:Date.now(),awayMs:0,awaySince:0};collectorTouch();saveGame();}
+// item: the collector only accrues while the player is AWAY from the mother planet.
+// awaySince = when the current away-trip started (0 while on the mother); awayMs = banked
+// away time from earlier trips since the last harvest. Call collectorTouch() on every
+// location change (and on load) to start/bank the away clock.
+function collectorTouch(){
+  if(!G||!G.collector)return;
+  const home=!!(curPlanet()&&curPlanet().home);
+  if(home){ if(G.collector.awaySince){ G.collector.awayMs=(G.collector.awayMs||0)+(Date.now()-G.collector.awaySince); G.collector.awaySince=0; } }
+  else { if(!G.collector.awaySince) G.collector.awaySince=Date.now(); }
+}
+function collectorAwayMs(){
+  if(!G||!G.collector)return 0;
+  let ms=G.collector.awayMs||0;
+  if(G.collector.awaySince && curPlanet() && !curPlanet().home) ms+=Date.now()-G.collector.awaySince;
+  return ms;
+}
 // Compute collector travel yield over elapsed ms (real time). Returns {z:count}.
 function collectorYield(elapsedMs){
   if(!collectorActive())return null;
@@ -3852,9 +3869,10 @@ function collectorHarvestNow(){
     _collPick={type:null,picks:[],pendingTravel:-1};
     _collMode='change';
     renderCollectorPicker();return;}
-  const since=G.collector.since||Date.now();
-  const y=collectorYield(Date.now()-since);
-  G.collector.since=Date.now();saveGame();
+  const awayMs=collectorAwayMs();            // item: only the time spent away from the mother
+  const y=awayMs>0?collectorYield(awayMs):null;
+  G.collector.awayMs=0; G.collector.awaySince=(curPlanet()&&!curPlanet().home)?Date.now():0;
+  G.collector.since=Date.now(); saveGame();
   if(!y||Object.keys(y).length===0){toast('Nothing gathered yet','');return;}
   const gained={};let total=0;
   for(const zs in y){const z=+zs;const add=deposit(z,y[zs]);if(add>0){gained[z]=(gained[z]||0)+add;total+=add;}}
@@ -3972,6 +3990,7 @@ function moveConfirm(){const cost=moveNeed;
   const t=G.planets[moveTarget];const fromP=curPlanet();
   G.mileage=(G.mileage||0)+dist(fromP,t);
   G.ship.cur=t.id;t.revealed=true;G.localGain={};spawnFoes();
+  if(typeof collectorTouch==='function')collectorTouch();   // start/bank the collector's away clock
   const _stage=document.querySelector('.stage');
   if(_stage&&_stage.querySelectorAll)_stage.querySelectorAll('.hpop').forEach(el=>el.remove());
   G.chapters[G.chapter].cur=t.id;
@@ -6343,10 +6362,12 @@ function loadGame(){
 function applyOffline(lastSeen){
   const elapsedMs=Date.now()-lastSeen;if(elapsedMs<60000)return;
   if(collectorActive()){
-    const y=collectorYield(elapsedMs);
+    const awayMs=collectorAwayMs();   // only the offline time spent AWAY from the mother
+    const y=awayMs>0?collectorYield(awayMs):null;
     if(y){const gained={};let total=0;
       for(const zs in y){const z=+zs;const add=deposit(z,y[zs]);if(add>0){gained[z]=(gained[z]||0)+add;total+=add;}}
-      if(total>0)notifSetOffline({total,gained,hours:(Math.min(elapsedMs,effectiveOfflineCapHr()*3600*1000)/3600000).toFixed(1),collector:G.collector.type});}
+      if(total>0)notifSetOffline({total,gained,hours:(Math.min(awayMs,effectiveOfflineCapHr()*3600*1000)/3600000).toFixed(1),collector:G.collector.type});}
+    G.collector.awayMs=0; G.collector.awaySince=(curPlanet()&&!curPlanet().home)?Date.now():0;
     return;
   }
   const capMs=effectiveOfflineCapHr()*3600*1000;
@@ -6452,6 +6473,7 @@ function startGame(){
     else { try{localStorage.removeItem(SAVE_KEY);}catch(e){} }
   }
   if(!loaded)newGame();
+  if(typeof collectorTouch==='function')collectorTouch();   // init the away clock from the loaded position
   document.getElementById('intro').style.display="none";
   setupScene();renderTop();renderHolds();
   window.addEventListener('resize',()=>{setupScene();if(G&&G.sheetMode==='map')drawMap();});
