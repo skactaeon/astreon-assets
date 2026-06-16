@@ -1975,9 +1975,10 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.24';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v1.25';   // item 13: shown on the cover; item 12: save is kept unless this changes
 // Concise changelog shown in the Notification star's VERSION tab (newest first). English only (CJK must stay 0).
 const CHANGELOG=[
+  {v:'v1.25', items:['Deploy collectors from a cleared planet’s panel','Map marks planets that have a collector']},
   {v:'v1.24', items:['Collectors reworked: buy multiple, place on cleared planets','Each gathers its planet (anywhere); offline at half speed','D 2x220% / N 4x100% / W 6x60%']},
   {v:'v1.23', items:['Collector accrual rules updated']},
   {v:'v1.22', items:['Harvest speed: 6s per element','Notification: Collection / Version tabs','Collection list sorted by amount']},
@@ -5578,9 +5579,19 @@ function openPlanet(pid){G.selected=pid;G.sheetMode='planet';const p=G.planets[p
   if(pid===cur.id){
     if(!p.home&&!p.defeated)
       h+=`<button class="btn primary" onclick="closeSheet();openBattle()">${T('battle_monster')}</button>`;
-    else if(p.home)
-      h+=`<button class="btn primary" onclick="closeSheet();openExchange()">${T('trade')}</button>`;
-    else h+=`<button class="btn" disabled>${T('harvesting_here')}</button>`;
+    else {
+      if(p.home)
+        h+=`<button class="btn primary" onclick="closeSheet();openExchange()">${T('trade')}</button>`;
+      // cleared planet (incl. the mother): deploy / show a collector here
+      if(p.defeated||p.home){
+        if(typeof collectorOnPlanet==='function'&&collectorOnPlanet(p.id))
+          h+=`<button class="btn" disabled>✓ COLLECTOR DEPLOYED</button>`;
+        else if((G.collectors||[]).length>=COLLECTOR_MAX)
+          h+=`<button class="btn" disabled>COLLECTOR LIMIT</button>`;
+        else { const cc=collectorCost((G.collectors||[]).length);
+          h+=`<button class="btn primary" onclick="closeSheet();openCollectorPicker(-1)">DEPLOY COLLECTOR · ${cc>0?fmtNum(cc)+'p':'FREE'}</button>`; }
+      }
+    }
   }else{const cost=moveCost(cur,p);const can=G.points>=cost;
     h+=`<button class="btn primary" ${can?'':'disabled'} onclick="doMove(${pid})">${T('travel')} · −${cost}</button>`;}
   h+=`</div>`;
@@ -5711,10 +5722,6 @@ function attachMapDrag(){const cv=document.getElementById('mapCanvas');if(!cv)re
             down=null;cockpitOpenWhenReady();return;
           }
           closeMap();renderSceneStatic();_suppressSceneClick=Date.now()+450;
-        }
-        else if(!collectorActive()&&G.chapter===0){
-          // First time selecting an upper planet: choose a travel collector first.
-          mapSelectedId=-1;openCollectorPicker(best.id);
         }
         else if(mapSelectedId===best.id){
           mapSelectedId=-1;doMove(best.id);
@@ -5868,6 +5875,17 @@ function drawMap(){const cv=document.getElementById('mapCanvas');if(!cv)return;c
       const blink=0.45+0.55*Math.abs(Math.sin(Date.now()/260));
       ring(ctx,pt.x,pt.y,R+6,hexA("#ffd24a",blink));
       ring(ctx,pt.x,pt.y,R+10,hexA("#ffd24a",blink*0.45));
+    }
+    // mark planets that have a COLLECTOR deployed (pulsing ring + type label below).
+    if(front && typeof collectorOnPlanet==='function' && collectorOnPlanet(p.id)){
+      const _cc=((G.collectors||[]).find(c=>c.planetId===p.id)||{}).type||'D';
+      const _ccol=(COLLECTORS[_cc]&&COLLECTORS[_cc].color)||'#5fd0ff';
+      const _cpb=0.55+0.45*Math.abs(Math.sin(Date.now()/300));
+      ring(ctx,pt.x,pt.y,R+4,hexA(_ccol,_cpb));
+      ctx.fillStyle=hexA(_ccol,0.97);
+      ctx.font=`800 ${Math.max(8,R*0.5)}px 'Rajdhani'`;ctx.textAlign="center";ctx.textBaseline="top";
+      ctx.shadowBlur=6;ctx.shadowColor=_ccol;
+      ctx.fillText('▣ '+_cc,pt.x,pt.y+R+3);ctx.shadowBlur=0;ctx.textBaseline="alphabetic";
     }
     // mark constellations that HAVE monster art — only ONE planet each (the boss) so the
     // map stays readable and gives one test target per art-constellation.
