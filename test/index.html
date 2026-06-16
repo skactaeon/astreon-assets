@@ -1992,9 +1992,10 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.29';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v1.30';   // item 13: shown on the cover; item 12: save is kept unless this changes
 // Concise changelog shown in the Notification star's VERSION tab (newest first). English only (CJK must stay 0).
 const CHANGELOG=[
+  {v:'v1.30', items:['Only H/O/C and your collector elements are pocketed','Drop rate now shows your collector D/N/W bonus','Faster main guide; clearer guide steps','Bigger Notification text; stay on scene after picking a collector']},
   {v:'v1.29', items:['Mother shows 14 elements, supply highlighted clearly','Drop-rate added back to the guide','Guide reward goes to the Notification star','Gemini / Cancer / Scorpius monsters + attacks']},
   {v:'v1.28', items:['Mother always supplies H/O/C (15% each)','Nearby 5 planets use only H/O/C formulas','+100 protons for each guide (skip too)','Virgo / Capricornus monsters + gold attacks','Planet codes scattered','Drop-rate bar back, highlights your picks']},
   {v:'v1.27', items:['Bottom drop-rate strip removed; collector sits there now','Picker: clearer picked/unpicked elements','Faster tutorial captions']},
@@ -3767,6 +3768,16 @@ function addCollector(type,picks,planetId){
 }
 // this element's drop % on a given planet (its comp r, normalised to 100).
 function planetRateOf(p,z){ if(!p||!p.comp)return 0; let tot=0,r=0; for(const c of p.comp){tot+=c.r; if(c.z===z)r=c.r;} return tot>0?r/tot*100:0; }
+// item 9: the player only pockets elements they actually collect — H/O/C (the mother's
+// basic supply, always 1.0x) plus every element chosen on a collector (its D/N/W eff).
+// Returns the effective multiplier for z, or 0 if z is NOT collectable (gathered = wasted).
+function collectEffOf(z){
+  if(z===1||z===8||z===6)return 1;        // mother H/O/C basic supply (location-independent)
+  let best=0;
+  for(const c of (G&&G.collectors||[])){ if((c.picks||[]).includes(z)){ const d=COLLECTORS[c.type]; if(d&&d.eff>best)best=d.eff; } }
+  return best;                             // 0 -> this element never enters the pocket
+}
+function isCollectable(z){ return collectEffOf(z)>0; }
 // One collector's yield over elapsedMs. OFFLINE halves the rate (2x slower tick).
 // Location-independent: it gathers its OWN planet's elements regardless of where you are.
 function collectorYieldOne(c, elapsedMs, offline){
@@ -3886,14 +3897,11 @@ function collectorConfirm(){const def=COLLECTORS[_collPick.type];if(!def||_collP
   const tid=-1;
   if(tid>=0){closeModal();setTimeout(()=>{if(typeof doMove==='function')doMove(tid);},150);}
   else{
-    // Leaving the collector: fade the picker out smoothly. If the map is already
-    // open, re-run the grow-from-small globe intro underneath; otherwise (picker
-    // was prompted over the main scene) enter the map fresh with the full intro.
+    // item: after choosing a collector, STAY where you are — do NOT jump to the map.
+    // If the picker was opened over the map, resume it; otherwise just close back to
+    // the main scene. The MAP guide now fires the first time the player opens the map.
     closeModalFade(450);
     if(G&&G.sheetMode==='map')startMapIntro();
-    else setTimeout(()=>{ if(typeof openMap==='function')openMap(true); },220);
-    // item: the MAP guide appears right after the collector is chosen and the map opens
-    setTimeout(()=>{ if(typeof tutMaybeArea==='function')tutMaybeArea('map','Region Map — the worlds you can travel to.',MAP_TUT_STEPS); }, 1000);
   }}
 function renderCollectorDock(){
   const draw=(d,sz)=>{ if(!d)return;
@@ -3933,9 +3941,12 @@ function harvestTick(){const p=curPlanet();
   if(!p.defeated){renderTop();return;}
   p.stayMs=(p.stayMs||0)+effectiveTickMs()*(speedActive()?2:1);   // stay time for the rate bonus; boost accrues it 2x (countdown also runs 2x)
   let picks=[];for(let i=0;i<ECON.PICKS_PER_TICK;i++)picks.push(sampleOne(p));
-  for(const z of picks){deposit(z,1);G.localGain[z]=Math.min(effectiveCap(),(G.localGain[z]||0)+1);
-    if(typeof notifEl==='function')notifEl(z,1);}   // item 9: accumulate into the notification star
-  spawnHarvestPopups(picks);
+  // item 9: only elements you actually collect (H/O/C + your collector picks) enter the
+  // pocket — anything else sampled is wasted (e.g. Si drops here but you never chose it).
+  const kept=picks.filter(z=>isCollectable(z));
+  for(const z of kept){deposit(z,1);G.localGain[z]=Math.min(effectiveCap(),(G.localGain[z]||0)+1);
+    if(typeof notifEl==='function')notifEl(z,1);}   // accumulate into the notification star
+  spawnHarvestPopups(kept);
   // Stay-to-collect: each harvest tick has a 1/(protonSum*100) chance to obtain this
   // planet's compound formula (synced with the element drops). H2O -> 1/((1*2+8)*100)=1/1000.
   if(p.compId!=null && COMPOUNDS[p.compId]){
@@ -5649,7 +5660,10 @@ function openMap(intro){if(!G)return;G.sheetMode='map';
   } else {
     _mapIntro=1;_mapIntroSpin=0;_mapIntroTilt=0;
     setTimeout(()=>{drawMap();attachMapDrag();startMapBlink();},30);
-  }}
+  }
+  // item: first time the player opens the map, run the MAP guide (gated by tutSeen).
+  setTimeout(()=>{ if(typeof tutMaybeArea==='function')tutMaybeArea('map','Region Map — the worlds you can travel to.',MAP_TUT_STEPS); }, 1000);
+}
 function startMapIntro(){
   if(_mapIntroRAF)cancelAnimationFrame(_mapIntroRAF);
   _mapIntro=0;const t0=Date.now(),dur=TRANS_DUR;
@@ -6307,18 +6321,21 @@ function renderHolds(){
   if(typeof renderCollectorDock==='function')renderCollectorDock();   // map dock unchanged
   const el=document.getElementById('holds'); if(!el)return;
   el.innerHTML=''; el.className='holds'; el.style.cssText='';
+  el.style.pointerEvents='none';   // item 4: the DROP RATE strip is display-only, not clickable
   if(!show)return;
   const tEl=dock?dock.querySelector('.docktitle'):null;
   if(tEl)tEl.textContent='DROP RATE';
-  if(dock){ dock.onclick=null; dock.style.cursor='default'; }
-  // highlight H/O/C (basic supply) + elements a collector here gathers; dim the rest.
-  const hiSet=new Set([1,8,6]);
-  for(const c of (G.collectors||[])) if(c.planetId===p.id) for(const z of (c.picks||[])) hiSet.add(z);
+  if(dock){ dock.onclick=null; dock.style.cursor='default'; dock.style.pointerEvents='none'; }
+  // item 9: highlight the elements you actually collect (H/O/C + collector picks) and show
+  // their EFFECTIVE rate = base drop % x the collector's D/N/W multiplier. Everything else
+  // is dimmed and shows its raw drop % (sampled but never pocketed).
   let tot=0; if(p.comp)for(const c of p.comp)tot+=c.r;
   const seq=(p.comp&&p.comp.length)?p.comp.slice().sort((a,b)=>(b.r-a.r)||(a.z-b.z)):[];
   for(const co of seq){ const z=co.z;
-    const rate=tot>0?fmtPct((co.r/tot)*100):'';
-    const hi=hiSet.has(z);
+    const base=tot>0?(co.r/tot)*100:0;
+    const eff=collectEffOf(z);            // 0 = not collectable here
+    const hi=eff>0;
+    const rate=tot>0?fmtPct(hi?base*eff:base):'';
     const cell=document.createElement('div'); cell.className='dchip'; cell.style.color=EL[z].color;
     cell.style.background=hexA(EL[z].color, hi?0.42:0.16);
     if(hi){ cell.style.boxShadow='0 0 14px '+EL[z].color+',inset 0 0 10px '+EL[z].color+'88'; cell.style.borderWidth='2.5px'; }
@@ -6449,7 +6466,7 @@ function notifSetTab(t){ if(t===notifTab)return; notifTab=t;
 }
 function notifCollHTML(N){
   const has=N&&((N.el&&Object.keys(N.el).length)||(N.fx&&Object.keys(N.fx).length)||(N.off&&N.off.total>0)||(N.pts>0));
-  if(!has)return `<div class="sub" style="text-align:center;margin:16px 0">Nothing new yet.</div>`;
+  if(!has)return `<div class="sub" style="text-align:center;margin:16px 0;font-size:15px">Nothing new yet.</div>`;
   const elGrid=(map, order)=>{
     const zs=order||Object.keys(map).map(Number).sort((a,b)=>(map[b]||0)-(map[a]||0));
     let g=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;width:calc(100% + 16px);margin:8px -8px 0">`;
@@ -6462,20 +6479,20 @@ function notifCollHTML(N){
   const byQty=(map)=>Object.keys(map).map(Number).sort((a,b)=>(map[b]-map[a])||(b-a));
   let h='';
   if(N.pts>0){
-    h+=`<div class="sub" style="text-align:center;margin-top:6px">Guide reward: <b style="color:var(--glow)">+${N.pts}</b> protons</div>`;
+    h+=`<div class="sub" style="text-align:center;margin-top:6px;font-size:15px">Guide reward: <b style="color:var(--glow)">+${N.pts}</b> protons</div>`;
   }
   if(N.off && N.off.total>0){
-    h+=`<div class="sub" style="text-align:center;margin-top:6px">While away (${N.off.hours}h) your harvester collected <b style="color:var(--glow)">${N.off.total}</b> atoms:</div>`;
+    h+=`<div class="sub" style="text-align:center;margin-top:6px;font-size:15px">While away (${N.off.hours}h) your harvester collected <b style="color:var(--glow)">${N.off.total}</b> atoms:</div>`;
     h+=elGrid(N.off.gained, byQty(N.off.gained));
   }
   if(N.el && Object.keys(N.el).length){
-    h+=`<div class="sub" style="text-align:center;margin-top:10px">Elements gathered this session:</div>`;
+    h+=`<div class="sub" style="text-align:center;margin-top:10px;font-size:15px">Elements gathered this session:</div>`;
     h+=elGrid(N.el, byQty(N.el));
   }
   const fk=N.fx?Object.keys(N.fx):[];
   if(fk.length){
     const num=(typeof formulaCatalogNum==='function')?formulaCatalogNum():{};
-    h+=`<div class="sub" style="text-align:center;margin-top:10px">Formulas collected this session:</div>`;
+    h+=`<div class="sub" style="text-align:center;margin-top:10px;font-size:15px">Formulas collected this session:</div>`;
     h+=`<div class="fxscroll" style="max-height:30cqh;cursor:default"><div class="fxgrid fxgridcenter">`;
     for(const f of fk){ const ci=COMPOUNDS.findIndex(c=>c.text===f); if(ci<0)continue;
       const nt=`#${String(num[ci]||0).padStart(3,'0')}`;
@@ -6490,9 +6507,9 @@ function notifVerHTML(){
   let h=`<div class="fxscroll" style="max-height:54cqh;cursor:default;padding:0 6px">`;
   for(const c of CHANGELOG){
     h+=`<div style="text-align:left;max-width:330px;margin:0 auto;padding:7px 2px;border-bottom:1px solid rgba(70,224,255,.14)">`+
-       `<div style="font-family:'Orbitron';font-weight:800;font-size:13px;color:var(--glow);text-shadow:0 0 6px rgba(70,224,255,.5);margin-bottom:3px">${c.v}</div>`;
+       `<div style="font-family:'Orbitron';font-weight:800;font-size:15px;color:var(--glow);text-shadow:0 0 6px rgba(70,224,255,.5);margin-bottom:3px">${c.v}</div>`;
     for(const it of c.items)
-      h+=`<div style="font-family:'Rajdhani';font-weight:600;font-size:13px;color:rgba(210,235,255,.92);line-height:1.4;padding-left:8px">· ${it}</div>`;
+      h+=`<div style="font-family:'Rajdhani';font-weight:600;font-size:15px;color:rgba(210,235,255,.92);line-height:1.45;padding-left:8px">· ${it}</div>`;
     h+=`</div>`;
   }
   return h+`</div>`;
@@ -6883,16 +6900,16 @@ let _tutStep=0, _tutPaused=false, _tutFreezeTs=null, _tutPrevKey=null;
 let _tutList=null, _tutOnDone=null;   // active step list + completion callback (generalised for map/codex/battle guides)
 const TUT_STEPS=[
   {key:'name', title:'Planet Name & Code', sub:'Where you are',
-    rect:()=>({x:0.10,y:0.375,w:0.80,h:0.085})},
+    noMorph:true, rect:()=>({x:0.10,y:0.375,w:0.80,h:0.085})},
   {key:'formula', title:'Chemical Formula', sub:'Solved from gathered elements',
     rect:()=>({x:0.14,y:0.47,w:0.72,h:0.17})},
   {key:'falling', title:'Element Gathered', sub:'From the current planet',
     rect:()=>({x:0.08,y:0.30,w:0.84,h:0.52})},
+  {key:'drop', title:'Drop Rate', sub:'Chance to gather each element<br>Your supply is highlighted',
+    rect:()=>tutDockRect()},
   {key:'ring', title:'Planet Ring', sub:'Its glowing elemental signature',
     rect:()=>({x:0.04,y:0.27,w:0.92,h:0.42})},
-  {key:'drop', title:'Drop Rate', sub:'Chance to gather each element here &mdash; your supply is highlighted',
-    rect:()=>tutDockRect()},
-  {key:'notif', title:'Notification Star', sub:'Tap it: Collection news &amp; the Version changelog',
+  {key:'notif', title:'Notification Star', sub:'Collection news &amp; the Version changelog',
     circle:true, rect:()=>tutElRect('#notifStar',12)||{x:0.10,y:0.04,w:0.15,h:0.06}},
   {key:'ach', title:'Achievement Stars', sub:'Tap a star to see your milestones',
     rect:()=>tutElRect('#achOrbs',2)||{x:0.05,y:0.02,w:0.90,h:0.22}},
@@ -7115,7 +7132,7 @@ function tutorialShow(){
       pathEl.style.strokeWidth='1.5';pathEl.style.strokeLinejoin='round';pathEl.style.strokeLinecap='round';
       pathEl.setAttribute('d',skyPath);
       document.getElementById('tutEllipse').style.display='none';
-      cap.style.top=(oy+0.46*vh+18)+'px';cap.style.bottom='';
+      cap.style.top=(oy+0.27*vh)+'px';cap.style.bottom='';   // item: stars caption sits higher
     }
     _tutPrevKey=s.key;
     return;
