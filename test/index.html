@@ -770,7 +770,6 @@ button:not(.ckKey):not(.ckEl):not(.cxseg-btn):not(.cxseg-qty):not(.cxtab),.mapbt
     <div class="docktitle">Element drop rate and current quantity</div>
     <div class="holds" id="holds"></div>
   </div>
-  <div id="collectorDockMain" onclick="collectorHarvestNow()" style="position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:6;display:none;cursor:pointer;perspective:300px"></div>
   <div id="tutorialOverlay" style="position:absolute;inset:0;z-index:75;display:none">
     <div id="tutSpot" style="position:absolute;border:1.5px solid rgba(95,208,255,.9);border-radius:18px;box-shadow:0 0 0 9999px rgba(2,6,18,0.82),0 0 18px rgba(95,208,255,.55),inset 0 0 14px rgba(95,208,255,.25);transition:left 2.2s cubic-bezier(.4,0,.2,1),top 2.2s cubic-bezier(.4,0,.2,1),width 2.2s cubic-bezier(.4,0,.2,1),height 2.2s cubic-bezier(.4,0,.2,1),border-radius 2.2s cubic-bezier(.4,0,.2,1);pointer-events:none;animation:tutBreath 2.4s ease-in-out infinite"></div>
     <svg id="tutArc" width="100%" height="100%" style="position:absolute;inset:0;display:none;pointer-events:none">
@@ -1709,7 +1708,13 @@ function genUniverse(seed,chap){const r=RNG(seed);const planets=[];
   const usedComp=new Set();
   const homeId=0;const mother=planets[0];
   mother.home=true;mother.revealed=true;mother.defeated=true;mother.codeNum=r.int(1,99);
-  mother.comp=randComp(r,chap.id);mother.compId=null;mother.barren=true;
+  // mother: H, O, C are the FIXED top elements at 15% each (the basic supply); the rest
+  // of the composition is random, scaled to the remaining 55%.
+  {const _rest=randComp(r,chap.id).filter(c=>c.z!==1&&c.z!==8&&c.z!==6);
+   let _rt=_rest.reduce((s,c)=>s+c.r,0)||1;
+   for(const c of _rest)c.r=Math.round(c.r/_rt*55*10)/10;
+   mother.comp=[{z:1,r:15},{z:8,r:15},{z:6,r:15}].concat(_rest);}
+  mother.compId=null;mother.barren=true;
   if(chap.id===0){const h2o=FORMULAS.indexOf("H2O");
     if(h2o>=0){mother.compId=h2o;mother.motherFormula=true;}
     mother.fixedColor="#3da3e8";}
@@ -1724,6 +1729,12 @@ function genUniverse(seed,chap){const r=RNG(seed);const planets=[];
   }
   const others=[];for(let i=1;i<WC;i++)others.push(i);
   assignCompounds(planets,others,tierPool,usedComp,r,chap.id);
+  // item: the 5 planets nearest the mother get H/O/C-only formulas (easy first battles).
+  {const hocPool=[];for(let ci=0;ci<COMPOUNDS.length;ci++)
+     if(COMPOUNDS[ci].atoms.every(a=>a.z===1||a.z===6||a.z===8))hocPool.push(ci);
+   r.shuffle(hocPool);
+   const near=nearestOnSphere(homeId,planets.length,5);let _hi=0;
+   for(const pid of near){if(_hi>=hocPool.length)break;if(planets[pid].home)continue;planets[pid].compId=hocPool[_hi++];}}
   ensureSolvable(planets,r);
   for(const p of planets)p.color=p.fixedColor||blend(p.comp);
   const constellations=assignConstellations(planets,r,chap.constellations);
@@ -1763,6 +1774,10 @@ function genUniverse(seed,chap){const r=RNG(seed);const planets=[];
   // formulas changed → re-ensure every formula's elements are sourceable, recolor
   ensureSolvable(planets,r);
   for(const p of planets)p.color=p.fixedColor||blend(p.comp);
+  // item: scatter planet codes (P-numbers) so neighbours aren't sequential P01,P02,P03...
+  {const perm=[];for(let i=1;i<=planets.length;i++)perm.push(i);
+   for(let i=perm.length-1;i>0;i--){const j=r.int(0,i);const t=perm[i];perm[i]=perm[j];perm[j]=t;}
+   for(let i=0;i<planets.length;i++)planets[i].codeNum=perm[i];}
   return{planets,homeId,constellations};}
 // Reassign compIds so a planet's compound type fits its solving mechanic.
 function matchCompoundTypes(planets,tierPool,r,chapId){
@@ -1976,9 +1991,10 @@ const CHAPTERS=[
    concept:"Bonds: single / double / triple", conceptExt:"Complex & organic structures"},
 ];
 const TEST_MODE=true;
-const GAME_VERSION='v1.27';   // item 13: shown on the cover; item 12: save is kept unless this changes
+const GAME_VERSION='v1.28';   // item 13: shown on the cover; item 12: save is kept unless this changes
 // Concise changelog shown in the Notification star's VERSION tab (newest first). English only (CJK must stay 0).
 const CHANGELOG=[
+  {v:'v1.28', items:['Mother always supplies H/O/C (15% each)','Nearby 5 planets use only H/O/C formulas','+100 protons for each guide (skip too)','Virgo / Capricornus monsters + gold attacks','Planet codes scattered','Drop-rate bar back, highlights your picks']},
   {v:'v1.27', items:['Bottom drop-rate strip removed; collector sits there now','Picker: clearer picked/unpicked elements','Faster tutorial captions']},
   {v:'v1.26', items:['Pick your first collector right after the tutorial','Mother collector never slows down offline (bonus)']},
   {v:'v1.25', items:['Deploy collectors from a cleared planet’s panel','Map marks planets that have a collector']},
@@ -3831,7 +3847,8 @@ function renderCollectorPicker(){
       </div></div>`;
     h+=`<div class="sub" style="text-align:center;font-size:13px;margin:0 0 10px;color:${UC}">${VERB+' '}${def.slots}${' element'+(def.slots>1?'s':'')} to gather (${_collPick.picks.length}/${def.slots})</div>`;
     let _tot=0;for(const c of m.comp)_tot+=c.r;
-    const els=m.comp.slice().sort((a,b)=>(b.r-a.r)||(a.z-b.z));
+    // H, O, C are the always-collected basic supply, so the collector picks from the REST.
+    const els=m.comp.slice().filter(c=>c.z!==1&&c.z!==8&&c.z!==6).sort((a,b)=>(b.r-a.r)||(a.z-b.z));
     // Element cells use the SAME .dchip format as the main-scene bottom dock
     // (atomic number top-left, symbol centered, rate at the bottom), 7 per row.
     h+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;justify-content:stretch;width:100%;margin:0;box-sizing:border-box">`;
@@ -3883,8 +3900,7 @@ function renderCollectorDock(){
     const t=(G.collectors[0]&&G.collectors[0].type)||'D'; const n=(G.collectors||[]).length;
     d.innerHTML=collectorSVG(t,sz)+`<div style="font-family:'Rajdhani';font-size:10px;font-weight:400;letter-spacing:2px;color:var(--glow);text-shadow:0 0 6px rgba(95,208,255,.6)">COLLECTORS ×${n}</div>`;
   };
-  draw(document.getElementById('collectorDock'),67);          // map (bottom-left, kept)
-  draw(document.getElementById('collectorDockMain'),58);      // main-scene bottom (new)
+  draw(document.getElementById('collectorDock'),67);          // map (bottom-left)
 }
 function collectorHarvestNow(){
   if(!collectorActive())return;
@@ -5898,7 +5914,7 @@ function drawMap(){const cv=document.getElementById('mapCanvas');if(!cv)return;c
     }
     // mark constellations that HAVE monster art — only ONE planet each (the boss) so the
     // map stays readable and gives one test target per art-constellation.
-    const ART_CONST={Taurus:"#ffb24a",Aquarius:"#7fd0ff",Pisces:"#ff7fb0",Aries:"#ff5a5a",Leo:"#ffd24a",Libra:"#5fe08a",Sagittarius:"#c08aff"};
+    const ART_CONST={Taurus:"#ffb24a",Aquarius:"#7fd0ff",Pisces:"#ff7fb0",Aries:"#ff5a5a",Leo:"#ffd24a",Libra:"#5fe08a",Sagittarius:"#c08aff",Virgo:"#ffd24a",Capricornus:"#c8b070"};
     if(front && typeof planetConstName==='function'){
       const cn2=planetConstName(p);
       const mcol=ART_CONST[cn2];
@@ -6282,55 +6298,33 @@ var dockMode=0;
 const DOCK_MODES=['ELEMENT DROP RATE','CURRENT HOLDING QUANTITY'];   // item 8: gathered removed
 function cycleDockMode(){ dockMode=(dockMode+1)%DOCK_MODES.length; renderHolds(); }
 function renderHolds(){
-  // item: the bottom DROP RATE / HOLDING element strip is removed (not all elements are
-  // harvested now); the collector dock lives at the main-scene bottom instead.
-  const _d=document.querySelector('.dock'); if(_d)_d.style.display='none';
-  if(typeof renderCollectorDock==='function')renderCollectorDock();
-  return;
-  const el=document.getElementById('holds');el.innerHTML="";
-  const p=curPlanet();
   const dock=document.querySelector('.dock');
-  const undefeated=(!p.home&&!p.defeated);
-  if(dock)dock.style.display=undefeated?'none':'';
-  // Title shows the current mode; the WHOLE dock area (title + element strip) toggles.
+  const p=curPlanet();
+  const show=(p.home||p.defeated);   // only on planets you actually harvest from
+  if(dock)dock.style.display=show?'':'none';
+  if(typeof renderCollectorDock==='function')renderCollectorDock();   // map dock unchanged
+  const el=document.getElementById('holds'); if(!el)return;
+  el.innerHTML=''; el.className='holds'; el.style.cssText='';
+  if(!show)return;
   const tEl=dock?dock.querySelector('.docktitle'):null;
-  if(tEl){ tEl.textContent=DOCK_MODES[dockMode]; }
-  if(dock){ dock.onclick=cycleDockMode; dock.style.cursor='pointer'; }
-  // ratio lookup per element from the planet composition
-  const ratioByZ={};let _tot=0;
-  if(p.comp&&p.comp.length){for(const c of p.comp)_tot+=c.r;
-    for(const c of p.comp)ratioByZ[c.z]=_tot>0?(c.r/_tot):0;}
-  const seq=(p.comp&&p.comp.length)
-    ? p.comp.slice().sort((a,b)=>(b.r-a.r)||(a.z-b.z)).map(c=>c.z)
-    : Object.keys(G.localGain).map(Number);
-  el.className='holds';
-  el.style.cssText='';   // styling now lives in .dock .holds CSS
-  for(let i=0;i<seq.length;i++){
-    const z=seq[i];
-    const gathered=(G.localGain[z]||0);
-    const holding=(G.ship&&G.ship.hold)?(G.ship.hold[z]||0):0;
-    // Keep every element in its fixed slot. In the quantity modes, elements with nothing
-    // gathered/held render as an invisible placeholder so the grid never reflows.
-    if(dockMode!==0 && holding<=0){   // item 8: holding mode hides empty slots
-      const ph=document.createElement('div');
-      ph.className='dchip placeholder';
-      ph.style.visibility='hidden';
-      el.appendChild(ph);
-      continue;
-    }
-    // value shown depends on the active dock mode
-    let val='';
-    if(dockMode===0){ val=ratioByZ[z]!=null?fmtPct(ratioByZ[z]*100):''; }
-    else { val=holding>0?('×'+holding):'0'; }   // item 8: only rate + holding now
-    const c=document.createElement('div');
-    c.className='dchip';
-    c.style.color=EL[z].color;
-    c.style.background=hexA(EL[z].color,0.3);
-    c.innerHTML=`<span class="zz">${z}</span>`+
-      `<span class="sy">${EL[z].sym}</span>`+
-      `<span class="dv">${val}</span>`;
-    el.appendChild(c);
-  }}
+  if(tEl)tEl.textContent='DROP RATE';
+  if(dock){ dock.onclick=null; dock.style.cursor='default'; }
+  // highlight H/O/C (basic supply) + elements a collector here gathers; dim the rest.
+  const hiSet=new Set([1,8,6]);
+  for(const c of (G.collectors||[])) if(c.planetId===p.id) for(const z of (c.picks||[])) hiSet.add(z);
+  let tot=0; if(p.comp)for(const c of p.comp)tot+=c.r;
+  const seq=(p.comp&&p.comp.length)?p.comp.slice().sort((a,b)=>(b.r-a.r)||(a.z-b.z)):[];
+  for(const co of seq){ const z=co.z;
+    const rate=tot>0?fmtPct((co.r/tot)*100):'';
+    const hi=hiSet.has(z);
+    const cell=document.createElement('div'); cell.className='dchip'; cell.style.color=EL[z].color;
+    cell.style.background=hexA(EL[z].color, hi?0.40:0.13);
+    if(hi){ cell.style.boxShadow='0 0 8px '+hexA(EL[z].color,0.55); }
+    else { cell.style.opacity='0.38'; cell.style.filter='grayscale(.4)'; }
+    cell.innerHTML=`<span class="zz">${z}</span><span class="sy">${EL[z].sym}</span><span class="dv">${rate}</span>`;
+    el.appendChild(cell);
+  }
+}
 let toastT=null;
 function toast(msg,kind){const el=document.getElementById('toast');if(!el)return;
   el.textContent=msg;el.className="toast show"+(kind?" "+kind:"");
@@ -6822,7 +6816,7 @@ function toggleMute(){setVolume(_muted?3:0);}
       close(function(){ try{ maybeStartTutorial(); }catch(e){} });
     });
     skipBtn.addEventListener('click', function(){
-      close(function(){ try{ if(G){ G.tutorialDone=true; saveGame(); } }catch(e){} setTimeout(maybeIntroCollector,500); });
+      close(function(){ try{ if(G){ G.tutorialDone=true; saveGame(); } }catch(e){} tutReward(); setTimeout(maybeIntroCollector,500); });
     });
     card.appendChild(title); card.appendChild(msg);
     card.appendChild(startBtn); card.appendChild(skipBtn);
@@ -7196,8 +7190,11 @@ function tutorialShow(){
 }
 function tutorialNext(){_tutStep++;if(_tutStep>=(_tutList||TUT_STEPS).length)tutorialEnd();else tutorialShow();}
 function tutorialPrev(){if(_tutStep>0){_tutStep--;tutorialShow();}}
+// +100 protons reward for finishing OR skipping any guide (helps the early game).
+function tutReward(){ if(!G)return; G.points=(G.points||0)+100; G.maxPoints=Math.max(G.maxPoints||0,G.points); saveGame&&saveGame(); renderTop&&renderTop(); if(typeof toast==='function')toast('+100 protons','ok'); }
 function tutorialEnd(){
   _tutPaused=false;_tutFreezeTs=null;
+  tutReward();
   const de=document.getElementById('tutDemoEl');if(de)de.remove();
   const ov=document.getElementById('tutorialOverlay');
   if(ov){
@@ -7304,7 +7301,7 @@ function tutMaybeArea(area,title,steps){
   setTimeout(function(){
     tutAsk('FIRST TIME HERE', title,
       function(){ setTimeout(function(){ tutorialRun(steps); },180); },
-      null);
+      tutReward);   // SKIP a guide still grants the +100
   }, 520);
 }
 // After onboarding: introduce + let the player place their first (FREE) collector on the
@@ -7934,6 +7931,8 @@ function cockpitEnemyFX(){
   else if(cn==='Pisces'){ type='circle'; cMain='#46a0ff'; cGlow='#bfeaff'; }
   else if(cn==='Libra'){ type='wave'; cMain='#46e08a'; cGlow='#c2ffdb'; }
   else if(cn==='Sagittarius'){ type='beam'; cMain='#ff4040'; cGlow='#ffb0b0'; }
+  else if(cn==='Virgo'){ type='wave'; cMain='#ffd24a'; cGlow='#ffe9a8'; }
+  else if(cn==='Capricornus'){ type='vee'; cMain='#ffd24a'; cGlow='#ffe9a8'; }
   const tx=W*0.5, ty=H*0.33;
   const DUR=700,t0=performance.now();
   if(_projRAF)cancelAnimationFrame(_projRAF);
@@ -8002,6 +8001,20 @@ function cockpitEnemyFX(){
         ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(x1,y1);ctx.stroke();}
       ctx.shadowBlur=0;ctx.globalAlpha=1;impact(t);_projRAF=requestAnimationFrame(frB);}
     _projRAF=requestAnimationFrame(frB); return;
+  }
+  if(type==='vee'){
+    // CAPRICORNUS: several gold V-shapes flash over the formula, one after another.
+    const vees=[];
+    for(let i=0;i<5;i++)vees.push({cx:tx+(Math.random()*2-1)*W*0.20, cy:ty+(Math.random()*2-1)*H*0.12, sz:H*0.11+Math.random()*H*0.08, off:(i/5)*0.6});
+    function frV(now){const t=now-t0;if(t>=DUR){ctx.clearRect(0,0,W,H);_projRAF=0;return;}ctx.clearRect(0,0,W,H);ctx.lineCap='round';ctx.lineJoin='round';
+      for(const v of vees){const k=Math.max(0,Math.min(1,(t/DUR)-v.off));if(k<=0)continue;const grow=Math.min(1,k*2.2),a=Math.sin(Math.PI*k)*0.95;
+        const s=v.sz*grow, ax=v.cx, ay=v.cy+s*0.6, lx=v.cx-s*0.7, ly=v.cy-s*0.6, rx=v.cx+s*0.7, ry=v.cy-s*0.6;
+        ctx.globalAlpha=a;ctx.shadowBlur=14;ctx.shadowColor=cMain;ctx.strokeStyle=cMain;ctx.lineWidth=4;
+        ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(ax,ay);ctx.lineTo(rx,ry);ctx.stroke();
+        ctx.globalAlpha=a*0.7;ctx.shadowBlur=6;ctx.strokeStyle=cGlow;ctx.lineWidth=1.6;
+        ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(ax,ay);ctx.lineTo(rx,ry);ctx.stroke();}
+      ctx.shadowBlur=0;ctx.globalAlpha=1;impact(t);_projRAF=requestAnimationFrame(frV);}
+    _projRAF=requestAnimationFrame(frV); return;
   }
   // circle (Aquarius green / Pisces blue / default): blooming rings
   const rings=[];
